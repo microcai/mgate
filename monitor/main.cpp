@@ -103,7 +103,7 @@ static void portmap_change(MYSQL_ROW row, void*p)
 			);
 		run_cmd(cmd);
 	}
-	sprintf((char*) p, "delete from portmap_change where nIndex <= %s",row[0]);
+	sprintf((char*) p, "delete from portmap_change where nIndex <= %d",atoi(row[0]?row[0]:"0"));
 }
 
 
@@ -259,7 +259,8 @@ static void room_change(MYSQL_ROW row, void*p)
 
 			RecordAccout(Cd);
 
-			syslog(LOG_NOTICE, "退房 客户：%s\n", roomer_row[0]);
+			if(roomer_row[0])
+				syslog(LOG_NOTICE, "退房 客户：%s\n", roomer_row[0]);
 
 			sql.Format("delete from roomer_list where nIndex='%s'",row[1]);
 			ksql_run_query(sql);
@@ -321,7 +322,8 @@ static void room_change(MYSQL_ROW row, void*p)
 				}
 			}
 			RecordAccout(Cd);
-			syslog(LOG_NOTICE, "登记客户:%s , ID = %s\n", roomer_row[0],roomer_row[2]);
+			if(roomer_row[0] && roomer_row[2])
+				syslog(LOG_NOTICE, "登记客户:%s , ID = %s\n", roomer_row[0],roomer_row[2]);
 		}
 		ksql_free_result(res);
 		break;
@@ -379,7 +381,6 @@ static void On_SQL_change()
 
 	do
 	{
-
 		ksql_query_and_use_result(room_change,
 				"select nIndex,RoomerId,ActionType from room_change order by nIndex asc", strSQL);
 
@@ -432,27 +433,7 @@ static void On_SQL_change()
 		ksql_run_query(sql);
 	}
 }
-#if 0
-static void on_sigsegv(int)
-{
-	struct dirent * dt;
-	DIR *dir = opendir("/proc/self/fd");
-	while ((dt = readdir(dir)))
-	{
-		if (atoi(dt->d_name) > 2)
-		{
-			fcntl(atoi(dt->d_name),F_SETFL,O_CLOEXEC|fcntl(atoi(dt->d_name),F_GETFL));
-		}
-	}
-	closedir(dir);
-	char * argv[2];
-	argv[0] = (char *) "monitor";
-	argv[1] = NULL;
 
-	execvp("monitor", argv);
-
-}
-#endif
 static void load_white(MYSQL_ROW row, void*)
 {
 	u_char mac[6];
@@ -507,7 +488,8 @@ static void pre_load(MYSQL_ROW row, void*)
 
 				mac_set_allowed(cd.MAC_ADDR,true,cd.ip);
 				set_client_data(cd.MAC_ADDR,&cd);
-				syslog(LOG_NOTICE,"预加载客户:%s ，mac='%s' \n",mrow[0],mrow[3]);
+				if( mrow[0] && mrow[3])
+					syslog(LOG_NOTICE,"预加载客户:%s ，mac='%s' \n",mrow[0],mrow[3]);
 			}
 		}
 		ksql_free_result(res);
@@ -515,9 +497,14 @@ static void pre_load(MYSQL_ROW row, void*)
 }
 #endif
 
+static void on_term(int )
+{
+//	ksql_close();
+	exit(0);
+}
+
 int main(int argc, char*argv[], char*env[])
 {
-
 	pthread_attr_t p_attr;
 	pthread_t pcap_tcp;
 	time_t t;
@@ -543,6 +530,12 @@ int main(int argc, char*argv[], char*env[])
 #else
 	openlog(PACKAGE_TARNAME,LOG_PID,LOG_USER);
 #endif
+#if 00
+	//调用 检查自动升级。
+	while(1){Check_update("localhost","");sleep(1);}
+#endif
+	//exit (0);
+
 	syslog(LOG_NOTICE, "%s loaded at %s", PACKAGE_NAME,	ctime(&t));
 
 	ParseParameters(&argc, &argv, parameter);
@@ -574,12 +567,18 @@ int main(int argc, char*argv[], char*env[])
 	dnss = GetToken("dns", "");
 	update_server = GetToken("update.server","");
 	update_trunk = GetToken("update.trunk","monitor");
+	update_server = GetToken(config_file,"update.server","");
+	update_trunk = GetToken(config_file,"update.trunk","monitor");
 	MAX_PCAP_THREAD = atoi(threads.c_str());
 
 	StartSQL();
 
 	signal(15,on_term);
 	signal(2,on_term);
+
+	signal(15,on_term);
+	signal(2,on_term);
+
 
 	if(flush_db)
 	{
@@ -608,9 +607,10 @@ int main(int argc, char*argv[], char*env[])
 	else
 	{
 		syslog(LOG_CRIT,"nic %s not enabled!",hotel::str_ethID);
-		sleep(10000);
+		sleep(20);
 		return 1;
 	}
+
 	ioctl(tmp, SIOCGIFNETMASK, &rif);
 	arg.mask = ((sockaddr_in*) (&(rif.ifr_addr)))->sin_addr.s_addr;
 
@@ -710,44 +710,27 @@ int main(int argc, char*argv[], char*env[])
 
 		inotify_event *inotifyevent = (inotify_event*) errbuf;
 
-		switch (poll(pfd, 1, 5000))
+		int timedout = 1;
+		switch (poll(pfd, 1, timedout *1000))
 		{
 		case 0:
 			On_SQL_change();
+			//调用 检查自动升级。
+			switch(Check_update(update_server.c_str(),update_trunk.c_str()))
+			{
+				case -1:
+				timedout=5;
+				break;
+				case 0:
+				timedout=1;
+			}
+
 			break;
 		case 1:
 			if (read(inotifyfd, inotifyevent, sizeof(errbuf)) > 0)
 			{
 				if (inotifyevent->wd == socket_file_watch)
 					On_SQL_change();
-//				else if (inotifyevent->wd == module_dir_watch)
-//				{
-//					//					if (inotifyevent->mask & IN_DELETE)
-//					//					{
-//					//						log_printf(L_DEBUG_OUTPUT, "need unload modules %s\n",
-//					//								inotifyevent->name);
-//					//						//enum_and_reload_modules(module_dir);
-//					//						unload_modules(inotifyevent->name);
-//					//					}
-//					//					if(inotifyevent->mask & IN_OPEN)
-//					//					{
-//					//						log_printf(L_FAITAL, "DON'T OVERWRITE modules %s\nUSE install command!\n",
-//					//								inotifyevent->name);
-//					//
-//					//						char ** targv = (char **)malloc((argc+1)*sizeof(char*));
-//					//						memcpy(targv,argv,argc*sizeof(char*));
-//					//						targv[argc] = NULL;
-//					//						closefds();
-//					//						execvp(argv[0],targv);
-//					//					}
-//					if (inotifyevent->mask & IN_CLOSE_WRITE)
-//					{
-//						log_printf(L_DEBUG_OUTPUT, "need reload modules %s\n",
-//								inotifyevent->name);
-//						//enum_and_reload_modules(module_dir);
-//						reload_modules(inotifyevent->name, module_dir);
-//					}
-//				}
 			}
 			else
 			{
@@ -769,9 +752,10 @@ int main(int argc, char*argv[], char*env[])
 #else
 	if (ksql_is_server_gone())
 	{
-		switch (Check_update(update_server.c_str(), update_trunk.c_str()))
 		{
-		case (-1):
+		ksql_close();
+		while (InitRecordSQL(pswd, user, database, host))
+			sleep(2);
 			sleep(5);
 			break;
 		case 0:

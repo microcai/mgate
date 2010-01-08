@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.1])
-AC_INIT([monitor], [1.1.5], [BUG-REPORT-ADDRESS])
+AC_INIT([monitor], [1.1.6], [BUG-REPORT-ADDRESS])
 AM_INIT_AUTOMAKE([-Wall -Werror])
 
 AC_SUBST_FILE(RPATH_EXT)
@@ -18,7 +18,7 @@ AC_ARG_ENABLE(hotel,
 				[  --enable-hotel enable hotel related features and 
 	 disable cafe related features],
 				[AM_CONDITIONAL(ENABLE_HOTEL,true)],
-				[AM_CONDITIONAL(ENABLE_HOTEL,false)])              
+				[AM_CONDITIONAL(ENABLE_HOTEL,false)])
 
 AC_SUBST(MODULES_PATH,/usr/libexec/)
 
@@ -62,7 +62,7 @@ AC_CHECK_LIB([mysqlclient -L/usr/lib/mysql], [mysql_query] ,
 									])
 				])
 
-AC_SUBST(LD_MYSQL_FLAGS)		    
+AC_SUBST(LD_MYSQL_FLAGS)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -78,18 +78,17 @@ AC_CHECK_FUNCS([inet_ntoa memset munmap setenv socket strerror strstr])
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h memory.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h unistd.h])
 
-AC_CHECK_FILE(/var/www/html,[], [ AC_MSG_ERROR( httpd not found!)]) 
 #AC_CONFIG_FILES([modules/Makefile])
 AC_CONFIG_FILES( [Makefile libdreamtop/Makefile monitor/Makefile modules/Makefile])
 
-if test $prefix == NONE ; then
-AC_DEFINE_UNQUOTED(MODULES_PATH,"/usr/local/libexec/monitor/modules",the path of the loadable module)
+if  [ $prefix = "NONE" ]; then
+AC_DEFINE_UNQUOTED(MODULES_PATH,"/usr/local/libexec/monitor/modules/",the path of the loadable module)
+AC_DEFINE_UNQUOTED(EXCUTE_PATH,"/usr/local/bin/",the path of the excutable )
+
 else
-AC_DEFINE_UNQUOTED(MODULES_PATH,"$prefix/libexec/monitor/modules",the path of the loadable module)
+
+AC_DEFINE_UNQUOTED(MODULES_PATH,"$prefix/libexec/monitor/modules/",the path of the loadable module)
+AC_DEFINE_UNQUOTED(EXCUTE_PATH,"$prefix/bin/",the path of the excutable )
 fi
-
-
-
-
 
 AC_OUTPUT

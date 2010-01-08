@@ -13,6 +13,7 @@
 #pragma once
 
 #include <netinet/in.h>
+#include <string>
 
 #define PROLEN_NATIONALITY	4
 #define PROLEN_CERTTYPE		4

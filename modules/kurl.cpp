@@ -211,9 +211,6 @@ static int RecordPOST(const char *user, const char*pswd, const char*host, u_char
 
 	struct tcphdr* tcp = (tcphdr*)(packet + 14 + sizeof(iphdr));
 
-	char strhost[32];
-	snprintf(strhost,32,"%d.%d.%d.%d",((u_char*)&dip)[0],((u_char*)&dip)[1],((u_char*)&dip)[2],((u_char*)&dip)[3]);
-
 	na.data = host;
 	na.ip = sip;
 	na.dstip = dip;
@@ -223,7 +220,7 @@ static int RecordPOST(const char *user, const char*pswd, const char*host, u_char
 	char key2[80];
 	snprintf(key2,80,"%s:%s",user,pswd);
 	na.passwd = key2 ;
-	na.host = strhost;
+	na.host = host;
 	na.dport = ntohs(tcp->dest);
 
 	RecordAccout(&na);
@@ -268,6 +265,41 @@ static int GetHttpPost(struct so_data*, u_char*packet)
 		return 0; // POST \r\n\r\n 几个字节？
 
 	//add 090901
+	std::string url, usr, pwd;
+	if( ParseTcpPkt(tcpdata, tcpdatelen, url, usr, pwd) == true)
+	{
+		return RecordPOST(usr.c_str(), pwd.c_str(), url.c_str(), packet,ip_head->saddr, ip_head->daddr);
+	}
+	return 0;
+	//end 090901
+
+	HOSTDATA* pHostData;
+	std::map<in_addr_t, HOSTDATA>::iterator it;
+	static std::map<in_addr_t,HOSTDATA> host_list;
+	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_lock(&lock);
+	it = host_list.find(ip_head->daddr);
+	if (it != host_list.end())
+		pHostData = &it->second;
+	else
+		pHostData = NULL;
+	pthread_mutex_unlock(&lock);
+	const int nSize = 50;
+	char pUser[50] =
+	{ 0 };
+	char pPassword[50] =
+	{ 0 };
+	char pHost[50] =
+	{ 0 };
+
+	if (!pHostData)
+	{
+		if (memcmp("POST ", tcpdata, 5) == 0)
+		{
+			char *pPos = NULL;
+			pPos = strstr((char *) tcpdata, "Host:");
+			if (pPos)
+			{
 
 	//static pthread_mutex_t lock=PTHREAD_MUTEX_INITIALIZER;
 	//pthread_mutex_lock(&lock);
@@ -295,6 +327,7 @@ static int GetHttpPost(struct so_data*, u_char*packet)
 	{
 		//pthread_mutex_unlock(&lock);
 		return 0;
+	return 0;
 	}
 }
 
@@ -348,9 +381,14 @@ static int url_packet_callback(struct so_data* sodata, u_char * packet)
 				if (nLen >= nSize)
 					return 0;
 				if (nLen <= 5)
-					return 0;
+				int nret = RecordUrl(pUrl,packet,ip_head->saddr ,ip_head->daddr);
 
-				memset(strOldUrl[nCurPos], 0, 300);
+				return nret;
+			}
+			catch (...)
+			{
+					return 0;
+            return RecordUrl(pUrl,packet,ip_head->saddr ,ip_head->daddr);
 				strcpy(strOldUrl[nCurPos], pUrl);
 				nCurPos++;
 				nCurPos %= 20;
