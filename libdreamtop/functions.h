@@ -40,23 +40,23 @@ _EXTERN_	void
 
 _EXTERN_ u_int16_t
     checksum(u_int16_t *buffer, int size);
-_EXTERN_ int
-	is_client_online( u_char mac_addr[6], in_addr_t ip);
-_EXTERN_ int
-	set_client_offline(const char* b,const char* f,const char* r);
 
+_EXTERN_ bool
+	mac_is_alowed(u_char mac[6]);
+_EXTERN_ bool
+	mac_is_alowed(u_char mac[6],const u_int32_t ip);
+_EXTERN_ bool
+	ip_is_allowed(void*,in_addr_t)__attribute_noinline__;
 _EXTERN_ void
-	set_client_online(in_addr_t ip,struct Clients_DATA* data);
-_EXTERN_ int
-	get_client_data(in_addr_t ip,struct Clients_DATA*);
+	mac_set_allowed(u_char mac[6],bool allow =false,in_addr_t ip=INADDR_NONE);
+_EXTERN_ bool
+	set_client_data( u_char mac[6],  Clients_DATA * pcd );
+_EXTERN_ bool
+	get_client_data(u_char mac[6],Clients_DATA * pcd );
 _EXTERN_ void
 	redirect_to_local_http( u_int32_t ,const u_char *,struct iphdr* );
 _EXTERN_ void
 	init_http_redirector(std::string dest);
-_EXTERN_ void
-	nat_disable_ip(const char *  ip);
-_EXTERN_ void
-	nat_enbale_ip(const char * ip);
 _EXTERN_ void
 	log_puts(enum LOG_PRINT_LEVEL level,const std::string );
 _EXTERN_ void

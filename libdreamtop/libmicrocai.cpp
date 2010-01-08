@@ -133,24 +133,6 @@ int gbk_utf8(char *outbuf, size_t outlen, const char *inbuf, size_t inlen)
 	return 0;
 }
 
-void nat_disable_ip(const char * ip)
-{
-	CString cmd;
-	cmd.Format(
-			"iptables -t nat -D  POSTROUTING  --source  %s -j MASQUERADE -o eth+",
-			ip);
-	run_cmd(cmd);
-}
-
-void nat_enbale_ip(const char * ip)
-{
-	CString cmd;
-	cmd.Format(
-			"iptables -t nat -A POSTROUTING --source %s -j MASQUERADE -o eth+",
-			ip);
-	run_cmd(cmd);
-}
-
 struct tm * GetCurrentTime()
 {
 	time_t t;

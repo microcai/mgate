@@ -41,7 +41,6 @@
 //	u_char* p= (u_char*)&pp;
 //	snprintf(ip,16,"%d.%d.%d.%d", p[0],p[1],p[2],p[3]);
 //}
-static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 extern void *pcap_thread_func(struct pcap_thread_args *arg)
 {
@@ -63,17 +62,17 @@ extern void *pcap_thread_func(struct pcap_thread_args *arg)
 	net_ip = arg->ip;
 	memcpy(mac_addr,arg->mac_addr,6);
 
-	u_char *packet_content;
-
-	packet_content = (typeof(packet_content))malloc(ETHER_MAX_LEN);
-
+	u_char packet_content[ETHER_MAX_LEN*2];
 
 	for(;;)
 	{
+		static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 		pthread_mutex_lock(&lock);
 		while(pcap_next_ex(pcap_handle, &pcaphdr, &packet_contents) != 1);
-		memcpy(packet_content,packet_contents,pcaphdr->len);
+		memcpy(packet_content,packet_contents,ETHER_MAX_LEN*2);
 		pthread_mutex_unlock(&lock);
+
+//		recv(fno,packet_content,ETHER_MAX_LEN,0);
 
 	    ip_head =( typeof(ip_head) )(packet_content + ETH_HLEN);
 

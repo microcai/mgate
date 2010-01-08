@@ -39,8 +39,6 @@ void get_registerd_handler(PROTOCOL_HANDLER * out_hander, int in_count ,int port
     int i = 0;
     struct handler* p = head;
 
-    memset(out_hander, 0, in_count * sizeof (PROTOCOL_HANDLER));
-
     if(pthread_rwlock_tryrdlock(&rwlock)!=0)
     {
     	return;

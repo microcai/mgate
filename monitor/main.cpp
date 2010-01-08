@@ -61,8 +61,8 @@ static struct parameter_tags parameter[] =
 				"--module_dir", parameter_type::STRING, module_dir,
 				sizeof(module_dir), "--module_dir\t\t模块位置"), parameter_tags(
 				"--flushdb", parameter_type::BOOL_short, (char*) &flush_db,
-				sizeof(flush_db), "--flush_db\t\t清空客房数据"), parameter_tags() };
-
+				sizeof(flush_db), "--flush_db\t\t清空客房数据"), parameter_tags()
+};
 
 static void port_map(MYSQL_ROW row, void * p)
 {
@@ -603,24 +603,6 @@ int main(int argc, char*argv[], char*env[])
 	dnss = GetToken(config_file, "dns", "");
 	MAX_PCAP_THREAD = atoi(threads.c_str());
 
-//	log_printf(L_DEBUG_OUTPUT, "user=%s,pawd=%s,host=%s,db=%s,dns=", user.c_str(),
-//			pswd.c_str(), host.c_str(), database.c_str(),dnss.c_str());
-
-	run_cmd("iptables -F -t nat");
-	{
-		char * ptr;
-		ptr = strtok((char *) dnss.c_str(), ",");
-		while (ptr)
-		{
-			CString cmd;
-			cmd.Format("iptables -t nat -A POSTROUTING -j MASQUERADE -o eth+ "
-					"--dest %s", ptr);
-			run_cmd(cmd);
-			ptr = strtok(0,",");
-		}
-
-	}
-
 	std::cout << "----------初始化数据库----------" << std::endl;
 
 	while (InitRecordSQL(pswd, user, database, host))
@@ -639,8 +621,6 @@ int main(int argc, char*argv[], char*env[])
 		ksql_run_query("truncate portmap_change");
 		ksql_run_query("truncate t_customerlog");
 		ksql_run_query("truncate t_floor");
-//		ksql_run_query("truncate t_msnlog");
-//		ksql_run_query("truncate t_qqlog");
 		ksql_run_query("truncate t_netlog");
 		ksql_run_query("truncate whitelist");
 
@@ -655,7 +635,7 @@ int main(int argc, char*argv[], char*env[])
 		arg.ip = ((sockaddr_in*) (&(rif.ifr_addr)))->sin_addr.s_addr;
 	else
 	{
-		log_printf(L_FAITAL,"nic %s no enabled!",hotel::str_ethID);
+		log_printf(L_FAITAL,"nic %s not enabled!",hotel::str_ethID);
 		sleep(10000);
 		return 1;
 	}
@@ -669,17 +649,17 @@ int main(int argc, char*argv[], char*env[])
 
 	arg.pcap_handle = pcap_open_live(hotel::str_ethID, PCAP_ERRBUF_SIZE, 0, 0,
 			errbuf);
+	if(!arg.pcap_handle)
+	{
+		log_printf(L_FAITAL, "ERROR:can not open %s for capturing!\n",
+				hotel::str_ethID);
+		return -1;
+	}
 
 	if (pcap_datalink(arg.pcap_handle) != DLT_EN10MB)
 	{
 		log_printf(L_FAITAL, "ERROR:%s is not an ethernet adapter\n",
 				hotel::str_ethID);
-		return -1;
-	}
-
-	if (!arg.pcap_handle)
-	{
-		log_printf(L_ERROR, "无法打开 %s 抓数据包,请以root运行\n", hotel::str_ethID);
 		return -1;
 	}
 
@@ -695,10 +675,23 @@ int main(int argc, char*argv[], char*env[])
 
 	pcap_freecode(&bpf_filter);
 
-	pthread_attr_init(&p_attr);
+	run_cmd("iptables -F -t nat");
+	{
+		char * ptr;
+		ptr = strtok((char *) dnss.c_str(), ",");
+		while (ptr)
+		{
+			CString cmd;
+			cmd.Format("iptables -t nat -A POSTROUTING -j MASQUERADE -o eth+ "
+					"--dest %s", ptr);
+			run_cmd(cmd);
+			ptr = strtok(0,",");
+		}
 
+	}
+
+	pthread_attr_init(&p_attr);
 	pthread_attr_setdetachstate(&p_attr, PTHREAD_CREATE_DETACHED);//不需要考虑线程的退出状态吧？！
-	pthread_attr_setscope(&p_attr, PTHREAD_SCOPE_SYSTEM); //要使用内核线程
 
 	for (int i = 0; i < MAX_PCAP_THREAD; ++i)
 	{

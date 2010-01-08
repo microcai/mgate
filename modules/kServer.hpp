@@ -36,21 +36,12 @@ bool operator  < (const struct sockaddr_in & __x,
 #define MODE_NEED_LOGIN 0
 
 
-
-
-
-
 #ifdef  	 SERVER_SIDE
 
 struct active_client{
-	ulong login_code;
-	u_int64_t current_code;
-	u_int64_t prev_code;
-	time_t last_active_time;
-	sockaddr_in sock_addr;
-	u_int64_t passwd_token;
-	int mode;
-	int	state; // 模拟  TCP
+	int sockfd;
+
+	int32_t passwd_token;
 	int lastdata_len;
 	char * lastdata;
 	~active_client()
@@ -58,18 +49,13 @@ struct active_client{
 		if(lastdata)
 			delete [] lastdata;
 	}
+	active_client()
+	{
+		lastdata=0;
+		passwd_token = rand();
+	}
 };
-
-struct writedata{
-	sockaddr_in	addr;
-	size_t	length;
-	char	data[ETHERMTU];
-};
-
 
 #endif /*SERVER_SIDE*/
-
-
-
 
 #endif /* KSERVER_HPP_ */

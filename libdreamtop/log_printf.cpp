@@ -14,50 +14,11 @@
 
 #include "libmicrocai.h"
 
-static FILE * log_file;
 #ifdef DEBUG
 static enum LOG_PRINT_LEVEL debug_level = L_DEBUG_OUTPUT;
 #else
-static enum LOG_PRINT_LEVEL debug_level=L_ERROR;
+static enum LOG_PRINT_LEVEL debug_level=L_NOTICE;
 #endif
-
-
-static void onexit(int, void*)
-{
-	fwrite("\n--------------------", 1, 20, log_file);
-	fwrite("--------------------", 1, 20, log_file);
-	fwrite("--------------------", 1, 20, log_file);
-	fwrite("----------\n\n\n", 1, 12, log_file);
-	fclose(log_file);
-}
-//static void _Befor_fork()
-//{
-//
-//}
-//static void _After_Fork()
-//{
-//
-//}
-
-static void __attribute__((constructor)) onload()
-{
-	//	pthread_atfork(_Befor_fork,_After_Fork,0);
-	on_exit(onexit, 0);
-
-	int fd =  open("/var/log/monitor.log", O_CLOEXEC|O_APPEND|O_RDWR|O_CREAT,0666);
-	if(fd < 0)
-	{
-		write(2,"Cannot open log file \"/var/log/monitor.log\"\n",sizeof("Cannot open log file \"/var/log/monitor.log\"\n"));
-		_exit(-1);
-	}
-	log_file = fdopen(fd, "a");
-
-	if (!log_file)
-	{
-		fprintf(stderr,"Cannot open log file\n");
-		_exit(1);
-	}
-}
 
 void set_debug_level(enum LOG_PRINT_LEVEL l)
 {
@@ -68,27 +29,17 @@ void log_printf(enum LOG_PRINT_LEVEL level, const char * fmt, ...)
 {
 	va_list ap;
 	va_start(ap,fmt);
-	vfprintf(log_file, fmt, ap);
-	fputs("\n", log_file);
-	va_end(ap);
 	va_start(ap,fmt);
 	if (level == L_OUTPUT)
 		vprintf(fmt, ap);
 	else if (level <= debug_level)
 		vfprintf(stderr, fmt, ap);
 	va_end(ap);
-#ifdef DEBUG
-	fflush(log_file);
-#endif
 }
 void log_puts(enum LOG_PRINT_LEVEL level, const std::string str)
 {
-	fputs(str.c_str(), log_file);
 	if (level == L_OUTPUT)
 		puts(str.c_str());
 	else if (level <= debug_level)
 		fprintf(stderr, str.c_str());
-#ifdef DEBUG
-	fflush(log_file);
-#endif
 }

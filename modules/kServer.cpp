@@ -11,11 +11,11 @@
  */
 #include <iterator>
 #include <iostream>
-#include <map>
+#include <vector>
 #include <deque>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/poll.h>
+#include <sys/epoll.h>
 #include <netinet/in.h>
 #include <net/ethernet.h>
 //We need md5
@@ -30,112 +30,65 @@ static void notice_mainthread()
 	close(open("/tmp/monitor.socket",O_RDWR|O_CLOEXEC));
 }
 
-static ulong GenNextCode(ulong cur)
-{
-	return cur + rand();
-}
+static std::vector<active_client*>	activeclients;
 
-static std::map<sockaddr_in,active_client>	cmap;
-static std::deque<writedata>				writequeue;
-
-typedef std::map<sockaddr_in,active_client>::iterator it_c;
-
-static char blank[128]={0};
 static char	BUFFER[ETHERMTU];
 
-static int NeedWrite = POLLOUT & 0;
-static void OnWrite(int sock)
+static bool checkpasswd(const char * passwd, const char * Tpasswd, int32_t code)
 {
-	while(writequeue.size())
-	{
-		writedata wd = writequeue.front();
-
-		switch(sendto(sock,wd.data,wd.length,MSG_DONTWAIT,(sockaddr*)&wd.addr,INET_ADDRSTRLEN))
-		{
-		case 0:
-			return;
-		case -1:
-		if(errno==EINTR)
-			continue;
-		return;
-		}
-		writequeue.pop_front();
-	}
-	//TODO:写数据
-	NeedWrite = 0;
+	return (atoi(Tpasswd) + code) == atoi(passwd);
 }
 
-static void	SendData(const void * buf,size_t len,active_client * to)
+static void Send_SB_OK(int32_t code, active_client * to)
 {
-	writedata	wd;
-	memcpy(wd.data,buf,len);
-	wd.length = len;
-	memcpy(&wd.addr , & to->sock_addr ,INET_ADDRSTRLEN);
-
-	writequeue.push_back(wd);
-	NeedWrite = POLLOUT;
+	int len = snprintf(BUFFER, ETHERMTU, "SB OK %d", code);
+	write(to->sockfd,BUFFER,len);
 }
 
-static void OnNewConnection(int sock,sockaddr_in & addr)
-{
-	it_c it;
-	if (memcmp(BUFFER, blank, 128) == 0)
-	{
-		active_client ac;
-		active_client *pac;
-
-		ac.last_active_time = time(&ac.last_active_time);
-		ac.sock_addr = addr;
-		ac.lastdata = NULL;
-		it = cmap.insert(std::pair<sockaddr_in,active_client>(addr,ac)).first;
-		pac = & (it->second);
-		pac->login_code = ((uint64_t)pac);
-		pac->current_code = pac->login_code;
-		pac->passwd_token = pac->current_code << 32 | ~ pac->current_code ;
-		pac->prev_code = 0 ;
-		pac->mode = MODE_OK;
-		pac->state = SYN_WAIT ;
-		snprintf(BUFFER,ETHERMTU,"SB OK %lu",(ulong)pac->login_code);
-
-		SendData(BUFFER,30,pac);
-
-	}
-}
-
-static bool checkpasswd(const char * passwd, const char * Tpasswd, ulong code)
-{
-	return (atoll(Tpasswd) + code) == atoll(passwd);
-}
-
-static void Send_SB_OK(ulong pre, ulong cur, active_client * to)
-{
-	int len = snprintf(BUFFER, ETHERMTU, "SB OK %lu %lu", pre, cur);
-	to->mode = MODE_NEED_PASSWD;
-	SendData(BUFFER, len, to);
-}
 static void Send_SB_OK_OK(active_client * to)
 {
-	SendData("SB OK OK", 9, to);
+	write(to->sockfd,"SB OK OK", 9);
 }
 
-static void MakeItChange( const char * IsADD,const char * build,const char * floor,const char * room)
+static void MakeItChange(int roomid, int action )
 {
+	MYSQL_RES * res;
+	MYSQL_ROW row;
 	CString sqlstr;
-	sqlstr.Format("insert into room_change (Is_ADD,RoomBuild,RoomFloor,RoomNum) "
-			"values ('%s','%s','%s','%s')",IsADD, build, floor, room);
+
+
+	sqlstr.Format("select nIndex from roomer_list where"
+			" RoomId='%d' order by nIndex desc",roomid);
+	res = ksql_query_and_use_result(sqlstr);
+	sqlstr.Format("");
+	row = ksql_fetch_row(res);
+	if(row && row[0])
+	{
+		sqlstr.Format("insert into room_change (RoomerId,ActionType) "
+				"values ('%s','%d')",row[0], action);
+	}
+	ksql_free_result(res);
+
 	ksql_run_query(sqlstr);
 }
 
-static void MakeItOffline(const char * build,const char * floor,const char * room)
-{
-	CString sql;
-	sql.Format(
-			"update room_list set IsEmpty=1,state=0,IsWhite=2 "
-				"where IsWhite=0 and RoomBuild='%s' and RoomFloor='%s' and RoomNum='%s'",
-			build, floor, room);
-	ksql_run_query(sql);
 
-	MakeItChange("0",build,floor,room);
+static int GetRoomID(const char * build,const char * floor,const char * room)
+{
+	MYSQL_RES * res;
+	MYSQL_ROW row;
+	CString sql;
+	int nindex ;
+	sql.Format(
+			"select nIndex from room_list where RoomBuild='%s' and RoomFloor='%s' and RoomNum='%s'",
+			build, floor, room);
+	res = ksql_query_and_use_result(sql);
+	if((row = ksql_fetch_row(res)))
+	{
+		nindex =  atoi(row[0]);
+	}else nindex = -1;
+	ksql_free_result(res);
+	return nindex;
 }
 
 static int On_ONLINE(char * command)
@@ -144,6 +97,8 @@ static int On_ONLINE(char * command)
 
 	char * cmd;
 	char *TOKPTR;
+
+	int nIndex;
 
 	strtok_r(command," ",&TOKPTR);
 
@@ -216,22 +171,32 @@ static int On_ONLINE(char * command)
 
 		CString sqlstr;
 
-		sqlstr.Format("update room_list set IsEmpty=0,state=0,LoginNum='%s',CustomerName='%s',IDtype='%s',"
-				"ID='%s',live_address='%s',country='%s',org='%s',Time='%s',IP_ADDR='',MAC_ADDR='' where RoomBuild='%s' and RoomFloor='%s' and RoomNum='%s'",
-				 loginnum.c_str(),name.c_str(),Idtype.c_str(),ID.c_str(),address.c_str(),
-				 country.c_str(),org.c_str(), time.c_str(),
-				 build.c_str(),floor.c_str(),room.c_str());
+		// 获得 RoomId
+		nIndex = GetRoomID(build.c_str(),floor.c_str(),room.c_str());
 
-		ksql_run_query(sqlstr);
+		if(nIndex>0)
+		{
+			// 更新 rooom_list 的 count 值
+			sqlstr.Format("update room_list set RoomerCount=RoomerCount+1 where nIndex=%d",nIndex);
+			ksql_run_query(sqlstr);
 
-		MakeItChange("2",build.c_str(), floor.c_str(), room.c_str());
+			//插入新的用户
 
+			sqlstr.Format("insert into roomer_list "
+					"(CustomerName,ID,IDtype,IP_ADDR,MAC_ADDR,RoomId,Time,live_address,country,org,LoginNum) "
+					"values ('%s','%s','%s',null,null,'%d','%s','%s','%s','%s','%s')",
+					name.c_str(),ID.c_str(),Idtype.c_str(),nIndex,time.c_str(),
+					address.c_str(),country.c_str(),org.c_str(),loginnum.c_str());
+			ksql_run_query(sqlstr);
 
-		InsertCustomerLog(build.c_str(), floor.c_str(), room.c_str(), name.c_str(),
-				Idtype.c_str(), ID.c_str(), "0", "","" ,time.c_str());
+			MakeItChange(nIndex,3);
 
-		notice_mainthread();
+			log_printf(L_DEBUG_OUTPUT,"从金城登记 :% ...ok\n",name.c_str());
 
+			notice_mainthread();
+
+			InsertCustomerLog(build.c_str(),floor.c_str(),room.c_str(),name.c_str(),Idtype.c_str(),ID.c_str(),"0","","",time.c_str());
+		}
 		return 1;
 	}while(false);
 	return 0;
@@ -244,12 +209,16 @@ static int On_OFFLINE(char * command)
 	char *cmd;
 	char *TOKPTR;
 
+	MYSQL_RES * res,*tres;
+	MYSQL_ROW row,trow;
+
 	strtok_r(command," ",&TOKPTR);
 
 	int ret=0;
 
 	do {
-		// offline 房间,楼层,栋
+		// offline room,floor,build
+
 		cmd = strtok_r(0, ",", &TOKPTR);
 		if (!cmd)
 			break;
@@ -261,11 +230,10 @@ static int On_OFFLINE(char * command)
 		if (!cmd)
 			break;
 		std::string floor(cmd);
-		if (atoi(cmd) == 0 )
-			if(!( floor == "0"))
-					break;
+		if (atoi(cmd) == 0)
+			break;
 
-		cmd = strtok_r(0, ", ", &TOKPTR);
+		cmd = strtok_r(0, ",", &TOKPTR);
 		if (!cmd)
 			break;
 		std::string build(cmd);
@@ -276,28 +244,38 @@ static int On_OFFLINE(char * command)
 
 		formattime(time,GetCurrentTime());
 
-		sqlstr.Format("select CustomerName,IDtype,ID,IP_ADDR,MAC_ADDR"
-			" from room_list where "
-			"RoomBuild='%s' and RoomFloor='%s' and RoomNum='%s' ",
-			build.c_str(),floor.c_str(),room.c_str());
+		//找出这房间，退干净人。
 
-		MYSQL_RES * res = ksql_query_and_use_result(sqlstr);
+		sqlstr.Format("select l.`nIndex`  from room_list  l "
+				"  where l.`RoomBuild` = '%s' and l.`RoomFloor` = '%s' and l.`RoomNum` = '%s' ",
+				build.c_str(),floor.c_str(),room.c_str());
 
-		MYSQL_ROW row = ksql_fetch_row(res);
-
-		if(row)
+		res =ksql_query_and_use_result(sqlstr);
+		while((row=ksql_fetch_row(res)))
 		{
-			InsertCustomerLog(build.c_str(),floor.c_str(),room.c_str(),row[0],row[1],row[2],"1",row[3]?row[3]:"",row[4]?row[4]:"",time.c_str());
+			sqlstr.Format("update room_list set RoomerCount=0 where nIndex='%s'",row[0]);
+			ksql_run_query(sqlstr);
+
+			sqlstr.Format("select nIndex,CustomerName,IDtype,ID,IP_ADDR,MAC_ADDR from roomer_list where RoomId='%s'",row[0]);
+
+			tres = ksql_query_and_use_result(sqlstr);
+			while((trow=ksql_fetch_row(tres)))
+			{
+				sqlstr.Format("insert  into room_change (RoomerId,ActionType) values ('%s',2)",trow[0]);
+				ksql_run_query(sqlstr);
+				//记录日志
+				log_printf(L_DEBUG_OUTPUT,"从金城退掉 :%s \n",trow[1]);
+
+				InsertCustomerLog(build.c_str(),floor.c_str(),room.c_str(), trow[1], trow[2],trow[3],
+						 "1", trow[4] ? trow[4] : "",
+					trow[5] ? trow[5] : "", time.c_str());
+
+			}ksql_free_result(tres);
+			ret = 1;
 		}
-
 		ksql_free_result(res);
-
-		MakeItOffline(build.c_str(),floor.c_str(),room.c_str());
-
 		notice_mainthread();
-
 		ret = 1;
-
 	} while (false);
 	return ret;
 }
@@ -308,9 +286,18 @@ static int On_CHANGE(char * command)
 
 	int ret=0;
 
+	CString sql;
 	char *cmd;
 	char *TOKPTR;
+	std::string  time;
+
+	std::string name,address,country,org,ip,mac;
+
+
+	MYSQL_RES * res;
+	MYSQL_ROW row;
 	// change IDtype,ID,房间,楼层,栋
+
 
 	strtok_r(command," ",&TOKPTR);
 
@@ -321,75 +308,118 @@ static int On_CHANGE(char * command)
 			break;
 		if (atoi(cmd) == 0)
 			break;
-		CString Idtype(cmd);
+		std::string Idtype(cmd);
 
 		cmd = strtok_r(0, ",", &TOKPTR);
 		if (!cmd)
 			break;
 		if (strlen(cmd) < 6)
 			break;
-		CString ID(cmd);
+		std::string ID(cmd);
 
 		cmd = strtok_r(0, ",", &TOKPTR);
 		if (!cmd)
 			break;
-		CString room(cmd);
+		std::string room(cmd);
 		if (atoi(cmd) == 0)
 			break;
 
 		cmd = strtok_r(0, ",", &TOKPTR);
 		if (!cmd)
 			break;
-		CString floor(cmd);
+		std::string floor(cmd);
 		if (atoi(cmd) == 0)
 			break;
 
 		cmd = strtok_r(0, ",", &TOKPTR);
 		if (!cmd)
 			break;
-		CString build(cmd);
+		std::string build(cmd);
 
-		CString sql;
-		sql.Format("select RoomBuild,RoomFloor,RoomNum,CustomerName,"
-				"live_address,country,org,IP_ADDR,MAC_ADDR "
-				"from room_list where ID='%s' and IDtype='%s' ",
+
+		// 获得这家伙的详细信息
+
+		CString loginnum;
+
+		formattime(time,GetCurrentTime());
+
+		loginnum.Format("%1.1s%1.1s%02.2d%0.6s", build.c_str(),
+				floor.c_str(), atoi(room.c_str()), ID.c_str() + ID.size() - 6);
+
+		sql.Format("SELECT r.`CustomerName`, r.`IP_ADDR`, r.`MAC_ADDR`, r.`live_address`, r.`country`, r.`org`"
+				" FROM roomer_list r , room_list l"
+				" where r.`ID`='%s' and r.`IDtype`='%s' and l.nIndex=r.RoomId ",
 				ID.c_str(), Idtype.c_str());
-		MYSQL_RES * res = ksql_query_and_use_result(sql);
 
-		MYSQL_ROW row = ksql_fetch_row(res);
+		log_printf(L_DEBUG_OUTPUT,"换房 ， sql : %s\n",sql.c_str());
 
-		if(row)
+		res = ksql_query_and_use_result(sql);
+
+		if((row=ksql_fetch_row(res)))
 		{
+			if(row[0])
+				name = row[0];
+			if(row[1])
+				ip=row[1];
+			if(row[2])
+				mac = row[2];
+			if(row[3])
+				address =row[3];
+			if(row[4])
+				country = row[4];
+			if(row[5])
+				org = row[5];
+		}
 
-			std::string  time;
+		ksql_free_result(res);
 
-			formattime(time,GetCurrentTime());
+		// 找出这家伙的所有旧的房间，退掉
 
-			MakeItOffline(row[0], row[1 ], row[2]);
+		sql.Format("select r.`RoomId`,r.`nIndex`,r.`CustomerName`,r.`IP_ADDR`,r.`MAC_ADDR`,"
+				"l.`RoomBuild`, l.`RoomFloor`, l.`RoomNum` "
+				"from roomer_list r , room_list l where IDtype='%s' and ID='%s' and l.nIndex=r.RoomId",
+				Idtype.c_str(),ID.c_str());
+		res =ksql_query_and_use_result(sql);
+		while((row=ksql_fetch_row(res)))
+		{
+			sql.Format("update room_list set RoomerCount=RoomerCount-1 where nIndex='%s' and RoomerCount>0",row[0]);
+			ksql_run_query(sql);
 
-			InsertCustomerLog(row[0], row[1 ], row[2],row[3],Idtype.c_str(),ID.c_str(),"1",row[7]?row[7]:"",row[8]?row[8]:"",time.c_str());
+			sql.Format("insert into room_change (RoomerId,ActionType) values ('%s',2)",row[1]);
+			ksql_run_query(sql);
 
-			CString loginnum;
+			//记录日志
+			InsertCustomerLog(row[5],row[6],row[7],row[2],Idtype.c_str(),ID.c_str(),"1",row[3]?row[3]:"",row[4]?row[4]:"",time.c_str());
 
-			loginnum.Format("%1.1s%1.1s%02.2d%0.6s", build.c_str(),
-					floor.c_str(), atoi(room), ID.c_str() + ID.size() - 6);
+		}ksql_free_result(res);
 
-			sql.Format("update room_list set IsEmpty=0,state=0,LoginNum='%s',CustomerName='%s',IDtype='%s',"
-					"ID='%s',live_address='%s',country='%s',org='%s' where RoomBuild='%s' and RoomFloor='%s' and RoomNum='%s'",
-					 loginnum.c_str(),row[3],Idtype.c_str(),ID.c_str(),row[4],
-					 row[5],row[6], build.c_str(),floor.c_str(),room.c_str());
+		//好，现在，住到新的房间里去
+
+		// 获得 RoomId
+		int nIndex = GetRoomID(build.c_str(),floor.c_str(),room.c_str());
+
+		if(nIndex>0)
+		{
+			// 更新 rooom_list 的 count 值
+			sql.Format("update room_list set RoomerCount=RoomerCount+1 where nIndex=%d",nIndex);
+			ksql_run_query(sql);
+
+			//插入新的用户
+			sql.Format("insert into roomer_list "
+					"(CustomerName,ID,IDtype,IP_ADDR,MAC_ADDR,RoomId,Time,live_address,country,org,LoginNum) "
+					"values ('%s','%s','%s',null,null,'%d','%s','%s','%s','%s','%s')",
+					name.c_str(),ID.c_str(),Idtype.c_str(),nIndex,time.c_str(),
+					address.c_str(),country.c_str(),org.c_str(),loginnum.c_str());
 
 			ksql_run_query(sql);
 
-			MakeItChange("2",build.c_str(), floor.c_str(), room.c_str());
+			MakeItChange(nIndex,3);
 
 			notice_mainthread();
 
-			InsertCustomerLog(build.c_str(), floor.c_str(), room.c_str(),row[3],Idtype.c_str(),ID.c_str(),"0",row[7]?row[7]:"",row[8]?row[8]:"",time.c_str());
-
-			ret = 1;
+			InsertCustomerLog(build.c_str(),floor.c_str(),room.c_str(),name.c_str(),Idtype.c_str(),ID.c_str(),"0","","",time.c_str());
 		}
-		ksql_free_result(res);
+		ret=1;
 	} while (0);
 	return ret;
 }
@@ -400,92 +430,31 @@ static struct _t_token_processor
 	int (*proc)(char*);
 } token_processor[] = {
 	{ On_ONLINE },
-	{ On_OFFLINE },
 	{ On_CHANGE },
+	{ On_OFFLINE },
 	{ 0 }
 };
 
 
-static void OnRead(int sock)
+static int OnRead(active_client * pac)
 {
+	int sock = pac->sockfd;
 	char	* TOKPTR;
-	sockaddr_in addr={0};
-	addr.sin_family = AF_INET;
-	socklen_t  addr_len = INET_ADDRSTRLEN;
+	char * cmd;
 
-	int recvd = recvfrom(sock,BUFFER,ETHERMTU,MSG_DONTWAIT,(sockaddr*)&addr,&addr_len);
+	bzero(BUFFER,sizeof(BUFFER));
+	int recvd = read(sock,BUFFER,ETHERMTU);
 
-	it_c it = cmap.find(addr);
-	active_client * pac;
-
-	if(it==cmap.end()) // new connection arrived
+	if(pac->lastdata)
 	{
-		OnNewConnection(sock,addr);
-	}else
-	{
-
-		pac = & it->second;
-
-		if (pac->mode & MODE_OK  && pac->state == SYN_ESTABLISHED)
-		{
-			pac->mode = 0;
-
-			if(pac->lastdata)
-				delete [] pac->lastdata;
-
-			pac->lastdata = new char[recvd+1];
-
-			memcpy(pac->lastdata,BUFFER,recvd);
-			log_printf(L_DEBUG_OUTPUT,"on recv %s\n",BUFFER);
-
-			pac->lastdata_len = recvd;
-			pac->prev_code = pac->current_code;
-			pac->current_code = GenNextCode(pac->current_code);
-			return Send_SB_OK(pac->prev_code,pac->current_code,pac);
-		}
-
-		char * cmd  = strtok_r(BUFFER, " ", &TOKPTR);
-
-		if(pac->state != SYN_ESTABLISHED)
-		{
-			if(strncmp(BUFFER,"LOGIN",5)==0)
-			{
-				cmd = strtok_r(0, " ", &TOKPTR);
-				if ((pac->mode & MODE_OK) && pac->login_code == atoll(cmd))
-				{
-					pac->state = SYN_ESTABLISHED;
-
-					pac->mode = MODE_NEED_PASSWD;
-
-					time(&pac->last_active_time);
-					pac->prev_code = pac->current_code;
-					char buf[128];
-					memset(buf, 1, 128);
-					pac->lastdata = NULL;
-
-					return SendData(buf, 128, pac);
-				}
-			}
-			cmap.erase(it); // baby, byebye!
-			return;
-		}
-
+		// 接收 密码后开始执行代码。
+		cmd = strtok_r(BUFFER," ",&TOKPTR);
 		if (strcmp(cmd, "PASSWD") == 0)
 		{
-
-
-			cmd = strtok_r(0, " ", &TOKPTR);
-			if (checkpasswd(cmd, "123456", pac->current_code))
+			if (checkpasswd(BUFFER+7, "123", pac->passwd_token))
 			{
-				pac->mode = MODE_OK;
-
-				if(!pac->lastdata)
-				{
-					return Send_SB_OK_OK(pac);
-				}
-
 				int i = 0;
-				while(token_processor[i].proc)
+				while (token_processor[i].proc)
 				{
 					if (token_processor[i].proc(pac->lastdata))
 					{
@@ -494,50 +463,96 @@ static void OnRead(int sock)
 					}
 					++i;
 				}
-
-				cmap.erase(it);
-			}
-
+			}//else
+//			log_printf(L_DEBUG_OUTPUT,"passwd check fail, passwd token is %d!\n",pac->passwd_token);
 		}
-
+		return 1;
+	}else
+	{
+		pac->lastdata_len = recvd;
+		pac->lastdata = new char[recvd+1];
+		pac->lastdata[recvd] = 0;
+		memcpy(pac->lastdata,BUFFER,recvd);
+		// 发送加密令牌
+		Send_SB_OK(pac->passwd_token,pac);
+		log_printf(L_DEBUG_OUTPUT,"%s\n",pac->lastdata);
+		return 0;
 	}
-}
-
-static void CleanUpTimedOut()
-{
-	cmap.clear();
 }
 
 static void* server_thread(void*p)
 {
-	pollfd pfd;
-	pfd.fd = (long) p;
+	int listensocket = (long) p;
+	epoll_event epev;
+	epev.events = EPOLLIN|EPOLLERR|EPOLLRDHUP;
+	epev.data.ptr = NULL;
+
+	int epfd ,ret;
+	epfd = epoll_create(10);
+
+	epoll_ctl(epfd,EPOLL_CTL_ADD,listensocket,&epev);
 
 	for (;;)
 	{
-		pfd.events = POLLIN | NeedWrite | POLLERR;
-		switch (poll(&pfd, 1, 2500))
-		{
-		case 0:
-			CleanUpTimedOut();
-			break;
-		case -1:
-			if(errno == EINTR)
-				continue;
-			return 0;
-		}
-		if (pfd.revents & POLLOUT)
-		{
-			OnWrite(pfd.fd);
-		}
-		if(pfd.revents& POLLIN)
-		{
-			OnRead(pfd.fd);
-		}
-		if(pfd.revents & POLLERR)
-			break;
-	}
+		ret = epoll_wait(epfd, &epev, 1, 10000);
 
+		if (ret == -1)
+			if (errno == EINTR || errno == EAGAIN)
+				continue;
+		if (ret == -1)
+		{
+			exit(0); // restart , haha
+		}
+
+		if (ret == 0)
+		{
+			continue;
+		}
+
+		for (int i = 0; i < ret; ++i)
+		{
+			if (epev.events & (EPOLLHUP|EPOLLERR|EPOLLRDHUP ))
+			{
+				active_client * pac = (active_client*) epev.data.ptr;
+				if (pac)
+				{
+					epoll_ctl(epfd,EPOLL_CTL_DEL,pac->sockfd,0);
+					close(pac->sockfd);
+					log_printf(L_DEBUG_OUTPUT,"client closed\n");
+					delete pac;
+					log_printf(L_DEBUG_OUTPUT,"client real closed\n");
+				}
+				else
+					exit(0);
+			}
+			if (epev.events & EPOLLIN)
+			{
+				if (epev.data.ptr)
+				{
+					active_client * pac = (active_client*) epev.data.ptr;
+
+					if (OnRead(pac) != 0)
+					{
+						epoll_ctl(epfd,EPOLL_CTL_DEL,pac->sockfd,0);
+						close(pac->sockfd);
+						log_printf(L_DEBUG_OUTPUT,"client closed\n");
+						delete pac;
+						log_printf(L_DEBUG_OUTPUT,"client real closed\n");
+					}
+				}
+				else
+				{
+					active_client * pac = new active_client;
+					epev.data.ptr = pac;
+					epev.events = EPOLLIN|EPOLLERR|EPOLLRDHUP|EPOLLHUP;
+					pac->sockfd = accept(listensocket,0,0);
+					epoll_ctl(epfd,EPOLL_CTL_ADD,pac->sockfd,&epev);
+					activeclients.insert(activeclients.end(),pac);
+					continue;
+				}
+			}
+		}
+	}
 	return 0;
 }
 
@@ -556,7 +571,7 @@ extern "C" int __module_init(struct so_data*so)
 	pthread_t thread;
 	do
 	{
-		udp = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+		udp = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 		if (udp < 0)
 			break;
@@ -566,7 +581,7 @@ extern "C" int __module_init(struct so_data*so)
 			std::cout << "失败!" << std::endl;
 			break;
 		}
-		std::cout << "OK" << std::endl;
+		listen(udp,10);
 		return pthread_create(&thread, 0, server_thread, (void*)udp);
 	} while (false);
 	return 1;

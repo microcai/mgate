@@ -9,6 +9,7 @@
 #include <iostream>
 #include <string>
 #include <hash_map>
+#include <list>
 #include <map>
 #include <pthread.h>
 #include <netinet/in.h>
@@ -17,15 +18,40 @@
 #include "libmicrocai.h"
 using namespace __gnu_cxx;
 
+static void inet_ntoa(std::string & ret, in_addr_t ip)
+{
+	char buf[64];
+	snprintf(buf,32,"%d.%d.%d.%d", ((u_char*) (&ip))[0],
+			((u_char*) (&ip))[1], ((u_char*) (&ip))[2], ((u_char*) (&ip))[3]);
+	ret = buf;
+}
+static void nat_disable_ip(const std::string & ip )
+{
+	CString cmd;
+	cmd.Format("iptables -t nat -D  POSTROUTING  --source  %s "
+			   "-j MASQUERADE -o eth+",
+			   ip.c_str());
+
+	run_cmd(cmd);
+}
+
+static void nat_enbale_ip(const std::string & ip)
+{
+	CString cmd;
+	cmd.Format("iptables -t nat -A POSTROUTING --source %s "
+				"-j MASQUERADE -o eth+", ip.c_str());
+	run_cmd(cmd);
+}
+
 struct _HashFn
 {
 	size_t operator ()(in_addr_t __x) const
 	{
-		return __x & 0x000000FF;
+		return ((u_char*)&__x)[3];
 	}
 	size_t operator ()(in_addr_t __x)
 	{
-		return __x & 0x000000FF;
+		return ((u_char*)&__x)[3];
 	}
 };
 
@@ -35,6 +61,10 @@ struct _HashFn
 struct MACADDR
 {
 	u_char madd[6];
+	MACADDR(){}
+	MACADDR(u_char mac[6]){
+		memcpy(madd,mac,6);
+	}
 };
 
 struct myless: public std::binary_function<MACADDR, MACADDR, bool>
@@ -45,217 +75,336 @@ struct myless: public std::binary_function<MACADDR, MACADDR, bool>
 	}
 };
 
-static std::map<MACADDR, Clients_DATA*, myless> mac_ip_map;
-static hash_map<in_addr_t, Clients_DATA*, _HashFn> client_hash_map(256);
+struct ROOM;
+struct client{
+	in_addr_t	current_ip;
+	struct MACADDR current_mac;
+	struct ROOM *proom;
+	std::string name;
+	std::string ip;
+	std::string mac;
+	std::string id;
+	std::string idtype;
+    std::string RoomNum;
+    std::string Floor;
+    std::string Build;
+    int nIndex;
+};
+
+struct ROOM{
+	uint build;
+	uint floor;
+	uint room;
+	std::map<MACADDR, client, myless> clients;
+	MACADDR				bind_mac;
+};
+
+//struct unknow{
+//	struct MACADDR*current_mac;
+//	tm			 t_time;
+//	void*		info;
+//};
 
 
-pthread_rwlock_t lock =PTHREAD_RWLOCK_INITIALIZER;
+static pthread_rwlock_t lock = PTHREAD_RWLOCK_INITIALIZER;
+volatile static std::map<MACADDR,in_addr_t,myless>	allowed_mac;
+volatile static hash_map<in_addr_t, MACADDR,_HashFn> enabled_ip(256);
 
-static void inet_ntoa(std::string & ret, in_addr_t ip)
+static std::list<ROOM>							room_list;
+static std::map<MACADDR,client*,myless>				clients;
+
+static void __attribute__((constructor)) __load(void)
 {
-	char buf[32];
-	snprintf(buf,32,"%d.%d.%d.%d", ((u_char*) (&ip))[0],
-			((u_char*) (&ip))[1], ((u_char*) (&ip))[2], ((u_char*) (&ip))[3]);
-	ret = buf;
+	// here, we need to
+	pthread_rwlockattr_t attr;
+	pthread_rwlockattr_init(&attr);
+	pthread_rwlock_init(&lock,&attr);
+	pthread_rwlockattr_destroy(&attr);
 }
 
-
-static void set_client_newip(in_addr_t oldip,in_addr_t newip)
+bool mac_is_alowed(u_char mac[6])
 {
-	hash_map<in_addr_t, Clients_DATA*, _HashFn>::iterator it;
-
-	it = client_hash_map.find(oldip);
-
-	if (it != client_hash_map.end())
-	{
-		Clients_DATA * pcd = it->second;
-		client_hash_map.erase(it);
-		pcd->ip = newip;
-		inet_ntoa(pcd->ip_addr,newip);
-		client_hash_map.insert(std::pair<in_addr_t,Clients_DATA*>(newip,pcd));
-	}
-}
-
-
-int is_client_online(u_char mac_addr[6], in_addr_t ip)
-{
-	std::map<MACADDR, Clients_DATA*>::iterator it;
-	hash_map<in_addr_t, Clients_DATA*, _HashFn>::iterator hit;
-
-	MACADDR *pMACADDR = (typeof(pMACADDR)) mac_addr;
+	bool ret;
+	std::map<MACADDR,in_addr_t>::iterator it;
 
 	pthread_rwlock_rdlock(&lock);
 
-	hit = client_hash_map.find(ip);
-
-	if (hit != client_hash_map.end())
-	{
-		pthread_rwlock_unlock(&lock);
-		return true;
-	}
-
-	//	IP	NOT	FOUND, MAYBE DHCP changed the IP ? or 白名单?
-	//	OK, We'll Check it out.
-	it = mac_ip_map.find(*pMACADDR);
-
-	if (it == mac_ip_map.end())
-	{
-		pthread_rwlock_unlock(&lock);
-
-		return false;
-	}
-	else
-	{
-		pthread_rwlock_unlock(&lock);
-		pthread_rwlock_wrlock(&lock);
-		hit = client_hash_map.find(ip);
-
-		if( hit != client_hash_map.end())
-		{
-			pthread_rwlock_unlock(&lock);
-			return true;
-		}
-		Clients_DATA *pcd;
-		pcd = it->second;
-
-		if (pcd->ip)
-		{
-			nat_disable_ip(pcd->ip_addr.c_str());
-
-			set_client_newip(pcd->ip,ip);
-
-			nat_enbale_ip(pcd->ip_addr.c_str());
-			pthread_rwlock_unlock(&lock);
-			return true;
-		}else //  白名单 ?
-		{
-
-			pcd->ip = ip;
-			inet_ntoa(pcd->ip_addr,ip);
-
-			CString sql;
-
-			sql.Format("update room_list set IP_ADDR='%s',MAC_ADDR='%s' "
-					" where RoomBuild='%s' and RoomFloor='%s' and RoomNum='%s'",
-					pcd->ip_addr.c_str(), pcd->mac_addr.c_str(), pcd->Build.c_str(),
-					pcd->Floor.c_str(), pcd->RoomNum.c_str());
-
-			ksql_run_query(sql);
-
-			nat_enbale_ip(pcd->ip_addr.c_str());
-
-			client_hash_map.insert(std::pair<in_addr_t,Clients_DATA*>(ip, pcd));
-
-			pthread_rwlock_unlock(&lock);
-
-		}
-		return true;
-	}
-}
-
-void set_client_online(in_addr_t ip, struct Clients_DATA* data)
-{
-
-
-	hash_map<in_addr_t, Clients_DATA*, _HashFn>::iterator hit;
-
-	MACADDR mac ;
-	memcpy(mac.madd, data->MAC_ADDR, 6);
-
-	pthread_rwlock_wrlock(&lock);
-
-	if (ip)
-	{
-
-		hit = client_hash_map.find(ip);
-
-		if (hit != client_hash_map.end())
-		{
-			log_printf(L_DEBUG_OUTPUT, "%s already on line\n",
-					data->ip_addr.c_str());
-		}
-		else
-		{
-			Clients_DATA * pcd = new Clients_DATA(*data);
-
-			client_hash_map.insert(
-					std::pair<in_addr_t, Clients_DATA*>(ip, pcd));
-			mac_ip_map.insert(std::pair<MACADDR, Clients_DATA*>(mac, pcd));
-		}
-	}
-	else
-	{
-		Clients_DATA * pcd = new Clients_DATA;
-		*pcd = * data;
-
-		mac_ip_map.insert(std::pair<MACADDR, Clients_DATA*>(mac,pcd ));
-	}
+	it = ((std::map<MACADDR,in_addr_t,myless>*)&allowed_mac)->find(mac);
+	ret = (it != ((std::map<MACADDR,in_addr_t,myless>*)&allowed_mac)->end());
 	pthread_rwlock_unlock(&lock);
-
+	return ret;
 }
 
-int set_client_offline(const char* b,const char* f,const char* r)
+bool mac_is_alowed(u_char mac[6],in_addr_t ip)
 {
-	std::map<MACADDR, Clients_DATA*>::iterator it;
-	hash_map<in_addr_t, Clients_DATA*, _HashFn>::iterator hit;
-	pthread_rwlock_wrlock(&lock);
-
-	hit = client_hash_map.begin();
-
-	while(hit != client_hash_map.end())
-	{
-		Clients_DATA * pcd = hit->second;
-		if( pcd->Build == b && pcd->Floor == f && pcd->RoomNum == r)
-		{
-			client_hash_map.erase(hit);
-		}
-		hit++;
-	}
-
-	it = mac_ip_map.begin();
-
-	while(it != mac_ip_map.end())
-	{
-		Clients_DATA * pcd = it->second;
-		if( pcd->Build == b && pcd->Floor == f && pcd->RoomNum == r)
-		{
-			mac_ip_map.erase(it);
-			delete pcd;
-			break;
-		}
-		it++;
-	}
-	pthread_rwlock_unlock(&lock);
-	return 1;
-}
-
-
-int get_client_data(in_addr_t ip,struct Clients_DATA* pcd)
-{
-
-	hash_map<in_addr_t, Clients_DATA*, _HashFn>::iterator hit;
+	std::string  sip;
+	std::map<MACADDR,in_addr_t>::iterator it;
+	hash_map<in_addr_t, MACADDR,_HashFn>::iterator hit;
+	bool ret;
 
 	pthread_rwlock_rdlock(&lock);
 
-	hit = client_hash_map.find(ip);
-	if (hit != client_hash_map.end())
+	it =  ((std::map<MACADDR,in_addr_t,myless>*)&allowed_mac)->find(mac);
+
+	ret = (it != ((std::map<MACADDR,in_addr_t,myless>*)&allowed_mac)->end());
+
+	if (ret) // 允许的mac
 	{
 
-		*pcd = * hit->second;
-		pthread_rwlock_unlock(&lock);
-		return 0;
+		/********************************************
+		 * 更新 iptables 如果 ip 和 mac  对应有变
+		 ********************************************/
+		hit = ((hash_map<in_addr_t, MACADDR,_HashFn>*)&enabled_ip)->find(ip);
+
+		if (hit == ((hash_map<in_addr_t, MACADDR,_HashFn>*)&enabled_ip)->end()) //  ip 不在 iptables 允许范围内
+		{
+			pthread_rwlock_unlock(&lock);
+			pthread_rwlock_wrlock(&lock);
+
+			hit = ((hash_map<in_addr_t, MACADDR,_HashFn>*)&enabled_ip)->find(ip);
+
+			if (hit == ((hash_map<in_addr_t, MACADDR,_HashFn>*)&enabled_ip)->end())
+			{
+				((hash_map<in_addr_t, MACADDR,_HashFn>*)&enabled_ip)->insert(std::pair<in_addr_t, MACADDR>(ip, mac));
+				pthread_rwlock_unlock(&lock);
+				//这个 ip 地址看来没有入 iptables 啊，得，改改。
+				inet_ntoa(sip, ip);
+				nat_enbale_ip(sip);
+				// 存入 库存
+				CString sql;
+				std::map<MACADDR,client*,myless>::iterator cit;
+
+				client *pct;
+
+				cit = clients.find(mac);
+
+				if(cit!=clients.end())
+				{
+					pct= cit->second ;
+					pct->current_ip = ip;
+					pct->ip = sip;
+					sql.Format("update roomer_list set IP_ADDR='%s' where nIndex='%d' and ID='%s'",
+							sip.c_str(),pct->nIndex,pct->id.c_str());
+					ksql_run_query(sql);
+					log_printf(L_DEBUG_OUTPUT,"%s\n",sql.c_str());
+				}
+				return ret;
+			}
+		}
+//		else //ip 在 iptables 允许范围内
+//		{
+//		  不做任何操作，哈哈
+//		}
+	}else // 不被允许的 mac
+	{
+		/********************************************
+		 * 更新 iptables 如果 ip 和 mac  对应有变
+		 ********************************************/
+		hit = ((hash_map<in_addr_t, MACADDR,_HashFn>*)&enabled_ip)->find(ip);
+
+		if (hit != ((hash_map<in_addr_t, MACADDR,_HashFn>*)&enabled_ip)->end())
+		{
+			//  iptables 居然允许你？？断开他，妈的
+
+			pthread_rwlock_unlock(&lock);
+			pthread_rwlock_wrlock(&lock);
+
+			hit = ((hash_map<in_addr_t, MACADDR,_HashFn>*)&enabled_ip)->find(ip);
+
+			if (hit != ((hash_map<in_addr_t, MACADDR,_HashFn>*)&enabled_ip)->end())
+			{
+				inet_ntoa(sip, ip);
+				nat_disable_ip(sip);
+				((hash_map<in_addr_t, MACADDR,_HashFn>*)&enabled_ip)->erase(ip);
+			}
+		}
+		// else 这个 ip 地址看来没有入 iptables 啊，ok, 操作完成
 	}
 	pthread_rwlock_unlock(&lock);
-
-	/*
-	 * 都没有上线就调用这个？怎么可能呢！
-	 * 要记录！
-	 */
-
-	log_puts(L_ERROR, std::string("get_client befor online\n"));
-
-	return -1;
+	return ret;
 }
+
+void mac_set_allowed(u_char mac[6],bool allow /*==false*/,in_addr_t ip)
+{
+	std::map<MACADDR,in_addr_t>::iterator it;
+
+	pthread_rwlock_wrlock(&lock);
+
+	it =  ((std::map<MACADDR,in_addr_t,myless>*)&allowed_mac)->find(mac);
+
+	if (it == ((std::map<MACADDR,in_addr_t,myless>*)&allowed_mac)->end())
+	{
+		if(allow)
+			((std::map<MACADDR,in_addr_t,myless>*)&allowed_mac)->insert(std::pair<MACADDR,in_addr_t>(mac,0));
+	}
+	else
+	{
+		if(!allow)
+			((std::map<MACADDR,in_addr_t,myless>*)&allowed_mac)->erase(it);
+	}
+
+	if(!allow) // erase client data
+	{
+		std::map<MACADDR,client*,myless>::iterator it;
+
+		it = clients.find(mac);
+
+		if(it!=clients.end())
+		{
+			//有此数据啊,哈哈
+			it->second->proom->clients.erase(mac);
+
+			clients.erase(it);
+		}
+	}else if (ip && ip!=INADDR_NONE)
+	{
+		// add ip
+		if (((hash_map<in_addr_t, MACADDR,_HashFn>*)&enabled_ip)->find(ip) == ((hash_map<in_addr_t, MACADDR,_HashFn>*)&enabled_ip)->end())
+		{
+			std::string sip;
+			((hash_map<in_addr_t, MACADDR,_HashFn>*)&enabled_ip)->insert(std::pair<in_addr_t, MACADDR>(ip, mac));
+			inet_ntoa(sip, ip);
+			nat_enbale_ip(sip);
+		}
+	}
+
+	pthread_rwlock_unlock(&lock);
+}
+
+bool set_client_data( u_char mac[6],  Clients_DATA * pcd )
+{
+	uint b, f, r;
+	b = atoi(pcd->Build.c_str());
+	f = atoi(pcd->Floor.c_str());
+	r = atoi(pcd->RoomNum.c_str());
+
+	ROOM room;
+	client	ct;
+	client * pclient;
+
+	ct.idtype = pcd->CustomerIDType.c_str();
+	ct.current_ip = pcd->ip;
+	memcpy(ct.current_mac.madd,mac,6);
+	ct.id = pcd->CustomerID.c_str();
+	ct.ip = pcd->ip_addr;
+	ct.mac = pcd->mac_addr;
+	ct.name = pcd->CustomerName;
+	ct.RoomNum = pcd->RoomNum;
+	ct.Floor = pcd->Floor;
+	ct.Build = pcd->Build;
+	ct.proom = NULL;
+	ct.nIndex = pcd->nIndex;
+
+
+	std::list<ROOM>::iterator it;
+
+	pthread_rwlock_wrlock(&lock);
+
+	if(pcd)
+	{
+		do
+		{
+			// 首先， 你要寻找 客房
+			for (it = room_list.begin(); it != room_list.end(); ++it)
+			{
+				ROOM *p = it.operator ->();
+				if (p->build == b && p->floor == f && p->room == r)
+				{ //就是这个房间了，哈哈
+					p->clients.erase(mac);
+
+					ct.proom = p;
+
+					pclient = &p->clients.insert(
+							std::pair<MACADDR, client>(mac, ct)).first->second;
+					break;
+				}
+			}
+			if(!ct.proom)
+			{
+				//房间都还没添加啊，呵呵
+				memcpy(room.bind_mac.madd,mac,6);
+				room.build = b;
+				room.floor = f;
+				room.room = r;
+				room_list.insert(room_list.end(),room);
+			}
+		} while (ct.proom == NULL);
+		//接着，插入表
+		if(ct.proom)
+		{
+			clients.erase(mac);
+			clients.insert(std::pair<MACADDR,client*>(mac,pclient));
+		}
+	}else
+	{
+		clients.erase(mac);
+		for (it = room_list.begin(); it != room_list.end(); ++it)
+		{
+			ROOM *p = it.operator ->();
+			p->clients.erase(mac);
+		}
+	}
+	pthread_rwlock_unlock(&lock);
+	return ct.proom;
+}
+
+bool get_client_data(u_char mac[6],Clients_DATA * pcd )
+{
+	std::map<MACADDR,client*,myless>::iterator it;
+
+	client *pct;
+	pthread_rwlock_rdlock(&lock);
+	it = clients.find(mac);
+
+	if(it!=clients.end())
+	{
+		pct= it->second ;
+
+		pcd->Build = pct->Build;
+		pcd->CustomerID = pct->id.c_str();
+		pcd->CustomerIDType = pct->idtype.c_str();
+		pcd->CustomerName = pct->name;
+		pcd->Floor = pct->Floor;
+		memcpy(pcd->MAC_ADDR,pct->current_mac.madd,6);
+		pcd->RoomNum = pct->RoomNum;
+		pcd->ip = pct->current_ip;
+		pcd->ip_addr = pct->ip;
+		pcd->mac_addr = pct->mac;
+	}
+	bool ret = (it==clients.end());
+	pthread_rwlock_unlock(&lock);
+	return ret;
+}
+
+//void nat_disable_ip(const char * ip)
+//{
+//	in_addr_t ip_addr = inet_addr(ip);
+//	hash_map<in_addr_t, MACADDR, _HashFn>::iterator it;
+//	it = enabled_ip.find(ip_addr);
+//	if ( it != enabled_ip.end())
+//	{
+//
+//		CString cmd;
+//		cmd.Format(
+//				"iptables -t nat -D  POSTROUTING  --source  %s -j MASQUERADE -o eth+",
+//				ip);
+//		run_cmd(cmd);
+//		enabled_ip.erase(it);
+//	}
+//}
+//
+//void nat_enbale_ip(const char * ip,u_char mac_add[6])
+//{
+//	in_addr_t ip_addr = inet_addr(ip);
+//	if (enabled_ip.find(ip_addr) == enabled_ip.end())
+//	{
+//		CString cmd;
+//		cmd.Format("iptables -t nat -A POSTROUTING --source %s -j MASQUERADE -o eth+",ip);
+//		run_cmd(cmd);
+//		enabled_ip.insert(std::pair<in_addr_t,MACADDR>(ip_addr,mac_add));
+//	}
+//}
+
 
 Clients_DATA::Clients_DATA():
 	CustomerIDType(""), CustomerName(""), CustomerID(""), RoomNum(""), Floor(""),
@@ -264,26 +413,6 @@ Clients_DATA::Clients_DATA():
 	memset(MAC_ADDR,0,6);
 	ip= 0;
 	onlinetime.tm_year = 0;
-}
-
-
-Clients_DATA::Clients_DATA(in_addr_t _ip):
-	CustomerIDType(""), CustomerName(""), CustomerID(""), RoomNum(""), Floor(""),
-			Build(""), mac_addr(""), ip_addr("")
-{
-	onlinetime.tm_year = 0;
-	memset(MAC_ADDR,0,6);
-	ip = _ip;
-}
-
-Clients_DATA::Clients_DATA(const char* cip):
-	CustomerIDType(""), CustomerName(""), CustomerID(""), RoomNum(""), Floor(""),
-			Build(""), mac_addr(""), ip_addr("")
-{
-	onlinetime.tm_year = 0;
-	memset(MAC_ADDR,0,6);
-	ip = inet_addr(cip);
-	ip_addr = cip;
 }
 
 Clients_DATA::~Clients_DATA()

@@ -100,10 +100,9 @@ public:
     std::string Build;
     std::string mac_addr;// (xx:xx:xx:xx:xx:xx format)
     std::string ip_addr;
+    int nIndex;
 
     Clients_DATA();
-    Clients_DATA(in_addr_t ip);
-    Clients_DATA(const char* cip);
     ~Clients_DATA();
 
 };
