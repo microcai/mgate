@@ -472,9 +472,8 @@ static int OnRead(active_client * pac)
 	}else
 	{
 		pac->lastdata_len = recvd;
-		pac->lastdata = new char[recvd+1];
 		pac->lastdata[recvd] = 0;
-		memcpy(pac->lastdata,BUFFER,recvd);
+		memcpy(pac->lastdata,BUFFER,recvd>512?512:recvd);
 		// 发送加密令牌
 		Send_SB_OK(pac->passwd_token,pac);
 		syslog(LOG_NOTICE,"%s\n",pac->lastdata);
