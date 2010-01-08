@@ -1,12 +1,21 @@
 /*
+ * ksql.h
+ *
+ *  Created on: 2009-10-21
+ *      Author: cai
+ */
+
+#ifndef KSQL_H_
+#define KSQL_H_
+
+
+/*
  * File:   kmysql.h
  * Author: king
  *
  * Created on 2009年4月22日, 下午4:32
  */
 
-#ifndef _KMYSQL_H
-#define	_KMYSQL_H
 #ifndef __cplusplus
 #error ("需要C++编译器支持")
 #endif
@@ -36,6 +45,7 @@
 #define PROLEN_COMPUTERIP	40
 #define PROLEN_NETBARNAME	41
 #define PROLEN_PASSWD		51
+
 #ifdef ENABLE_HOTEL
 #define PROLEN_KEY1		61
 #else
@@ -68,10 +78,6 @@ namespace hotel{
     extern bool	Is_Old_DB;
 }
 
-#ifndef _mysql_h
-typedef char** MYSQL_ROW;
-typedef void * MYSQL_RES;
-#endif
 enum NetAcountType{
     NetAcountType_MAC_ADDR=1000,
     NetAcountType_MSN = 1001,
@@ -102,46 +108,21 @@ struct NetAcount{
     }
 };
 
-
-extern "C"
-{
-
-void ksql_query_and_use_result(void(*callback)(MYSQL_ROW row, void*),
+void ksql_query_and_use_result(void(*callback)(KSQL_ROW row, void*),
 		const char* query, void*p = NULL);
 int  ksql_run_query(const char *p);
 int	 ksql_run_query_async(const char *p);
-bool ksql_is_server_gone();
-void ksql_close();
 
 void StartSQL();
 int WaitForSQLserver();
 
-#ifndef _mysql_h
-// 使用  libksql 的定义
+KSQL_RES* ksql_query_and_use_result(const char* query);
 
-	/*
-	 * 成功 返回 MYSQL_RES* 类型，可以用于随后的 ksql_fetch_row 和 ksql_free_result
-	 * 失败返回 NULL。不用检查此值，直接传给 ksql_fetch_row ，用
-	 * while((row = ksql_fetch_row(res))
-	 * {
-	 * 		// DO some thing
-	 * }
-	 * ksql_free_result(res)
-	 * 这样的方式就可以了。
-	 */
-extern "C++" MYSQL_RES* ksql_query_and_use_result(const char* query);
 
-#else
-#ifndef __KLIBSQL_USEINTERNALLY
-#error ("必须不可以包含 <mysql/mysql.h>")
-#endif
-#endif
-
-MYSQL_ROW ksql_fetch_row(MYSQL_RES*res);
-void ksql_free_result(MYSQL_RES* res);
+KSQL_ROW ksql_fetch_row(KSQL_RES*res);
+void ksql_free_result(KSQL_RES* res);
 void ksql_thread_init();
 void ksql_thread_end();
-}
 
 void formattime(std::string & strtime, struct tm* pTm);
 void formattime(std::string & strtime);
@@ -186,5 +167,4 @@ void InsertCustomerLog(const char * build,const char * floor,const char * room, 
 		const char * idtype , const char * id, const char * type,const char * ip, const char * mac, const char * time);
 
 
-#endif	/* _KMYSQL_H */
-
+#endif /* KSQL_H_ */

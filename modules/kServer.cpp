@@ -54,8 +54,8 @@ static void Send_SB_OK_OK(active_client * to)
 
 static void MakeItChange(int roomid, int action )
 {
-	MYSQL_RES * res;
-	MYSQL_ROW row;
+	KSQL_RES * res;
+	KSQL_ROW row;
 	CString sqlstr;
 
 
@@ -77,8 +77,8 @@ static void MakeItChange(int roomid, int action )
 
 static int GetRoomID(const char * build,const char * floor,const char * room)
 {
-	MYSQL_RES * res;
-	MYSQL_ROW row;
+	KSQL_RES * res;
+	KSQL_ROW row;
 	CString sql;
 	int nindex ;
 	sql.Format(
@@ -211,8 +211,8 @@ static int On_OFFLINE(char * command)
 	char *cmd;
 	char *TOKPTR;
 
-	MYSQL_RES * res,*tres;
-	MYSQL_ROW row,trow;
+	KSQL_RES * res,*tres;
+	KSQL_ROW row,trow;
 
 	strtok_r(command," ",&TOKPTR);
 
@@ -296,8 +296,8 @@ static int On_CHANGE(char * command)
 	std::string name,address,country,org,ip,mac;
 
 
-	MYSQL_RES * res;
-	MYSQL_ROW row;
+	KSQL_RES * res;
+	KSQL_ROW row;
 	// change IDtype,ID,房间,楼层,栋
 
 

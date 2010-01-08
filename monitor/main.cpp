@@ -65,7 +65,7 @@ static struct parameter_tags parameter[] =
 				sizeof(flush_db), "--flush_db\t\t清空客房数据"), parameter_tags()
 };
 #ifdef ENABLE_HOTEL
-static void port_map(MYSQL_ROW row, void * p)
+static void port_map(KSQL_ROW row, void * p)
 {
 	CString cmd;
 
@@ -81,7 +81,7 @@ static void port_map(MYSQL_ROW row, void * p)
 	run_cmd(cmd);
 }
 
-static void portmap_change(MYSQL_ROW row, void*p)
+static void portmap_change(KSQL_ROW row, void*p)
 {
 //	select nIndex,protocol,wport,lport,IP_ADDR,WAN_IP,Is_ADD from portmap_change order by nIndex asc
 	int Is_ADD;
@@ -121,7 +121,7 @@ static bool assert_mac(const char * strmac)
 	return false;
 }
 
-static void room_change(MYSQL_ROW row, void*p)
+static void room_change(KSQL_ROW row, void*p)
 {
 
 	//select nIndex,RoomerId,ActionType from room_change order by nIndex asc"
@@ -129,8 +129,8 @@ static void room_change(MYSQL_ROW row, void*p)
 	CustomerData Cd;
 	Clients_DATA cd;
 	CString sql;
-	MYSQL_RES* res;
-	MYSQL_ROW roomer_row;
+	KSQL_RES* res;
+	KSQL_ROW roomer_row;
 	u_char mac[6];
 
 	int		ActionType;
@@ -434,7 +434,7 @@ static void On_SQL_change()
 	}
 }
 
-static void load_white(MYSQL_ROW row, void*)
+static void load_white(KSQL_ROW row, void*)
 {
 	u_char mac[6];
 	if(assert_mac(row[0]))
@@ -444,11 +444,11 @@ static void load_white(MYSQL_ROW row, void*)
 	}
 }
 
-static void pre_load(MYSQL_ROW row, void*)
+static void pre_load(KSQL_ROW row, void*)
 {
 //	"select nIndex,RoomBuild,RoomFloor,RoomNum,MAC_ADDR,IsBind,RoomerCount from room_list"
-	MYSQL_RES * res;
-	MYSQL_ROW 	mrow;
+	KSQL_RES * res;
+	KSQL_ROW 	mrow;
 
 	int			roomer_count;
 	Clients_DATA cd;

@@ -19,7 +19,6 @@
 #include <string.h>
 
 #include "libdreamtop.h"
-#include "kmysql.h"
 
 #define MSN_PORT  0x4707  //1863
 

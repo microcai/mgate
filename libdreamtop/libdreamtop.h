@@ -15,5 +15,5 @@
 #include "libmicrocai-macros.h"
 #include "libmicrocai-types.h"
 #include "functions.h"
-#include "kmysql.h"
+#include "ksql.h"
 #endif

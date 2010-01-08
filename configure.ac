@@ -1,24 +1,33 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.1])
-AC_INIT([monitor], [1.1.6], [BUG-REPORT-ADDRESS])
+AC_PREREQ([2.63])
+AC_INIT([monitor], [1.2.0], [BUG-REPORT-ADDRESS])
 AM_INIT_AUTOMAKE([-Wall -Werror])
 
 AC_SUBST_FILE(RPATH_EXT)
 
+
 AC_ARG_ENABLE(debug,
-                [  --enable-debug Enable DEBUG output. This is a debugging feature
-        which should not be only enabled by develpoers
+                [AC_HELP_STRING([--enable-debug],
+                	[Enable DEBUG output. This feature which should be only enabled by developers])
                 ],
                 [ CXXFLAGS="$CFLAGS -g2 -O0 -DDEBUG -Wall"],
-                [ CXXFLAGS="$CFLAGS -Os"]
+                [ CXXFLAGS+="-Os"]
               )
+
 AC_ARG_ENABLE(hotel,
-				[  --enable-hotel enable hotel related features and 
-	 disable cafe related features],
-				[AM_CONDITIONAL(ENABLE_HOTEL,true)],
+				AC_HELP_STRING([--enable-hotel],[enable hotel related features and disable cafe related features]),
+				[
+				AM_CONDITIONAL(ENABLE_HOTEL,true)
+				AC_DEFINE(ENABLE_HOTEL,[1],[enable hotel support ])				
+				],
 				[AM_CONDITIONAL(ENABLE_HOTEL,false)])
+
+AC_ARG_WITH(sqlite3,AC_HELP_STRING([--with-sqlite3],[ support for sqlite3. monitor will use sqlite when mysql is out of service]))
+
+AC_ARG_WITH(mysql,AC_HELP_STRING([--without-mysql],[disable support for mysql]),
+		[ with_mysql=$withval ],[with_mysql=yes])
 
 AC_SUBST(MODULES_PATH,/usr/libexec/)
 
@@ -26,43 +35,6 @@ AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
 AC_PROG_CXX
-# Checks for library functions.
-AC_CHECK_LIB([pthread], [main])
-
-AC_CHECK_LIB([net], [main],[ AC_CHECK_HEADER( libnet.h) ],[AC_MSG_ERROR(need libnet)])
-AC_CHECK_LIB([pcap], [main],[AC_CHECK_HEADER(pcap.h)],[AC_MSG_ERROR(need libpcap)])
-
-AC_CHECK_LIB([mysqlclient -L/usr/lib/mysql], [mysql_query] ,
-				#found
-				[
-					LD_MYSQL_FLAGS="-lmysqlclient -L/usr/lib/mysql";
-				],
-				#not found 
-				[
-					AC_CHECK_LIB([mysqlclient -L/usr/lib64/mysql], [mysql_query] ,
-									#found
-									[
-										LD_MYSQL_FLAGS="-lmysqlclient -L/usr/lib64/mysql"
-									],
-									#not found
-									[
-										AC_CHECK_LIB([mysqlclient -L/usr/local/lib/mysql], [mysql_query],
-														#found
-														[LD_MYSQL_FLAGS="-lmysqlclient -L/usr/local/lib/mysql"],
-														#not found
-														[
-															AC_CHECK_LIB([mysqlclient -L/usr/local/lib64/mysql], [mysql_query],
-																			#found
-																			[LD_MYSQL_FLAGS="-lmysqlclient -L/usr/local/lib64/mysql" ],
-																			#not found
-																			[
-																				AC_MSG_ERROR(monitor needs mysqlclient developing package,1)
-																			])														
-														])
-									])
-				])
-
-AC_SUBST(LD_MYSQL_FLAGS)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -70,6 +42,79 @@ AC_C_INLINE
 AC_TYPE_SIZE_T
 AC_TYPE_UINT16_T
 AC_TYPE_UINT32_T
+
+# Checks for library functions.
+
+AC_CHECK_LIB([pthread], [main])
+
+AC_CHECK_LIB([pcap], [main],[AC_CHECK_HEADER(pcap.h)],[AC_MSG_ERROR(need libpcap)])
+
+AS_IF( [ test "x$enable_hotel" != xno ],[AC_CHECK_LIB([net], [main],[ AC_CHECK_HEADER( libnet.h) ],[AC_MSG_ERROR(need libnet)])])
+
+AS_IF([test "x$with_mysql" != "xno" ],
+	[
+		AC_CHECK_LIB([mysqlclient -L/usr/lib/mysql], [mysql_query] ,
+						#found
+						[
+							AM_CONDITIONAL(WITH_MYSQL,true)
+							LD_MYSQL_FLAGS="-lmysqlclient -L/usr/lib/mysql";
+						],
+						#not found 
+						[
+							AC_CHECK_LIB([mysqlclient -L/usr/lib64/mysql], [mysql_query] ,
+											#found
+											[
+												LD_MYSQL_FLAGS="-lmysqlclient -L/usr/lib64/mysql";												
+												AM_CONDITIONAL(WITH_MYSQL,true)
+											],
+											#not found
+											[
+												AC_CHECK_LIB([mysqlclient -L/usr/local/lib/mysql], [mysql_query],
+																#found
+																[
+																	LD_MYSQL_FLAGS="-lmysqlclient -L/usr/local/lib/mysql";
+																	AM_CONDITIONAL(WITH_MYSQL,true)																	
+																],
+																#not found
+																[
+																	AC_CHECK_LIB([mysqlclient -L/usr/local/lib64/mysql], [mysql_query],
+																					#found
+																					[
+																						LD_MYSQL_FLAGS="-lmysqlclient -L/usr/local/lib64/mysql";
+																						AM_CONDITIONAL(WITH_MYSQL,true)
+																					],
+																					#not found
+																					[
+																						AC_MSG_ERROR([no mysql-devel found, use --without-mysql to disable them ],[1])
+																						AM_CONDITIONAL(WITH_MYSQL,FALSE)
+																					])														
+																])
+											])
+						])	
+	]
+	)
+
+
+AC_SUBST(LD_MYSQL_FLAGS)
+
+AS_IF(	[test "x$with_sqlite3" != xno ],
+		[
+			# check for sqlite3-devel packages
+			AC_CHECK_LIB([sqlite3],[main],
+					[AC_CHECK_HEADER([sqlite3.h],
+							[
+								AM_CONDITIONAL(WITH_SQLITE3,true)
+								AC_DEFINE([WITH_SQLITE3],[1],[will compile sqlite support])
+							],
+							[AM_CONDITIONAL(WITH_SQLITE3,false)])],
+					[AC_MSG_ERROR(need sqlite3-devel)])
+			
+		],
+		[
+			AM_CONDITIONAL(WITH_SQLITE3,false)
+		])
+
+AM_CONDITIONAL(WITH_MYSQL,true)
 
 # Checks for library functions.
 AC_FUNC_MALLOC
@@ -81,14 +126,9 @@ AC_CHECK_HEADERS([arpa/inet.h memory.h netinet/in.h stdlib.h string.h sys/ioctl.
 #AC_CONFIG_FILES([modules/Makefile])
 AC_CONFIG_FILES( [Makefile libdreamtop/Makefile monitor/Makefile modules/Makefile])
 
-if  [ $prefix = "NONE" ]; then
-AC_DEFINE_UNQUOTED(MODULES_PATH,"/usr/local/libexec/monitor/modules/",the path of the loadable module)
-AC_DEFINE_UNQUOTED(EXCUTE_PATH,"/usr/local/bin/",the path of the excutable )
+AS_IF([test "$prefix" = "NONE"],[prefix="/usr/local"])
 
-else
-
-AC_DEFINE_UNQUOTED(MODULES_PATH,"$prefix/libexec/monitor/modules/",the path of the loadable module)
-AC_DEFINE_UNQUOTED(EXCUTE_PATH,"$prefix/bin/",the path of the excutable )
-fi
+AC_DEFINE_UNQUOTED(MODULES_PATH,"$prefix/libexec/monitor/modules/",[the path of the loadable module])
+AC_DEFINE_UNQUOTED(EXCUTE_PATH,"$prefix/bin/",[the path of the excutable])
 
 AC_OUTPUT

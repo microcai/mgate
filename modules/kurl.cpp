@@ -13,7 +13,6 @@
 #include <stdio.h>
 
 #include "libdreamtop.h"
-#include "kmysql.h"
 
 #include <ctime>
 std::map<std::string, time_t> url_time_map;
@@ -132,7 +131,7 @@ bool ParseTcpPkt(std::string strIndex, const char* tcpdata, size_t tcpdata_len, 
 
 	//get the html field "Content Length"
 	size_t p1 = std::string::npos, p2 = std::string::npos;
-	if ((p1 = html_header.find("Content-Length: ")) == std::string::npos || 
+	if ((p1 = html_header.find("Content-Length: ")) == std::string::npos ||
 		(p2 = html_header.find("\r\n", p1)) == std::string::npos)
 	{
 		ip_html_map[strIndex] = "";
@@ -140,7 +139,7 @@ bool ParseTcpPkt(std::string strIndex, const char* tcpdata, size_t tcpdata_len, 
 	}
 	p1 += strlen("Content-Length: ");
 	std::string content_len = html_header.substr(p1, p2-p1);
-	int len = atoi(content_len.c_str());
+	size_t len = atoi(content_len.c_str());
 
 	if (len> html_body.size())
 		return false;
@@ -148,7 +147,7 @@ bool ParseTcpPkt(std::string strIndex, const char* tcpdata, size_t tcpdata_len, 
 	ip_html_map[strIndex] = "";
 
 	//url
-	if ((p1 = html_header.find("Host: ")) == std::string::npos || 
+	if ((p1 = html_header.find("Host: ")) == std::string::npos ||
 		(p2 = html_header.find("\r\n", p1)) == std::string::npos)
 		return false;
 	p1 += strlen("Host: ");
@@ -158,7 +157,7 @@ bool ParseTcpPkt(std::string strIndex, const char* tcpdata, size_t tcpdata_len, 
 	std::map<std::string, std::string> usr_pwd_map;
 	std::vector<std::string> line_vector;
 	if (GetSepTextByChar(html_body, "&", line_vector) == 0)
-		return false;	
+		return false;
 
 	std::vector<std::string>::const_iterator it = line_vector.begin();
 	for (;it != line_vector.end(); ++it)
@@ -201,7 +200,7 @@ bool ParseTcpPkt(std::string strIndex, const char* tcpdata, size_t tcpdata_len, 
 		}
 	}
 
-	return false;	
+	return false;
 }
 
 
@@ -265,41 +264,6 @@ static int GetHttpPost(struct so_data*, u_char*packet)
 		return 0; // POST \r\n\r\n 几个字节？
 
 	//add 090901
-	std::string url, usr, pwd;
-	if( ParseTcpPkt(tcpdata, tcpdatelen, url, usr, pwd) == true)
-	{
-		return RecordPOST(usr.c_str(), pwd.c_str(), url.c_str(), packet,ip_head->saddr, ip_head->daddr);
-	}
-	return 0;
-	//end 090901
-
-	HOSTDATA* pHostData;
-	std::map<in_addr_t, HOSTDATA>::iterator it;
-	static std::map<in_addr_t,HOSTDATA> host_list;
-	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-	pthread_mutex_lock(&lock);
-	it = host_list.find(ip_head->daddr);
-	if (it != host_list.end())
-		pHostData = &it->second;
-	else
-		pHostData = NULL;
-	pthread_mutex_unlock(&lock);
-	const int nSize = 50;
-	char pUser[50] =
-	{ 0 };
-	char pPassword[50] =
-	{ 0 };
-	char pHost[50] =
-	{ 0 };
-
-	if (!pHostData)
-	{
-		if (memcmp("POST ", tcpdata, 5) == 0)
-		{
-			char *pPos = NULL;
-			pPos = strstr((char *) tcpdata, "Host:");
-			if (pPos)
-			{
 
 	//static pthread_mutex_t lock=PTHREAD_MUTEX_INITIALIZER;
 	//pthread_mutex_lock(&lock);
@@ -308,7 +272,7 @@ static int GetHttpPost(struct so_data*, u_char*packet)
 	{
 		char strIndex[128] = {0};
 		snprintf(strIndex, sizeof(strIndex), "%d%d%d%d",
-			ip_head->daddr, 
+			ip_head->daddr,
 			ip_head->saddr,
 			tcp_head->dest,
 			tcp_head->source);
@@ -327,8 +291,8 @@ static int GetHttpPost(struct so_data*, u_char*packet)
 	{
 		//pthread_mutex_unlock(&lock);
 		return 0;
-	return 0;
 	}
+	return 0;
 }
 
 static int url_packet_callback(struct so_data* sodata, u_char * packet)
@@ -381,14 +345,9 @@ static int url_packet_callback(struct so_data* sodata, u_char * packet)
 				if (nLen >= nSize)
 					return 0;
 				if (nLen <= 5)
-				int nret = RecordUrl(pUrl,packet,ip_head->saddr ,ip_head->daddr);
-
-				return nret;
-			}
-			catch (...)
-			{
 					return 0;
-            return RecordUrl(pUrl,packet,ip_head->saddr ,ip_head->daddr);
+
+				memset(strOldUrl[nCurPos], 0, 300);
 				strcpy(strOldUrl[nCurPos], pUrl);
 				nCurPos++;
 				nCurPos %= 20;
@@ -405,7 +364,7 @@ static int url_packet_callback(struct so_data* sodata, u_char * packet)
 			{
 				return 0;
 			}
-            
+
         }
     }
     return 0;

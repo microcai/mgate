@@ -2,7 +2,7 @@
 %define debug_package %{nil}
 
 Name:           monitor
-Version:        1.1.5
+Version:        1.2.0
 Release:        1%{?dist}
 Summary:        The monitor-hotel-version-%{version}
 
@@ -11,9 +11,9 @@ License:        Kingstone Lisence
 URL:            http://www.chuangyuan.net
 Source0:        monitor-%{version}.tar.bz2
 
-BuildRequires:  libpcap-devel libnet-devel libstdc++-devel glibc-devel mysql-devel
+BuildRequires:  libpcap-devel libnet-devel libstdc++-devel glibc-devel mysql-devel sqlite-devel
 
-Requires:       libpcap libnet libstdc++ mysql-libs glibc
+Requires:       libpcap libnet libstdc++ mysql-libs glibc sqlite
 Conflicts:		monitor-cafe
 Vendor:			Kingstone Soft, Inc.  
 
@@ -40,7 +40,7 @@ tar -xvf ../../workspace/monitor/release/monitor-%{version}.tar.bz2
 
 %build 
 cd monitor-%{version}
-%configure --enable-hotel 
+%configure --enable-hotel --with-sqlite3
 make %{?_smp_mflags}
 
 %install

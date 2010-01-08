@@ -157,6 +157,9 @@ public:
 	}
 };
 
+typedef void ** KSQL_RES;
+typedef char ** KSQL_ROW;
+
 
 #ifdef _______DDDDD
 struct tm

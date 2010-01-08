@@ -5,6 +5,9 @@
  *
  * See COPYING for more details about this software's license
  */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include <iostream>
 #include <map>

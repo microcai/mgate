@@ -182,7 +182,6 @@ int Check_update(const char * updateserver,const char * update_trunk)
 			{
 				syslog(LOG_NEWS,"script exited with %d\nRESTARTING!!!!\n",
 						WEXITSTATUS(s));
-				ksql_close();
 				exit(0);
 			}
 		}
