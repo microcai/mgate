@@ -34,9 +34,7 @@ BuildRoot:      %{_tmppath}/monitor-hotel-%{version}-%{release}-root-%(%{__id_u}
 				This package is for cafe use				
 
 %prep 
-rm -rf monitor-%{version}
-tar -xvf ../../workspace/monitor/release/monitor-%{version}.tar.bz2
-
+%setup -q 
 %build 
 unset CFLAGS
 %configure --with-sqlite3
@@ -44,7 +42,6 @@ make %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
-cd monitor-%{version}
 make install DESTDIR=$RPM_BUILD_ROOT
 
 %clean

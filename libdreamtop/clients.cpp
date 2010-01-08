@@ -212,7 +212,7 @@ bool mac_is_alowed(u_char mac[6],in_addr_t ip)
 			{
 				inet_ntoa(sip, ip);
 				nat_disable_ip(sip);
-				((hash_map<in_addr_t, MACADDR,_HashFn>*)&enabled_ip)->erase(ip);
+				enabled_ip.erase(ip);
 			}
 		}
 		// else 这个 ip 地址看来没有入 iptables 啊，ok, 操作完成
@@ -227,17 +227,17 @@ void mac_set_allowed(u_char mac[6],bool allow /*==false*/,in_addr_t ip)
 
 	pthread_rwlock_wrlock(&lock);
 
-	it =  ((std::map<MACADDR,in_addr_t,myless>*)&allowed_mac)->find(mac);
+	it =  allowed_mac.find(mac);
 
-	if (it == ((std::map<MACADDR,in_addr_t,myless>*)&allowed_mac)->end())
+	if (it == allowed_mac.end())
 	{
 		if(allow)
-			((std::map<MACADDR,in_addr_t,myless>*)&allowed_mac)->insert(std::pair<MACADDR,in_addr_t>(mac,0));
+			allowed_mac.insert(std::pair<MACADDR,in_addr_t>(mac,0));
 	}
 	else
 	{
 		if(!allow)
-			((std::map<MACADDR,in_addr_t,myless>*)&allowed_mac)->erase(it);
+			allowed_mac.erase(it);
 	}
 
 	if(!allow) // erase client data

@@ -199,20 +199,19 @@ int Check_update(const char * updateserver,const char * update_trunk)
 		syslog(LOG_NOTICE,"dns resove:%s = %s \n",updateserver,inet_ntoa(addr.sin_addr));
 
 		sock = socket(AF_INET,SOCK_DGRAM,0);
-
+		if(sock < 0) break; // 下次继续啊
 		connect(sock,(sockaddr*)&addr,INET_ADDRSTRLEN);
-
-		last_state = 1;
+		last_state = 3;
 		tv.tv_sec = 1;
 		tv.tv_usec = 500;
 
 		setsockopt(sock,SOL_SOCKET,SO_RCVTIMEO,(char*)&tv,sizeof(tv));
 
 		break;
-	case 1: // 第3次调用，DNS解析成功，开始查询主程序是否要更新
+	case 3: // 第3次调用，DNS解析成功，开始查询主程序是否要更新
 		s = GenTrunk(buffer,md5_exe,PACKAGE_NAME,update_trunk);
 		send(sock,buffer,s,0);
-		last_state = 2;
+		last_state = 4;
 		break;
 	case 4: //第4次调用，接受服务端的消息。是否主程序需要更新
 		last_state = 3;
@@ -440,3 +439,5 @@ int Check_update(const char * updateserver,const char * update_trunk)
 	}
 	return 0;
 }
+
+

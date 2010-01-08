@@ -43,16 +43,16 @@ struct active_client{
 
 	int32_t passwd_token;
 	int lastdata_len;
-	char lastdata[512];
+	char * lastdata;
 	~active_client()
 	{
-//		if(lastdata)
-	//		delete [] lastdata;
+		if(lastdata)
+			delete [] lastdata;
 	}
 	active_client()
 	{
+		lastdata=0;
 		passwd_token = rand();
-		memset(lastdata,0,512);
 	}
 };
 

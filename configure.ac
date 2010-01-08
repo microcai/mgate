@@ -8,7 +8,7 @@ AC_ARG_ENABLE(debug,
                 [AC_HELP_STRING([--enable-debug],
                 	[Enable DEBUG output. This feature which should be only enabled by developers])
                 ],
-                [ CXXFLAGS="-g2 -DDEBUG -Wall"]
+                [ CXXFLAGS="-g2 -DDEBUG -Wall -O0"]
               )
 # Checks for programs.
 AC_PROG_CXX
@@ -28,9 +28,8 @@ AC_ARG_WITH(sqlite3,[AC_HELP_STRING([--with-sqlite3],[ support for sqlite3. moni
 AC_ARG_WITH(mysql,[AC_HELP_STRING([--without-mysql],[disable support for mysql])],
 		[ with_mysql=$withval ],[with_mysql=yes])
 		
-AC_ARG_WITH(jincheng,[AC_HELP_STRING([--without-jincheng],[disable jincheng module])],[with_jincheng=$withval],[with_jincheng="yes"])
-
-AC_ARG_WITH(kpolice,[AC_HELP_STRING([--without-kpolice],[disable kpolice module])],[with_kpolice=$withval],[with_kpolice="yes"])
+AC_ARG_WITH(jincheng,[AC_HELP_STRING([--without-jincheng],[disable jincheng module])],[],[with_jincheng="yes"])
+AC_ARG_WITH(kpolice ,[AC_HELP_STRING([--without-kpolice],[disable kpolice module])],[],[with_kpolice="yes"])
 
 AC_ARG_WITH(kqq, [AC_HELP_STRING([--with-kqq], [enable kqq module (default)])],[],[with_kqq="yes"])
 AC_ARG_WITH(kurl,[AC_HELP_STRING([--with-kurl],[enable kkurl module (default)])],[],[with_kurl="yes"])
@@ -51,9 +50,9 @@ AC_CHECK_LIB([pthread], [main])
 
 AC_CHECK_LIB([pcap], [main],[AC_CHECK_HEADER(pcap.h)],[AC_MSG_ERROR(need libpcap)])
 
-AS_IF( [ test "x$enable_hotel" != "xno" ],[AC_CHECK_LIB([net], [main],[ AC_CHECK_HEADER( libnet.h) ],[AC_MSG_ERROR(need libnet)])])
+AS_IF( [ test "x$enable_hotel" != xno ],[AC_CHECK_LIB([net], [main],[ AC_CHECK_HEADER( libnet.h) ],[AC_MSG_ERROR(need libnet)])])
 
-AS_IF( [ test "x$with_mysql" != "xno" ],
+AS_IF([test "x$with_mysql" != "xno" ],
 	[
 		AC_CHECK_LIB([mysqlclient -L/usr/lib/mysql], [mysql_query] ,
 						#found
@@ -88,7 +87,7 @@ AS_IF( [ test "x$with_mysql" != "xno" ],
 																					#not found
 																					[
 																						AC_MSG_ERROR([no mysql-devel found, use --without-mysql to disable them ],[1])
-																						AM_CONDITIONAL(WITH_MYSQL,false)
+																						AM_CONDITIONAL(WITH_MYSQL,FALSE)
 																					])														
 																])
 											])
@@ -96,11 +95,10 @@ AS_IF( [ test "x$with_mysql" != "xno" ],
 	]
 	)
 
-AS_IF([ test "x$with_mysql" = "xno" ] , [ AM_CONDITIONAL(WITH_MYSQL,false)  ]  )
 
 AC_SUBST(LD_MYSQL_FLAGS)
 
-AS_IF(	[test "x$with_sqlite3" != "xno" ],
+AS_IF(	[test "x$with_sqlite3" != xno ],
 		[
 			# check for sqlite3-devel packages
 			AC_CHECK_LIB([sqlite3],[main],
@@ -125,11 +123,7 @@ AC_CHECK_FUNCS([inet_ntoa memset munmap setenv socket strerror strstr])
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h memory.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h unistd.h])
 
-#subset modules that should compile
-
-AS_IF( [ test "x$with_kpolice" = "xyes" ] , [ AM_CONDITIONAL(WITH_KPOLICE,[true]) ] , [ AM_CONDITIONAL(WITH_KPOLICE,[false])])
-
-
+#AC_CONFIG_FILES([modules/Makefile])
 AC_CONFIG_FILES( [Makefile libdreamtop/Makefile monitor/Makefile modules/Makefile])
 
 AS_IF([test "$prefix" = "NONE"],[prefix="/usr/local"])

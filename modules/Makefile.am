@@ -6,23 +6,14 @@ libexecdir=${prefix}/libexec/monitor/modules
 MODULE_COMM_FLAGS = -I$(top_srcdir)/libdreamtop -fpic
 MODULE_COMM_LD = -lpthread -L$(top_builddir)/libdreamtop -ldreamtop
 
+libexec_PROGRAMS =  kpolice.so  kurl.so kqq.so kmsn.so
+if ENABLE_HOTEL
+libexec_PROGRAMS +=   klz.so kjincheng.so
+MODULE_COMM_FLAGS += -DENABLE_HOTEL 
 
-libexec_PROGRAMS = 
-libexec_PROGRAMS += kurl.so kqq.so kmsn.so
-
-
-if WITH_KPOLICE
-libexec_PROGRAMS += kpolice.so
-kpolice_so_SOURCES = kpolice.cpp kpolice.h
-kpolice_so_CXXFLAGS = $(MODULE_COMM_FLAGS)
-kpolice_so_LDADD = $(MODULE_COMM_LD)
-kpolice_so_LDFLAGS=-shared $(LDFLAGS)
 endif
 
 if ENABLE_HOTEL
-
-libexec_PROGRAMS +=   klz.so kjincheng.so
-MODULE_COMM_FLAGS += -DENABLE_HOTEL 
 
 klz_so_SOURCES = klz.cpp
 klz_so_CXXFLAGS = $(MODULE_COMM_FLAGS)
@@ -43,6 +34,9 @@ kqq_so_SOURCES = kqq.cpp
 kqq_so_CXXFLAGS = $(MODULE_COMM_FLAGS)
 kqq_so_LDADD = $(MODULE_COMM_LD)
 
+kpolice_so_SOURCES = kpolice.cpp kpolice.h
+kpolice_so_CXXFLAGS = $(MODULE_COMM_FLAGS)
+kpolice_so_LDADD = $(MODULE_COMM_LD)
 
 kurl_so_SOURCES = kurl.cpp
 kurl_so_CXXFLAGS = $(MODULE_COMM_FLAGS)
@@ -56,4 +50,5 @@ endif
 kqq_so_LDFLAGS=-shared $(LDFLAGS)
 kmsn_so_LDFLAGS= -shared $(LDFLAGS)
 kurl_so_LDFLAGS=-shared $(LDFLAGS)
+kpolice_so_LDFLAGS=-shared $(LDFLAGS)
 

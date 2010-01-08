@@ -35,17 +35,15 @@ BuildRoot:      %{_tmppath}/monitor-hotel-%{version}-%{release}-root-%(%{__id_u}
 				
 
 %prep 
-rm -rf monitor-%{version}
-tar -xvf ../../workspace/monitor/release/monitor-%{version}.tar.bz2
+%setup -q
 
 %build 
-cd monitor-%{version}
+#cd monitor-%{version}
 %configure --enable-hotel --with-sqlite3
 make %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
-cd monitor-%{version}
 make install DESTDIR=$RPM_BUILD_ROOT
 
 %clean

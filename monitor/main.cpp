@@ -404,34 +404,34 @@ static void On_SQL_change()
 		strSQL[0] = 0;
 	}
 	//检查是否有人住的太太太久了，删掉他！
-
-	MYSQL_RES * res;
-	MYSQL_ROW  row;
-	CString sql;
-
-	tm *pTm = GetCurrentTime();
-
-	if(pTm->tm_mon)
-		pTm->tm_mon --;
-	else
-	{
-		pTm->tm_year --;
-		pTm->tm_mon = 11;
-	}
-
-
-	sql.Format("select nIndex,RoomId from roomer_list where Time < '%d-%d-%d'",
-            pTm->tm_year+1900,pTm->tm_mon+1,pTm->tm_mday );
-
-	res = ksql_query_and_use_result(sql);
-	while ((row = ksql_fetch_row(res)))
-	{
-		sql.Format("insert into room_change (RoomerId,ActionType) values ('%s',2)",row[0]);
-		ksql_run_query(sql);
-
-		sql.Format("update room_list set RoomerCount=RoomerCount-1 where nIndex='%s' and RoomerCount>0",row[1]);
-		ksql_run_query(sql);
-	}
+//
+//	MYSQL_RES * res;
+//	MYSQL_ROW  row;
+//	CString sql;
+//
+//	tm *pTm = GetCurrentTime();
+//
+//	if(pTm->tm_mon)
+//		pTm->tm_mon --;
+//	else
+//	{
+//		pTm->tm_year --;
+//		pTm->tm_mon = 11;
+//	}
+//
+//
+//	sql.Format("select nIndex,RoomId from roomer_list where Time < '%d-%d-%d'",
+//            pTm->tm_year+1900,pTm->tm_mon+1,pTm->tm_mday );
+//
+//	res = ksql_query_and_use_result(sql);
+//	while ((row = ksql_fetch_row(res)))
+//	{
+//		sql.Format("insert into room_change (RoomerId,ActionType) values ('%s',2)",row[0]);
+//		ksql_run_query(sql);
+//
+//		sql.Format("update room_list set RoomerCount=RoomerCount-1 where nIndex='%s' and RoomerCount>0",row[1]);
+//		ksql_run_query(sql);
+//	}
 }
 
 static void load_white(KSQL_ROW row, void*)
@@ -567,18 +567,12 @@ int main(int argc, char*argv[], char*env[])
 	dnss = GetToken("dns", "");
 	update_server = GetToken("update.server","");
 	update_trunk = GetToken("update.trunk","monitor");
-	update_server = GetToken(config_file,"update.server","");
-	update_trunk = GetToken(config_file,"update.trunk","monitor");
 	MAX_PCAP_THREAD = atoi(threads.c_str());
 
 	StartSQL();
 
 	signal(15,on_term);
 	signal(2,on_term);
-
-	signal(15,on_term);
-	signal(2,on_term);
-
 
 	if(flush_db)
 	{
@@ -750,12 +744,11 @@ int main(int argc, char*argv[], char*env[])
 	}
 	return 0;
 #else
-	if (ksql_is_server_gone())
+	for (;;)
 	{
+		switch (Check_update(update_server.c_str(), update_trunk.c_str()))
 		{
-		ksql_close();
-		while (InitRecordSQL(pswd, user, database, host))
-			sleep(2);
+		case (-1):
 			sleep(5);
 			break;
 		case 0:
@@ -763,8 +756,8 @@ int main(int argc, char*argv[], char*env[])
 			break;
 		}
 	}
-	sleep(5000);
 #endif
+	return 0;
 
 }
 

@@ -37,9 +37,7 @@ stop () {
 	echo -n $"Stopping $prog: "
 	killall -9 runmonitor > /dev/NULL 2>/dev/null
 	killall -2 monitor > /dev/NULL 2>/dev/null
-	RETVAL=0
-	echo
-	[ $RETVAL = 0 ]
+	echo "OK"
 	return 0
 }
 
@@ -62,7 +60,7 @@ case $1 in
 		restart
 	;;
 	*)
-	echo $"Usage: $prog {start|stop}"
+	echo $"Usage: $prog {start|stop|restart}"
 	exit 3
 esac
 
