@@ -342,12 +342,7 @@ int ksql_run_query(const char *p)
 	pthread_mutex_unlock(&sql_mutex);
 	//尽量减少加锁的时间，增加并行。
 	if (ret)
-	{
-		std::string errstring("err make query  ");
-		errstring += mysql_error(&mysql);
-		lprint(errstring);
-		std::cerr << errstring;
-	}
+		log_printf(L_DEBUG_OUTPUT,"err make query  %s\n",mysql_error(&mysql));
 	return ret;
 }
 MYSQL_ROW ksql_fetch_row(MYSQL_RES*res)
@@ -375,11 +370,8 @@ void* * ksql_query_and_use_result(const char* query)
 
 	if(mysql_query(&mysql,query))
 	{
-		std::string errstring("err make query  ");
-		errstring += mysql_error(&mysql);
-		lprint(errstring);
-		std::cerr << errstring;
 		pthread_mutex_unlock(&sql_mutex);
+		log_printf(L_DEBUG_OUTPUT,"err make query  %s\n",mysql_error(&mysql));
 		return NULL;
 	}
 	res = mysql_store_result(&mysql);
@@ -409,9 +401,7 @@ void** ksql_query_and_use_result_quite(const char* query)
 	if(mysql_query(&mysql,query))
 	{
 		pthread_mutex_unlock(&sql_mutex);
-		std::string errstring("err make query  ");
-		errstring += mysql_error(&mysql);
-		lprint(errstring);
+		log_printf(L_DEBUG_OUTPUT,"err make query  %s\n",mysql_error(&mysql));
 		return NULL;
 	}
 	res = mysql_store_result(&mysql);

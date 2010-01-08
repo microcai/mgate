@@ -1,11 +1,17 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.63])
+AC_PREREQ([2.1])
 AC_INIT([monitor], [1.0.0], [BUG-REPORT-ADDRESS])
 AM_INIT_AUTOMAKE([-Wall -Werror])
 
-#AC_CONFIG_SRCDIR([l])
+AC_SUBST_FILE(RPATH_EXT)
+
+AC_ARG_ENABLE(debug,
+                [  --enable-debug Enable DEBUG output. This is a debugging feature  which should not be only enabled by develpoers],
+                [ CXXFLAGS="$CFLAGS -g2 -O0 -DDEBUG"],
+                [ CXXFLAGS="$CFLAGS -Os"]
+              )
 
 AC_SUBST(MODULES_PATH,/usr/libexec/)
 
@@ -13,17 +19,9 @@ AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
 AC_PROG_CXX
-AC_PROG_CC
-# Checks for libraries.
-# FIXME: Replace `main' with a function in `-lmicrocai':
-AC_CHECK_LIB([mysqlclient], [main])
-# FIXME: Replace `main' with a function in `-lpthread':
-AC_CHECK_LIB([pthread], [main])
-AC_CHECK_LIB([net], [main],[ AC_CHECK_HEADER( pcap.h) ],[	AC_ERROR(need libnet)])
-AC_CHECK_LIB([pcap], [main],[AC_CHECK_HEADER(libnet.h)],[AC_ERROR(need libpcap)])
-
-# Checks for header files.
-AC_CHECK_HEADERS([arpa/inet.h memory.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h unistd.h])
+# Checks for library functions.
+AC_CHECK_LIB([net], [main],[ AC_CHECK_HEADER( pcap.h) ],[AC_MSG_ERROR(need libnet)])
+AC_CHECK_LIB([pcap], [main],[AC_CHECK_HEADER(libnet.h)],[AC_MSG_ERROR(need libpcap)])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -36,7 +34,54 @@ AC_TYPE_UINT32_T
 AC_FUNC_MALLOC
 AC_FUNC_MMAP
 AC_CHECK_FUNCS([inet_ntoa memset munmap setenv socket strerror strstr])
+# Checks for header files.
+AC_CHECK_HEADERS([arpa/inet.h memory.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h unistd.h])
 
+# Checks for libraries.
+# FIXME: Replace `main' with a function in `-lpthread':
+AC_CHECK_LIB([pthread], [main])
+
+
+AC_CHECK_LIB([mysqlclient -L/usr/lib/mysql], [mysql_query] ,
+				#found
+				[
+					LD_MYSQL_FLAGS="-lmysqlclient -L/usr/lib/mysql";
+				],
+				#not found 
+				[
+					AC_CHECK_LIB([mysqlclient -L/usr/lib64/mysql], [mysql_query] ,
+									#found
+									[
+										LD_MYSQL_FLAGS="-lmysqlclient -L/usr/lib64/mysql"
+									],
+									#not found
+									[
+										AC_CHECK_LIB([mysqlclient -L/usr/local/lib/mysql], [mysql_query],
+														#found
+														[LD_MYSQL_FLAGS="-lmysqlclient -L/usr/local/lib/mysql"],
+														#not found
+														[
+															AC_CHECK_LIB([mysqlclient -L/usr/local/lib64/mysql], [mysql_query],
+																			#found
+																			[LD_MYSQL_FLAGS="-lmysqlclient -L/usr/local/lib64/mysql" ],
+																			#not found
+																			[
+																				AC_MSG_ERROR(monitor needs mysqlclient developing package,1)
+																			])														
+														])
+									])
+				])
+
+AC_SUBST(LD_MYSQL_FLAGS)		    
+
+AC_CHECK_FILE(/var/www/cgi-bin,[], [ AC_MSG_ERROR( httpd not found!)]) 
 #AC_CONFIG_FILES([modules/Makefile])
-AC_CONFIG_FILES( [Makefile libmicrocai/Makefile monitor/Makefile modules/Makefile nat_helper/Makefile])
+AC_CONFIG_FILES( [Makefile libdreamtop/Makefile monitor/Makefile modules/Makefile nat_helper/Makefile])
+
+if test $prefix == NONE ; then
+AC_DEFINE_UNQUOTED(MODULES_PATH,"/usr/local/libexec/monitor/modules",the path of the loadable module)
+else
+AC_DEFINE_UNQUOTED(MODULES_PATH,"$prefix/libexec/monitor/modules",the path of the loadable module)
+fi
+
 AC_OUTPUT

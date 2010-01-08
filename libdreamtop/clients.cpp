@@ -1,3 +1,10 @@
+/*
+ * clients.cpp
+ *
+ * Copyright 2009 microcai <microcai@sina.com>
+ *
+ * See COPYING for more details about this software's license
+ */
 
 
 #include <iostream>
@@ -82,7 +89,7 @@ int set_client_offline(in_addr_t ip)
 	{
 		pthread_rwlock_unlock(&lock);
 		//谁啊，乱调用！记录这一行为！
-		lprint(std::string("set offline called befor set online\n"));
+		log_puts(L_ERROR,std::string("set offline called befor set online\n"));
 		return false;
 	}
 	if (p->next == NULL)
@@ -131,7 +138,7 @@ struct Clients_DATA* get_client_data(in_addr_t ip)
      * 要记录！
      */
     pthread_rwlock_unlock(&lock);
-    lprint(std::string("get_client befor online\n"));
+    log_puts(L_ERROR,std::string("get_client befor online\n"));
     return NULL;
 }
 

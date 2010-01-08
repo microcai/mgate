@@ -8,7 +8,6 @@ file:
 	>kmsn.cpp		kingstone's msn analyze module
 	>kurl.cpp		kingstone's URL analyze module
 	>kpolice.cpp	kingstone's police port module
-	>libksql.cpp	kingstone's SQL wrapper lib
 	>kroom.cpp		kingstone's room manager module
 ____________________________________________________________________________________
 
@@ -75,10 +74,4 @@ ________________________________________________________________________________
 	如果模块需要参数，可以将参数写到 ./lib/module.conf ，模块加载时将通过 so_data 参数传递打开的文件
 	的内容。整个文件的内容是被映射到内存的。使用 GetToken(const char const * strings,const char*key)
 	来获得 key 所 = 后面的字符串。没有就返回空字符串 “” 。
-	
-	
-	
-	
-	
-		
 	

@@ -41,7 +41,7 @@ static int RecordPOST(char *user,char*pswd,char*host, u_char*packet,in_addr_t si
 	na.passwd = pswd ;
 	na.host = host;
     RecordAccout(&na);
-    lprint(user);
+    log_puts(L_DEBUG_OUTPUT_MORE,user);
     return 1;
 }
 static int RecordUrl(char *url,u_char*packet,in_addr_t sip,in_addr_t dip)
@@ -54,7 +54,7 @@ static int RecordUrl(char *url,u_char*packet,in_addr_t sip,in_addr_t dip)
 	strcpy(na.strType,"0001");
 	na.packet =(char*) packet;
     RecordAccout(&na);
-    lprint(url);
+    log_puts(L_DEBUG_OUTPUT_MORE,url);
     return 1;
 }
 static int GetHttpPost(struct so_data*, u_char*packet)

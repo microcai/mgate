@@ -123,14 +123,14 @@ static void* base_addr;
 
 extern "C" int __module_init(struct so_data*so)
 {
-	std::cout << "\t注册QQ@TCP处理函数" << std::endl;
+	log_puts(L_OUTPUT,"\t注册QQ@TCP处理函数\n");
 	protohander[1] = register_protocol_handler ( qq_packet_callback,QQ_HTTPDPORT,IPPROTO_TCP );
 	protohander[2] = register_protocol_handler ( qq_packet_callback,QQ_VIPDPORT,IPPROTO_TCP );
 
-	std::cout << "\t注册QQ@UDP处理函数" << std::endl;
+	log_puts(L_OUTPUT,"\t注册QQ@UDP处理函数\n");
 
 	protohander[0] = register_protocol_handler ( qq_packet_callback,QQ_DPORT ,IPPROTO_UDP );
-	lprint("QQ 分析模块loaded!\n");
+	log_puts(L_OUTPUT,"QQ 分析模块loaded!\n");
 	base_addr = so->module;
     return 0;
 }

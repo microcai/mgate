@@ -1,5 +1,31 @@
 
+敬告:
 本软件用来配合 金石软件酒店管理系统 工作
 
 您不能拿来用作其他用途
+
+安装需求：
+	需要安装 mysql-devel libpcap-devel libnet-devel
+	开发库。
+	内核 2.6  以上，  glibc 2.3 以上	
+
+安装方法：
+	解压文件
+	tar -xvf monitor-1.0.0.tar.bz2
+	cd monitor-1.0.0
+	
+运行 shell 脚本来进行配置
+	./configure 
+如果没有错误
+	就执行 
+	make all
+	或者 简单的  make
+	
+	如果编译成功，就可以执行 
+	make install
+	注意，您可能需要  root 权限执行此命令
+	
+	
+
+
 

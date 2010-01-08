@@ -213,7 +213,7 @@ static void *kroomthread(void*)
 				{
 					char * strsql = new char[1024];
 					sprintf(strsql,
-							"select CustomerName,CustomerIDType,CustomerIDNum,MachineIP,BuildNum,RoomFloor,RoomNum,nIndex from t_room_list where MachineIP=\'%s\' ",
+							"select CustomerName,CustomerIDType,CustomerIDNum,MachineIP,BuildNum,RoomFloor,RoomNum,nIndex from t_room_list where MachineIP=\'%s\'",
 							row[2]);
 					ksql_query_and_use_result(loadroomlist, strsql, 0);
 					delete []strsql;
