@@ -30,6 +30,8 @@ endif
 
 if WITH_MYSQL
 libdreamtop_so_SOURCES += KSQL/kmysql.cpp KSQL/kmysql.h
+
+
 endif
 
 if WITH_SQLITE3

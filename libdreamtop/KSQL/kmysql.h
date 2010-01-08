@@ -18,6 +18,7 @@ int InitMysqlDB();
 
 bool is_mysqlserver_gone();
 
+int kmysql_run_query(const char *p);
 KSQL_RES* kmysql_query_and_use_result(const char* query);
 KSQL_ROW kmysql_fetch_row(KSQL_RES*res);
 void kmysql_free_result(KSQL_RES* res);

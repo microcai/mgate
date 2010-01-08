@@ -4,7 +4,7 @@
 Name:           monitor
 Version:        1.2.0
 Release:        1%{?dist}
-Summary:        The monitor-hotel-version-%{version}
+Summary:        The monitor-cafe-version-%{version}
 
 Group:          Applications/Internet
 License:        Kingstone Lisence
@@ -14,7 +14,7 @@ Source0:        monitor-%{version}.tar.bz2
 BuildRequires:  libpcap-devel libstdc++-devel glibc-devel mysql-devel sqlite-devel
 
 Requires:       libpcap libstdc++ mysql-libs glibc sqlite
-Conflicts:		monitor-cafe
+Conflicts:		monitor-hotel
 Vendor:			Kingstone Soft, Inc.  
 
 %description
@@ -23,7 +23,7 @@ Vendor:			Kingstone Soft, Inc.
 				public security department. 
 
 %package cafe
-Summary:        The hotel-version of monitor
+Summary:        The cafe-version of monitor
 Group:          Applications/Internet
 BuildRoot:      %{_tmppath}/monitor-hotel-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -38,6 +38,7 @@ rm -rf monitor-%{version}
 tar -xvf ../../workspace/monitor/release/monitor-%{version}.tar.bz2
 
 %build 
+unset CFLAGS
 %configure --with-sqlite3
 make %{?_smp_mflags}
 

@@ -7,14 +7,18 @@
 1 编译安装
 
 编译需求
-需要有 libnet-devel libpcap-devel glibc-devel mysql-devel 
-
+需要   mysql-devel libpcap-devel libnet-devel(开启酒店支持需要) sqlite-deve(开启sqlite支持的话也要安装 )
 
 解压后进入解压后的目录
 
 执行 ./configure
 
 如果需要的软件包都有的话，这一步应该很快就会通过。
+
+查看配置选项可以用 ./configure --help
+具体的，编译进酒店支持系统需要加 --enable-hotel，编译进sqlite 支持需要加 --with-sqlite3
+
+
 
 然后执行 make
 
@@ -33,7 +37,8 @@ tar -xvf www.tar.bz2 -C /var/www
 
 3 导入数据库
 
-导入 hotel-utf.sql 数据库到 mysql
+执行 monitor
+会自动导入数据库后退出
 
 ==============================================
 
@@ -41,6 +46,7 @@ tar -xvf www.tar.bz2 -C /var/www
 
 需要配置的文件在 /var/www/application/config/config.ini
 主要是 mysql 的密码.
+
 
 配置好后运行 httpd 和 mysql
 /etc/init.d/httpd start

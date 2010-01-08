@@ -68,12 +68,10 @@ void formattime(std::string & strtime)
 	formattime(strtime,&pTm);
 }
 
-#ifdef ENABLE_HOTEL
 static void MAC_ADDR2macaddr(char mac_addr[PROLEN_COMPUTERMAC],const u_char mac[ETHER_ADDR_LEN])
 {
 	sprintf(mac_addr,"%02x%02x%02x%02x%02x%02x",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
 }
-#endif
 
 void RecordAccout(struct CustomerData & cd)
 {
@@ -120,15 +118,16 @@ void RecordAccout(struct NetAcount*na)
 
 	utf8_gbk(ac.ClientName ,PROLEN_CLIENTNAME, pcd->CustomerName.c_str(),pcd->CustomerName.length());
 
+	snprintf(ac.ComputerName,sizeof(ac.ComputerName),"%c%c%02d",
+			*pcd->Build.c_str(),*pcd->Floor.c_str(), atoi(pcd->RoomNum.c_str()));
+
 	snprintf(ac.ComputerIp, sizeof(ac.ComputerIp)-1, "%03d.%03d.%03d.%03d",
 			((u_char*) &(pcd->ip))[0], ((u_char*) &(pcd->ip))[1],
 			((u_char*) &(pcd->ip))[2], ((u_char*) &(pcd->ip))[3]);
-
-	MAC_ADDR2macaddr(ac.ComputerMac, pcd->MAC_ADDR);
-
-	snprintf(ac.ComputerName,sizeof(ac.ComputerName),"%c%c%02d",
-			*pcd->Build.c_str(),*pcd->Floor.c_str(), atoi(pcd->RoomNum.c_str()));
 #endif
+
+	MAC_ADDR2macaddr(ac.ComputerMac,mac);
+
 	strcpy(ac.ServType, na->strType);
 
 #ifdef ENABLE_HOTEL
@@ -139,14 +138,22 @@ void RecordAccout(struct NetAcount*na)
 			na->data.c_str(), strTime.c_str());
 #else
 	char strmac[32];
-	in_addr in_addr_ip;
+	in_addr in_addr_ip={0};
+
 	in_addr_ip.s_addr = na->ip;
+
+	snprintf(ac.ComputerIp, sizeof(ac.ComputerIp), "%03d.%03d.%03d.%03d",
+			((u_char*) &(in_addr_ip))[0], ((u_char*) &(in_addr_ip))[1],
+			((u_char*) &(in_addr_ip))[2], ((u_char*) &(in_addr_ip))[3]);
 
 	formatMAC(mac,strmac);
 
-	strSQL.Format("insert into t_customerlog () values ()",inet_ntoa(in_addr_ip),
+	strSQL.Format(
+			"insert into t_netlog (MachineIP,MachineMac,nLogType,strLogInfo,nTime) values   ('%s','%s','%s','%s','%s')",
+			inet_ntoa(in_addr_ip),
 			strmac, na->strType,
 			na->data.c_str(), strTime.c_str());
+
 #endif
 	ksql_run_query_async(strSQL);
 //	syslog(LOG_NOTICE,"%s",strSQL.c_str());
@@ -341,6 +348,9 @@ static void * KSQL_daemon(void*_p)
 			{
 				kmysql_close();
 				break;
+			}else{
+				//修复数据库，神州行，我看行。
+				ksql_run_query("repair table t_netlog");
 			}
 		}
 	}
@@ -393,12 +403,15 @@ int WaitForSQLserver()
 
 int ksql_run_query(const char *p)
 {
-//	if(ksql_usemysql)
-//	{
-//		return kmysql_query_and_use_result(p);
-//	}else
-//	return ksqlite_query_and_use_result(p);
-	return 1;
+	int ret;
+	if(ksql_usemysql)
+	{
+		ret = kmysql_run_query(p);
+	}else
+	ret = ksqlite_query(p);
+	if (ret)
+		syslog(LOG_ERR, "err make query  %s\n", p);
+	return ret;
 }
 
 int ksql_run_query_async(const char *p)
@@ -433,6 +446,6 @@ namespace hotel{
     char strHoteName[32];
     char strServerIP[32];
     char strWebIP[32];
-    char str_ethID[32]="eth0";
+    char str_ethID[32]="eth1";
     bool Is_Old_DB=false;
 }

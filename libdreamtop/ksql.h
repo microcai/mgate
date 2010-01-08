@@ -46,10 +46,10 @@
 #define PROLEN_NETBARNAME	41
 #define PROLEN_PASSWD		51
 
-#ifdef ENABLE_HOTEL
-#define PROLEN_KEY1		61
-#else
+#ifdef ENABLE_BIGKEY1
 #define PROLEN_KEY1		501
+#else
+#define PROLEN_KEY1		61
 #endif
 
 #define PROLEN_ORGAN		71

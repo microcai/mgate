@@ -4,20 +4,21 @@
 
 您不能拿来用作其他用途
 
-安装需求：
-	需要安装 mysql-devel libpcap-devel libnet-devel
+编译需求：
+	需要安装 mysql-devel libpcap-devel libnet-devel(开启酒店支持需要) sqlite-deve(开启sqlite支持的话也要安装);
 	开发库。
-	内核 2.6  以上，  glibc 2.3 以上	
+	内核 2.6.26  以上，  glibc 2.4 以上	
 
 安装方法：
 	解压文件
-	tar -xvf monitor-1.1.6.tar.bz2
-	cd monitor-1.0.0
+	tar -xvf monitor-1.2.0.tar.bz2
+	cd monitor-1.2.0
 	
 运行 shell 脚本来进行配置
-	./configure 
+	./configure
 	
-需要添加支持酒店系统的就要增加 --enable-hotel 参数
+需要添加支持酒店系统的就要增加 --enable-hotel 参数, 需要 libnet-devel
+需要
 
 	
 如果没有错误
