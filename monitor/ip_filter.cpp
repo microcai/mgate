@@ -19,7 +19,8 @@
  *      MA 02110-1301, USA.
  */
 
-#include <iostream>
+
+#include <sys/syslog.h>
 #include <sys/socket.h>
 #include <net/ethernet.h>
 #include <netinet/in.h>
@@ -49,8 +50,8 @@ extern void *pcap_thread_func(struct pcap_thread_args *arg)
 	pcap_t *	pcap_handle;
 	u_char		mac_addr[6];
 
-	pcap_pkthdr *pcaphdr;
-	const u_char*packet_contents;
+//	pcap_pkthdr *pcaphdr;
+//	const u_char*packet_contents;
 
 	struct iphdr *ip_head;
     u_int16_t   port;
@@ -63,16 +64,19 @@ extern void *pcap_thread_func(struct pcap_thread_args *arg)
 	memcpy(mac_addr,arg->mac_addr,6);
 
 	u_char packet_content[65536];
+	int fno = pcap_fileno(pcap_handle);
 
 	for(;;)
 	{
-		static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-		pthread_mutex_lock(&lock);
-		while(pcap_next_ex(pcap_handle, &pcaphdr, &packet_contents) != 1);
-		memcpy(packet_content,packet_contents,pcaphdr->caplen);
-		pthread_mutex_unlock(&lock);
+//		static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+//		pthread_mutex_lock(&lock);
+//		while(pcap_next_ex(pcap_handle, &pcaphdr, &packet_contents) != 1);
+//		if(pcaphdr->caplen >= 65536)
+//			syslog(LOG_WARNING,"pcaphdr->caplen = %d",pcaphdr->caplen);
+//		memcpy(packet_content,packet_contents,65536);
+//		pthread_mutex_unlock(&lock);
 
-//		recv(fno,packet_content,ETHER_MAX_LEN,0);
+		recv(fno,packet_content,ETHER_MAX_LEN,0);
 
 	    ip_head =( typeof(ip_head) )(packet_content + ETH_HLEN);
 
@@ -106,6 +110,7 @@ extern void *pcap_thread_func(struct pcap_thread_args *arg)
 	    	continue;
 	    }
 #endif
+
 		//here we get a list of handler;
 	    bzero(handlerlist,sizeof(handlerlist));
 		get_registerd_handler(handlerlist, 1024, port, ip_head->protocol);

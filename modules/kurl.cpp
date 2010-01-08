@@ -198,9 +198,6 @@ static int RecordPOST(const char *user, const char*pswd, const char*host, u_char
 
 	struct tcphdr* tcp = (tcphdr*)(packet + 14 + sizeof(iphdr));
 
-	char strhost[32];
-	snprintf(strhost,32,"%d.%d.%d.%d",((u_char*)&dip)[0],((u_char*)&dip)[1],((u_char*)&dip)[2],((u_char*)&dip)[3]);
-
 	na.data = host;
 	na.ip = sip;
 	na.dstip = dip;
@@ -210,7 +207,7 @@ static int RecordPOST(const char *user, const char*pswd, const char*host, u_char
 	char key2[80];
 	snprintf(key2,80,"%s:%s",user,pswd);
 	na.passwd = key2 ;
-	na.host = strhost;
+	na.host = host;
 	na.dport = ntohs(tcp->dest);
 
 	RecordAccout(&na);

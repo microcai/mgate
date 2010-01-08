@@ -50,7 +50,6 @@ static int record_QQ_number(u_int qq, in_addr_t ip,u_char*packet)
     na.dstip= * ( in_addr_t *) (packet +  28);
     na.dport = ntohs(tcp->dest);
 
-    //RecordAccout(&na);
     RecordAccout(&na);
 
     return 1;

@@ -7,11 +7,11 @@ bin_PROGRAMS = monitor
 bin_SCRIPTS = runmonitor
 sbin_SCRIPTS = monitord
 
-monitor_SOURCES = ip_filter.cpp main.cpp protocol_def.h runmonitor monitord
+monitor_SOURCES = ip_filter.cpp main.cpp auto_update.cpp protocol_def.h runmonitor monitord
 						 
 monitor_CXXFLAGS = -I $(top_srcdir)/libdreamtop
 if ENABLE_HOTEL
 monitor_CXXFLAGS += -DENABLE_HOTEL
 endif
-monitor_LDADD = -L$(top_builddir)/libdreamtop -ldreamtop -lpcap 
+monitor_LDADD = -L$(top_builddir)/libdreamtop -ldreamtop -lpcap
 monitor_LDFLAGS= -Wl,-rpath,${prefix}/libexec/monitor/modules 

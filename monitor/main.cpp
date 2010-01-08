@@ -103,7 +103,7 @@ static void portmap_change(MYSQL_ROW row, void*p)
 			);
 		run_cmd(cmd);
 	}
-	sprintf((char*) p, "delete from portmap_change where nIndex <= %s",row[0]);
+	sprintf((char*) p, "delete from portmap_change where nIndex <= %d",atoi(row[0]?row[0]:"0"));
 }
 
 
@@ -259,7 +259,8 @@ static void room_change(MYSQL_ROW row, void*p)
 
 			RecordAccout(Cd);
 
-			syslog(LOG_NOTICE, "退房 客户：%s\n", roomer_row[0]);
+			if(roomer_row[0])
+				syslog(LOG_NOTICE, "退房 客户：%s\n", roomer_row[0]);
 
 			sql.Format("delete from roomer_list where nIndex='%s'",row[1]);
 			ksql_run_query(sql);
@@ -321,7 +322,8 @@ static void room_change(MYSQL_ROW row, void*p)
 				}
 			}
 			RecordAccout(Cd);
-			syslog(LOG_NOTICE, "登记客户:%s , ID = %s\n", roomer_row[0],roomer_row[2]);
+			if(roomer_row[0] && roomer_row[2])
+				syslog(LOG_NOTICE, "登记客户:%s , ID = %s\n", roomer_row[0],roomer_row[2]);
 		}
 		ksql_free_result(res);
 		break;
@@ -379,7 +381,6 @@ static void On_SQL_change()
 
 	do
 	{
-
 		ksql_query_and_use_result(room_change,
 				"select nIndex,RoomerId,ActionType from room_change order by nIndex asc", strSQL);
 
@@ -432,27 +433,7 @@ static void On_SQL_change()
 		ksql_run_query(sql);
 	}
 }
-#if 0
-static void on_sigsegv(int)
-{
-	struct dirent * dt;
-	DIR *dir = opendir("/proc/self/fd");
-	while ((dt = readdir(dir)))
-	{
-		if (atoi(dt->d_name) > 2)
-		{
-			fcntl(atoi(dt->d_name),F_SETFL,O_CLOEXEC|fcntl(atoi(dt->d_name),F_GETFL));
-		}
-	}
-	closedir(dir);
-	char * argv[2];
-	argv[0] = (char *) "monitor";
-	argv[1] = NULL;
 
-	execvp("monitor", argv);
-
-}
-#endif
 static void load_white(MYSQL_ROW row, void*)
 {
 	u_char mac[6];
@@ -507,7 +488,8 @@ static void pre_load(MYSQL_ROW row, void*)
 
 				mac_set_allowed(cd.MAC_ADDR,true,cd.ip);
 				set_client_data(cd.MAC_ADDR,&cd);
-				syslog(LOG_NOTICE,"预加载客户:%s ，mac='%s' \n",mrow[0],mrow[3]);
+				if( mrow[0] && mrow[3])
+					syslog(LOG_NOTICE,"预加载客户:%s ，mac='%s' \n",mrow[0],mrow[3]);
 			}
 		}
 		ksql_free_result(res);
@@ -517,6 +499,10 @@ static void pre_load(MYSQL_ROW row, void*)
 
 int main(int argc, char*argv[], char*env[])
 {
+	//调用 检查自动升级。
+	Check_update("www.google.com","");
+
+	exit (0);
 
 	pthread_attr_t p_attr;
 	pthread_t pcap_tcp;
@@ -568,7 +554,7 @@ int main(int argc, char*argv[], char*env[])
 	}
 
 	//解析出参数来
-	std::string pswd, user, host, database,dnss,threads;
+	std::string pswd, user, host, database,dnss,threads,update_server,update_trunk;
 
 	pswd = GetToken(config_file, "db.config.password");
 	user = GetToken(config_file, "db.config.username", "root");
@@ -576,6 +562,8 @@ int main(int argc, char*argv[], char*env[])
 	database = GetToken(config_file, "db.config.dbname", "hotel");
 	threads = GetToken(config_file,"threads","1");
 	dnss = GetToken(config_file, "dns", "");
+	update_server = GetToken(config_file,"update.server","");
+	update_trunk = GetToken(config_file,"update.trunk","monitor");
 	MAX_PCAP_THREAD = atoi(threads.c_str());
 
 	syslog(LOG_NOTICE,"----------初始化数据库----------");
@@ -725,6 +713,9 @@ int main(int argc, char*argv[], char*env[])
 					sleep(2);
 			}
 			On_SQL_change();
+			//调用 检查自动升级。
+			Check_update(update_server.c_str(),update_trunk.c_str());
+
 			break;
 		case 1:
 			if (read(inotifyfd, inotifyevent, sizeof(errbuf)) > 0)

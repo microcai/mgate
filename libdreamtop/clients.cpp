@@ -23,7 +23,8 @@ using namespace __gnu_cxx;
 static void inet_ntoa(std::string & ret, in_addr_t ip)
 {
 	char buf[64];
-	snprintf(buf,32,"%d.%d.%d.%d", ((u_char*) (&ip))[0],
+	buf[63]=0;
+	snprintf(buf,63,"%d.%d.%d.%d", ((u_char*) (&ip))[0],
 			((u_char*) (&ip))[1], ((u_char*) (&ip))[2], ((u_char*) (&ip))[3]);
 	ret = buf;
 }
@@ -109,20 +110,11 @@ struct ROOM{
 
 
 static pthread_rwlock_t lock = PTHREAD_RWLOCK_INITIALIZER;
-volatile static std::map<MACADDR,in_addr_t,myless>	allowed_mac;
-volatile static hash_map<in_addr_t, MACADDR,_HashFn> enabled_ip(256);
+static std::map<MACADDR,in_addr_t,myless>	allowed_mac;
+static hash_map<in_addr_t, MACADDR,_HashFn> enabled_ip(256);
 
 static std::list<ROOM>							room_list;
 static std::map<MACADDR,client*,myless>				clients;
-
-//static void __attribute__((constructor)) __load(void)
-//{
-//	// here, we need to
-//	pthread_rwlockattr_t attr;
-//	pthread_rwlockattr_init(&attr);
-//	pthread_rwlock_init(&lock,&attr);
-//	pthread_rwlockattr_destroy(&attr);
-//}
 
 bool mac_is_alowed(u_char mac[6])
 {
@@ -131,8 +123,8 @@ bool mac_is_alowed(u_char mac[6])
 
 	pthread_rwlock_rdlock(&lock);
 
-	it = ((std::map<MACADDR,in_addr_t,myless>*)&allowed_mac)->find(mac);
-	ret = (it != ((std::map<MACADDR,in_addr_t,myless>*)&allowed_mac)->end());
+	it = allowed_mac.find(mac);
+	ret = (it != allowed_mac.end());
 	pthread_rwlock_unlock(&lock);
 	return ret;
 }
@@ -146,7 +138,7 @@ bool mac_is_alowed(u_char mac[6],in_addr_t ip)
 
 	pthread_rwlock_rdlock(&lock);
 
-	it =  ((std::map<MACADDR,in_addr_t,myless>*)&allowed_mac)->find(mac);
+	it =  allowed_mac.find(mac);
 
 	ret = (it != ((std::map<MACADDR,in_addr_t,myless>*)&allowed_mac)->end());
 
@@ -163,11 +155,11 @@ bool mac_is_alowed(u_char mac[6],in_addr_t ip)
 			pthread_rwlock_unlock(&lock);
 			pthread_rwlock_wrlock(&lock);
 
-			hit = ((hash_map<in_addr_t, MACADDR,_HashFn>*)&enabled_ip)->find(ip);
+			hit = enabled_ip.find(ip);
 
-			if (hit == ((hash_map<in_addr_t, MACADDR,_HashFn>*)&enabled_ip)->end())
+			if (hit == enabled_ip.end())
 			{
-				((hash_map<in_addr_t, MACADDR,_HashFn>*)&enabled_ip)->insert(std::pair<in_addr_t, MACADDR>(ip, mac));
+				enabled_ip.insert(std::pair<in_addr_t, MACADDR>(ip, mac));
 				pthread_rwlock_unlock(&lock);
 				//这个 ip 地址看来没有入 iptables 啊，得，改改。
 				inet_ntoa(sip, ip);
@@ -377,36 +369,6 @@ bool get_client_data(u_char mac[6],Clients_DATA * pcd )
 	pthread_rwlock_unlock(&lock);
 	return ret;
 }
-
-//void nat_disable_ip(const char * ip)
-//{
-//	in_addr_t ip_addr = inet_addr(ip);
-//	hash_map<in_addr_t, MACADDR, _HashFn>::iterator it;
-//	it = enabled_ip.find(ip_addr);
-//	if ( it != enabled_ip.end())
-//	{
-//
-//		CString cmd;
-//		cmd.Format(
-//				"iptables -t nat -D  POSTROUTING  --source  %s -j MASQUERADE -o eth+",
-//				ip);
-//		run_cmd(cmd);
-//		enabled_ip.erase(it);
-//	}
-//}
-//
-//void nat_enbale_ip(const char * ip,u_char mac_add[6])
-//{
-//	in_addr_t ip_addr = inet_addr(ip);
-//	if (enabled_ip.find(ip_addr) == enabled_ip.end())
-//	{
-//		CString cmd;
-//		cmd.Format("iptables -t nat -A POSTROUTING --source %s -j MASQUERADE -o eth+",ip);
-//		run_cmd(cmd);
-//		enabled_ip.insert(std::pair<in_addr_t,MACADDR>(ip_addr,mac_add));
-//	}
-//}
-
 
 Clients_DATA::Clients_DATA():
 	CustomerIDType(""), CustomerName(""), CustomerID(""), RoomNum(""), Floor(""),

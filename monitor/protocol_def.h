@@ -32,5 +32,6 @@ struct pcap_thread_args{
 	u_char	  mac_addr[6];
 };
 void *pcap_thread_func( struct pcap_thread_args * );
+int Check_update(const char * updateserverip,const char * update_trunk);
 
 #endif
