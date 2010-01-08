@@ -246,7 +246,7 @@ extern "C" int __module_init(struct so_data*so)
 {
     std::cout << "URL 分析模块loaded!" << std::endl;
     //不是只有 80 端口才是 http !!!
-    protocol_handler[0] = register_protocol_handler(url_packet_callback,0, IPPROTO_TCP);
+    protocol_handler[0] = register_protocol_handler(url_packet_callback,0x5000, IPPROTO_TCP);
     protocol_handler[1] = register_protocol_handler(GetHttpPost,0x5000, IPPROTO_TCP);
     return 0;
 }

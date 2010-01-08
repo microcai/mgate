@@ -328,7 +328,7 @@ int InitRecordSQL(const std::string & passwd, const std::string & user,
 
 		strcpy(hotel::strServerIP, row[0]);
 		strcpy(hotel::strHotelID, row[1]);
-		strcpy(hotel::str_ethID, row[2]);
+		strcpy(hotel::str_ethID + 3, row[2]);
 		strcpy(hotel::strHoteName, row[3]);
 		strcpy(hotel::strWebIP, row[4]);
 		log_printf(L_DEBUG_OUTPUT,"ServerIP is %s\n",hotel::strServerIP);

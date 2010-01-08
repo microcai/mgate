@@ -50,6 +50,11 @@ static void __attribute__((constructor)) onload()
 	//	pthread_atfork(_Befor_fork,_After_Fork,0);
 	on_exit(onexit, 0);
 	log_file = fopen("view.log", "a");
+	if (!log_file)
+	{
+		fprintf(stderr,"Cannot open log file\n");
+		_exit(1);
+	}
 }
 
 void set_debug_level(enum LOG_PRINT_LEVEL l)

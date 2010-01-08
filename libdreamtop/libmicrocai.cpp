@@ -55,6 +55,7 @@ int Wait_For_event(int timedout)
 	pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
 	tsm.tv_nsec = timedout %1000;
 	tsm.tv_sec = timedout / 1000;
+
 	pthread_mutex_lock(&m);
 	int ret = pthread_cond_timedwait(&wait_cond,&m, &tsm);
 	pthread_mutex_unlock(&m);

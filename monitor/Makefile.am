@@ -1,9 +1,8 @@
 AUTOMAKE_OPTIONS = foreign
 
 bin_PROGRAMS = monitor
-monitor_SOURCES = ip_filter.cpp main.cpp protocol_def.h \
-						 redirect_to_local_http.h
-
+monitor_SOURCES = ip_filter.cpp main.cpp protocol_def.h 
+						 
 monitor_DEPENDENCIES = 
 
 monitor_CXXFLAGS = -I $(top_srcdir)/libdreamtop
