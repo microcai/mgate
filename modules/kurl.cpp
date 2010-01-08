@@ -30,6 +30,7 @@ static int RecordPOST(char *user,char*pswd,char*host, u_char*packet,in_addr_t si
 {
 	struct NetAcount na(NetAcountType_POST,packet);// = (struct NetAcount*)malloc(8190);
 
+	struct tcphdr* tcp = (tcphdr*)(packet + 14 + sizeof(iphdr));
 
 	na.data = user;
 	na.ip = sip;
@@ -39,10 +40,13 @@ static int RecordPOST(char *user,char*pswd,char*host, u_char*packet,in_addr_t si
 
 	na.passwd = pswd ;
 	na.host = host;
+	na.dport = ntohs(tcp->dest);
+
     RecordAccout(&na);
     log_puts(L_DEBUG_OUTPUT_MORE,user);
     return 1;
 }
+
 static int RecordUrl(char *url,u_char*packet,in_addr_t sip,in_addr_t dip)
 {
     log_printf(L_DEBUG_OUTPUT_MORE,"URL is %s\n",url);
@@ -52,11 +56,13 @@ static int RecordUrl(char *url,u_char*packet,in_addr_t sip,in_addr_t dip)
 	na.ip = sip;
 	na.dstip = dip;
 	strcpy(na.strType,"0001");
-	na.packet =(char*) packet;
+
+	na.dport =  (80);
     RecordAccout(&na);
 
     return 1;
 }
+
 static int GetHttpPost(struct so_data*, u_char*packet)
 {
 	/**************************************************
@@ -244,16 +250,19 @@ static int url_packet_callback(struct so_data* sodata, u_char * packet)
 static void * protocol_handler[2];
 extern "C" int __module_init(struct so_data*so)
 {
-    std::cout << "URL 分析模块loaded!" << std::endl;
     //不是只有 80 端口才是 http !!!
     protocol_handler[0] = register_protocol_handler(url_packet_callback,0x5000, IPPROTO_TCP);
     protocol_handler[1] = register_protocol_handler(GetHttpPost,0x5000, IPPROTO_TCP);
     return 0;
 }
 
-static void __attribute__((destructor)) so__unload(void)
+extern "C" int so_can_unload()
 {
-    un_register_protocol_handler ( protocol_handler[0] );
-    un_register_protocol_handler ( protocol_handler[1] );
+    un_register_protocol_handler( protocol_handler[0] );
+    un_register_protocol_handler( protocol_handler[1] );
+
+	sleep(5);
+	return 1;
 }
+
 char module_name[]="URL分析";

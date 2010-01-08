@@ -23,13 +23,14 @@
 #define __________POOTOCOL_DEF__H 1
 #include <netinet/ip.h>
 #include <stdio.h>
+#include <pcap.h>
 
 struct pcap_thread_args{
 	in_addr_t ip;
 	in_addr_t mask;
-	char eth[8];
-	char bpf_filter_string[200];
-
+	pcap_t	* pcap_handle;
+	u_char	  mac_addr[6];
 };
+void *pcap_thread_func( struct pcap_thread_args * );
 
 #endif

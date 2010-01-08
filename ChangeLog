@@ -1,6 +1,9 @@
+
+version 2.1.0 
+	NEW: modules auto reload when module updated	 
+
 version 1.0.0
 	NEW: Use GNU Autotools.
-
 	
 version 0.9.0
 	NEW: Module dependence support	

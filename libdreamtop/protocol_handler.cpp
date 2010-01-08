@@ -7,9 +7,12 @@
  * See COPYING for more details about this software's license
  */
 #include <stdlib.h>
+#include <pthread.h>
 #include "libmicrocai.h"
 
 static struct handler * head = 0, *tail = 0;
+static pthread_rwlock_t	rwlock=PTHREAD_RWLOCK_INITIALIZER;
+
 void* register_protocol_handler(PROTOCOL_HANDLER handler, int port, int IPPROTOCOL_TYPE)
 {
     struct handler *p = new struct handler();
@@ -17,6 +20,7 @@ void* register_protocol_handler(PROTOCOL_HANDLER handler, int port, int IPPROTOC
     p->port = port;
     p->protocol_type = IPPROTOCOL_TYPE;
     p->handler = handler;
+    pthread_rwlock_wrlock(&rwlock);
     if (tail) {
         tail->next = p;
         p->pre = tail;
@@ -26,35 +30,40 @@ void* register_protocol_handler(PROTOCOL_HANDLER handler, int port, int IPPROTOC
         head->pre = 0;
         tail->next = 0;
     }
+    pthread_rwlock_unlock(&rwlock);
     return (void *) p;
 }
 
-PROTOCOL_HANDLER* get_registerd_handler(int port, int IPPROTOCOL_TYPE)
+void get_registerd_handler(PROTOCOL_HANDLER * out_hander, int in_count ,int port, int IPPROTOCOL_TYPE)
 {
-    PROTOCOL_HANDLER*ret = 0;
     int i = 0;
     struct handler* p = head;
-    ret = (PROTOCOL_HANDLER*)malloc(4096);
-    memset(ret, 0, 4096);
+
+    memset(out_hander, 0, in_count * sizeof (PROTOCOL_HANDLER));
+
+    if(pthread_rwlock_tryrdlock(&rwlock)!=0)
+    {
+    	return;
+    }
+
     while (p)
     {
         if (p->magic != 'M')break;
         if ((p->port == port || p->port == 0) && p->protocol_type == IPPROTOCOL_TYPE)
-            ret[i++] = p->handler;
+        	out_hander[i++] = p->handler;
         p = p->next;
     }
-    if (i)return ret;
-    free(ret);
-    return 0;
+    pthread_rwlock_unlock(&rwlock);
 }
 
 int un_register_protocol_handler(void*p)
 {
+
     if (p)
     {
         if (((struct handler *) p)->magic != 'M')
             return -1;
-
+    	pthread_rwlock_wrlock(&rwlock);
         if (((struct handler *) p)->pre)
             ((struct handler *) p)->pre->next = ((struct handler *) p)->next;
         else
@@ -63,8 +72,10 @@ int un_register_protocol_handler(void*p)
             ((struct handler *) p)->next->pre = ((struct handler *) p)->pre;
         else
             tail = ((struct handler *) p)->pre;
+        pthread_rwlock_unlock(&rwlock);
         delete (struct handler*)p;
         return 0;
     } else
         return -1;
+
 }

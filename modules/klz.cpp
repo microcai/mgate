@@ -115,14 +115,24 @@ static int GetLZAccount(struct so_data*,u_char *packet)
 	}
 	return 0;
 }
-extern char module_name[];
+
+static void * hander;
 extern "C" int __module_init(struct so_data*so)
 {
-   std::cout << module_name <<  "模块loaded!" << std::endl;
-   register_protocol_handler(GetLZAccount,0,IPPROTO_TCP);
-   return 0;
+	hander = register_protocol_handler(GetLZAccount, 0, IPPROTO_TCP);
+	return 0;
 }
 
+extern "C" int	so_can_unload(  )
+{
+	return 1;
+}
+
+static void __attribute__((destructor)) so__unload(void)
+{
+	un_register_protocol_handler(hander);
+	sleep(4);
+}
 
 char module_name[]="联众帐号监视";
 

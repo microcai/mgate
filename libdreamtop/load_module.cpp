@@ -13,14 +13,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <unistd.h>
 #include <dlfcn.h>
 #include <dirent.h>
+#include <fcntl.h>
 
 #include "libmicrocai.h"
 
 static std::map<std::string,void*> loaded;
 static const std::string thisfilename("libmicrocai.so");
-static int load_module_recursive(std::string & libname,struct so_data *_so_data)
+
+static int load_module_recursive(std::string & libname,struct so_data *_so_data,const char *path_to_modules)
 {
 	char * depmod;
 	char * module_name;
@@ -39,6 +42,7 @@ static int load_module_recursive(std::string & libname,struct so_data *_so_data)
 		return 1;
 	}
 	loaded.insert(std::pair<std::string, void*>(libname, m)); //更新配对
+
 	*(&depmod) = (char*) dlsym(m, "_depmod_");
 	if (depmod)
 	{
@@ -49,7 +53,7 @@ static int load_module_recursive(std::string & libname,struct so_data *_so_data)
 		while (tok)
 		{
 			mod = tok;
-			int ret = load_module_recursive(mod, _so_data);
+			int ret = load_module_recursive(mod, _so_data,path_to_modules);
 			if (ret)
 			{
 				loaded.erase(libname);
@@ -106,8 +110,71 @@ static int load_module_recursive(std::string & libname,struct so_data *_so_data)
 	return 0;
 }
 
-int enum_and_load_modules(const char*path_to_modules,struct so_data * _so_data)
+int unload_modules(const char * so_name)
 {
+	std::map<std::string,void*>::iterator it;
+	it = loaded.begin();
+
+	void *p;
+
+	std::string soname;
+
+	while (it != loaded.end())
+	{
+		p = & it->second;
+
+		soname = it->first;
+
+		if (soname == so_name)
+		{
+			log_printf(L_DEBUG_OUTPUT, "unload %p %s\n", p, soname.c_str());
+			dlclose(p);
+			loaded.erase(it);
+			return 0;
+		}
+		it++;
+	}
+	return 0;
+}
+
+void load_modules(const char * so_name,const char*path_to_modules)
+{
+	so_data sodata;
+	std::string soname(so_name);
+	if (so_name[0] != '.' && so_name[0] != 'l' && so_name[0] != 'i' && so_name[0] != 'b')
+		load_module_recursive( soname, & sodata,path_to_modules);
+
+	std::map<std::string,void*>::iterator it;
+	it = loaded.begin();
+
+	while (it != loaded.end())
+	{
+		void *p = it->second;
+
+		int (*so_can_unload)();
+
+		so_can_unload = (typeof(so_can_unload))dlsym(p, "so_can_unload");
+
+		if( so_can_unload && so_can_unload() == 0 )
+		{
+			loaded.erase(it);
+			it = loaded.begin();
+		}
+		it++;
+	}
+
+}
+
+void reload_modules(const char * so_name,const char*path_to_modules)
+{
+	if(unload_modules(so_name)==0)
+		load_modules(so_name,path_to_modules);
+
+}
+
+int enum_and_load_modules(const char*path_to_modules)
+{
+	struct so_data _so_data;
  	int ret;
  	struct dirent * dt;
     DIR *dir = opendir(path_to_modules);
@@ -116,13 +183,6 @@ int enum_and_load_modules(const char*path_to_modules,struct so_data * _so_data)
 		std::cerr << "WARNNING: 没有找到扩展模块" << std::endl;
 		return -1;
 	}
-
-//	auto_str pwd(new char[4096]);
-//
-//	getcwd(pwd,4096);
-//
-//	chdir(path_to_modules);
-
 
 	std::cout << "**********************开始加载扩展模块*******************************" << std::endl;
 
@@ -143,7 +203,7 @@ int enum_and_load_modules(const char*path_to_modules,struct so_data * _so_data)
 						&& libname[libname.length() - 1] == 'o')
 				{
 
-					ret = load_module_recursive(libname, _so_data);
+					ret = load_module_recursive(libname, &_so_data,path_to_modules);
 					if (ret < 0)
 					{
 						closedir(dir);
@@ -153,12 +213,11 @@ int enum_and_load_modules(const char*path_to_modules,struct so_data * _so_data)
 			}
 		}
 	}
-//	chdir(pwd);
 	closedir(dir);
 	std::cout << "**********************模块加载完毕**********************************" << std::endl;
 
 	std::cout << "*********************加载的模块清单**********************************" << std::endl;
-//	static std::map<std::string,void*> loaded;
+
 	std::map<std::string,void*>::iterator it;
 	it = loaded.begin();
 	void *p;
@@ -166,10 +225,28 @@ int enum_and_load_modules(const char*path_to_modules,struct so_data * _so_data)
 	while (it != loaded.end())
 	{
 		p = it->second;
+
 		std::cout << "模块文件名:" << it->first <<  "\t模块名称:";
 		std::cout << (char*) dlsym(p, "module_name") << std::endl;
 		it++;
 	}
+
+	while (it != loaded.end())
+	{
+		p = it->second;
+
+		int (*so_can_unload)();
+
+		so_can_unload = (typeof(so_can_unload))dlsym(p, "so_can_unload");
+
+		if( so_can_unload && so_can_unload() == 0 )
+		{
+			loaded.erase(it);
+			it = loaded.begin();
+		}
+		it++;
+	}
+
 	std::cout << "*******************************************************************" << std::endl;
 	std::cout.flush();
 

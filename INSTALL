@@ -1,79 +1,62 @@
-Installation Instructions
-*************************
 
-Copyright (C) 2008,2009 Dreamtop, Inc
+安装指导
 
-Basic Installation
-==================
 
-Briefly, the shell commands `./configure; make; make install' should
-configure, build, and install this package.  The following
-more-detailed instructions are generic; see the `README' file for
-instructions specific to this package.
+安装分成 3 个部分
 
-   The `configure' shell script attempts to guess correct values for
-various system-dependent variables used during compilation.  It uses
-those values to create a `Makefile' in each directory of the package.
-It may also create one or more `.h' files containing system-dependent
-definitions.  Finally, it creates a shell script `config.status' that
-you can run in the future to recreate the current configuration, and a
-file `config.log' containing compiler output (useful mainly for
-debugging `configure').
+1 编译安装
 
-   If you need to do unusual things to compile the package, please try ./configure --help
+编译需求
+需要有 libnet-devel libpcap-devel glibc-devel mysql-devel 
 
-   The file `configure.ac' (or `configure.in') is used to create
-`configure' by a program called `autoconf'.  You need `configure.ac' if
-you want to change it or regenerate `configure' using a newer version
-of `autoconf'.
 
-The simplest way to compile this package is:
+解压后进入解压后的目录
 
-  1. `cd' to the directory containing the package's source code and type
-     `./configure' to configure the package for your system.
+执行 ./configure
 
-     Running `configure' might take a while.  While running, it prints
-     some messages telling which features it is checking for.
+如果需要的软件包都有的话，这一步应该很快就会通过。
 
-  2. Type `make' to compile the package.
+然后执行 make
 
-  3. Optionally, type `make check' to run any self-tests that come with
-     the package.
+这一步应该会编译生成可执行文件和模块
 
-  4. Type `make install' to install the programs and any data files and
-     documentation.
+如果成功的还请执行 make install
+注意，这一步需要 root 权限
 
-  5. You can remove the program binaries and object files from the
-     source code directory by typing `make clean'.  To also remove the
-     files that `configure' created (so you can compile the package for
-     a different kind of computer), type `make distclean'.  There is
-     also a `make maintainer-clean' target, but that is intended mainly
-     for the package's developers.  If you use it, you may have to get
-     all sorts of other programs in order to regenerate files that came
-     with the distribution.
+2 安装 网页 
 
-  6. Often, you can also type `make uninstall' to remove the installed
-     files again.
+解压 www.tar.bz2 到 /var/www/
 
-Installation Names
-==================
+tar -xvf www.tar.bz2 -C /var/www
 
-By default, `make install' installs the package's commands under
-`/usr/local/bin', include files under `/usr/local/include', etc.  You
-can specify an installation prefix other than `/usr/local' by giving
-`configure' the option `--prefix=PREFIX'.
+注意，需要 root 权限
 
-   You can specify separate installation prefixes for
-architecture-specific files and architecture-independent files.  If you
-pass the option `--exec-prefix=PREFIX' to `configure', the package uses
-PREFIX as the prefix for installing programs and libraries.
-Documentation and other data files still use the regular prefix.
+3 导入数据库
 
-   In addition, if you use an unusual directory layout you can give
-options like `--bindir=DIR' to specify different values for particular
-kinds of files.  Run `configure --help' for a list of the directories
-you can set and what kinds of files go in them.
+导入 hotel-utf.sql 数据库到 mysql
 
-   If the package supports it, you can cause programs to be installed
-with an extra prefix or suffix on their names by giving `configure' the
-option `--program-prefix=PREFIX' or `--program-suffix=SUFFIX'.
+==============================================
+
+配置指导
+
+需要配置的文件在 /var/www/application/config/config.ini
+主要是 mysql 的密码.
+
+配置好后运行 httpd 和 mysql
+/etc/init.d/httpd start
+/etc/init.d/mysqld start
+
+然后在浏览器输入 http://localhost/index
+
+点击 “系统初始化”
+
+输入好正确的 公安端地址和酒店编号和酒店名称
+探测网卡一般选1， Web服务器ip填入本机的内网ip
+
+===================================================
+
+执行 monitor
+
+====================================================
+
+

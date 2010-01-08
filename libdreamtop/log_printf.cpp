@@ -3,6 +3,7 @@
  * 所谓 内存日志，就是将日志记录到内存，以便调查看
  */
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -20,8 +21,6 @@ static enum LOG_PRINT_LEVEL debug_level = L_DEBUG_OUTPUT;
 static enum LOG_PRINT_LEVEL debug_level=L_ERROR;
 #endif
 
-static void handler(int)
-{exit(0);}
 
 static void onexit(int, void*)
 {
@@ -42,14 +41,17 @@ static void onexit(int, void*)
 
 static void __attribute__((constructor)) onload()
 {
-	struct sigaction action;
-	action.sa_flags = SA_NODEFER;
-	action.sa_handler = handler;
-	sigaction(2, &action, &action);
-
 	//	pthread_atfork(_Befor_fork,_After_Fork,0);
 	on_exit(onexit, 0);
-	log_file = fopen("view.log", "a");
+
+	int fd =  open("/var/log/monitor.log", O_CLOEXEC|O_APPEND|O_RDWR|O_CREAT,0666);
+	if(fd < 0)
+	{
+		write(2,"Cannot open log file \"/var/log/monitor.log\"\n",sizeof("Cannot open log file \"/var/log/monitor.log\"\n"));
+		_exit(-1);
+	}
+	log_file = fdopen(fd, "a");
+
 	if (!log_file)
 	{
 		fprintf(stderr,"Cannot open log file\n");

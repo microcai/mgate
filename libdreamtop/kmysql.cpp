@@ -11,28 +11,53 @@
 
 #include <iostream>
 #include <map>
-
-#include <syscall.h>
-#include <unistd.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
-#include <net/ethernet.h>
-#include <pthread.h>
-#include <mysql/mysql.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <fcntl.h>
+#include <syscall.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <net/ethernet.h>
+#include <mysql/mysql.h>
+#include <mysql/errmsg.h>
 
 #define		__KLIBSQL_USEINTERNALLY
 #include "libmicrocai.h"
 
+#define __PACKED__
 
 void** ksql_query_and_use_result(const char* query);
 
 static pthread_mutex_t sql_mutex;
 
 static MYSQL mysql;
+
+struct AccountInfo
+{
+     char		SiteID[PROLEN_NETBARID];
+     double		ClientID;
+     char		SiteName[PROLEN_NETBARNAME];
+     char		ComputerName[PROLEN_COMPUTERNAME];		//机器网络标识
+     char		ComputerIp[PROLEN_COMPUTERIP];
+     char		ComputerMac[PROLEN_COMPUTERMAC];		//Mac地址
+     char		DestIp[PROLEN_COMPUTERIP];
+     char		Port[6];
+     char		ServType[PROLEN_SERVTYPE];
+     char		Key1[PROLEN_KEY1];
+     char		Key2[PROLEN_KEY2];
+     char		Key3;
+     double		DateTime;
+     char		ClientName[PROLEN_CLIENTNAME];			// 顾客姓名
+     char		CertType[PROLEN_CERTTYPE];
+     char    	CertNo[PROLEN_CERTNO];
+     char		Organ[PROLEN_ORGAN];
+     char		Country[PROLEN_NATIONALITY];
+     char		PassWord[PROLEN_PASSWD];
+};
 
 static void NOP_SENDDATA(int cmd,void *data,int ulen)
 {
@@ -53,84 +78,7 @@ namespace hotel{
 
 int kregisterSendDataFunc(FUNC_SENDDATA f){	SendData = f;return 0;}
 
-double GetDBTime(char *pTime)
-{
-    int nYear = 0, nMon = 0, nDay = 0, nHour = 0, nMin = 0, nSec = 0;
-    char *p = strstr(pTime, "-");
-    if (!p)
-        return 0;
-    char strTemp[8];
-    memset(strTemp, 0, 8);
-    strncpy(strTemp, pTime, p - pTime);
-    nYear = atoi(strTemp);
-    pTime = p + 1;
-
-    p = strstr(pTime, "-");
-    if (!p)
-        return 0;
-    memset(strTemp, 0, 8);
-    strncpy(strTemp, pTime, p - pTime);
-    nMon = atoi(strTemp);
-    pTime = p + 1;
-
-    p = strstr(pTime, " ");
-    if (!p)
-        return 0;
-    memset(strTemp, 0, 8);
-    strncpy(strTemp, pTime, p - pTime);
-    nDay = atoi(strTemp);
-    pTime = p + 1;
-
-    p = strstr(pTime, ":");
-    if (!p)
-        return 0;
-    memset(strTemp, 0, 8);
-    strncpy(strTemp, pTime, p - pTime);
-    nHour = atoi(strTemp);
-    pTime = p + 1;
-
-    p = strstr(pTime, ":");
-    if (!p)
-        return 0;
-    memset(strTemp, 0, 8);
-    strncpy(strTemp, pTime, p - pTime);
-    nMin = atoi(strTemp);
-    pTime = p + 1;
-    if (!pTime)
-        return 0;
-
-    nSec = atoi(pTime);
-
-
-    int _afxMonthDays[13] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365};
-
-    unsigned short int wYear = nYear;
-    unsigned short int wMonth = nMon;
-    unsigned short int wDay = nDay;
-    unsigned short int wHour = nHour;
-    unsigned short int wMinute = nMin;
-    unsigned short int wSecond = nSec;
-
-    //  Check for leap year and set the number of days in the month
-
-    bool bLeapYear = ((wYear & 3) == 0) && ((wYear % 100) != 0 || (wYear % 400) == 0);
-
-    //yuqingzh delete	int nDaysInMonth =_afxMonthDays[wMonth] - _afxMonthDays[wMonth-1] +((bLeapYear && wDay == 29 && wMonth == 2) ? 1 : 0);
-
-    long nDate = wYear * 365L + wYear / 4 - wYear / 100 + wYear / 400 + _afxMonthDays[wMonth - 1] + wDay;
-
-    if (wMonth <= 2 && bLeapYear)
-        --nDate;
-
-    nDate -= 693959L;
-
-    double dblTime = (((long) wHour * 3600L) + ((long) wMinute * 60L) + ((long) wSecond)) / 86400.;
-
-    double dbTime = (double) nDate + ((nDate >= 0) ? dblTime : -dblTime);
-    return dbTime;
-}
-
-static void formattime(std::string & strtime, struct tm* pTm)
+void formattime(std::string & strtime, struct tm* pTm)
 {
 	CString st;
     st.Format("%d-%d-%d %d:%d:%d",
@@ -138,7 +86,8 @@ static void formattime(std::string & strtime, struct tm* pTm)
             pTm->tm_hour,pTm->tm_min,pTm->tm_sec);
     strtime = st.c_str();
 }
-static void formattime(std::string & strtime)
+
+void formattime(std::string & strtime)
 {
 	struct tm pTm;
 	time_t t = time(0);
@@ -146,151 +95,122 @@ static void formattime(std::string & strtime)
 	formattime(strtime,&pTm);
 }
 
-typedef struct AccountInfo{
-    char SiteID[PROLEN_NETBARID];
-    double ClientID;
-    char SiteName[PROLEN_NETBARNAME];
-    char ComputerName[PROLEN_COMPUTERNAME]; //机器网络标识
-    char ComputerIp[PROLEN_COMPUTERIP];
-    char ComputerMac[PROLEN_COMPUTERMAC]; //Mac地址
-    char DestIp[PROLEN_COMPUTERIP];
-    char Port[6];
-    char ServType[PROLEN_SERVTYPE];
-    char Key1[PROLEN_KEY1];
-    char Key2[PROLEN_KEY2];
-    char Key3;
-    double DateTime;
-    char ClientName[PROLEN_CLIENTNAME]; // 顾客姓名
-    char CertType[PROLEN_CERTTYPE];
-    char CertNo[PROLEN_CERTNO];
-    char Organ[PROLEN_ORGAN];
-    char Country[PROLEN_NATIONALITY];
-    char PassWord[PROLEN_PASSWD];
-}__attribute__((packed)) AccountInfo;
-
 static const char	SQL_template[]=
 	"insert into t_netlog (RoomNum,MachineIP,MachineMac,CustomerIDType,CustomerIDNum, "
-		"CustomerName,nLogType,strLogInfo,nTime) values ('%s','%s','%s','%s','%s','%s','%s','%s','%s')";
+		"CustomerName,nLogType,strLogInfo,nTime) values   ('%s%s%02d','%s','%s','%s','%s','%s','%s','%s','%s')";
 
 
-static void MAC_ADDR2macaddr(char mac_addr[PROLEN_COMPUTERMAC],const char mac[ETHER_ADDR_LEN])
+static void MAC_ADDR2macaddr(char mac_addr[PROLEN_COMPUTERMAC],const u_char mac[ETHER_ADDR_LEN])
 {
-	sprintf(mac_addr,"%02X%02X%02X%02X%02X%02X",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+	sprintf(mac_addr,"%02x%02x%02x%02x%02x%02x",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
 }
+
 void RecordAccout(struct NetAcount*na)
 {
-	struct Clients_DATA * pcd;
+	struct Clients_DATA cd;
+	struct Clients_DATA *pcd = &cd;
 
-	pcd = get_client_data(na->ip);
-	struct in_addr ip_addr;
+	;
+
+	if (get_client_data(na->ip,pcd)!=0) // there is no ..... so, let's just ignore it.
+		return;
+
 	std::string strTime;
 	CString strSQL;
 
 	AccountInfo ac ={{0}};
 
-	if (pcd && pcd->mac_addr.length() < 2)
+	formattime(strTime);
+
+	ac.DateTime = GetDBTime(GetCurrentTime());
+
+
+	if (pcd && pcd->mac_addr.size() < 2)
 	{
 		char mac[32];
 		if (GetMac(pcd->ip_addr.c_str(), mac, pcd->MAC_ADDR))
 			pcd->mac_addr = mac;
 	}
 
-	switch (na->type)
-	{
-	case NetAcountType_MAC_ADDR:
-		//上下机的记录
-		formattime(strTime, &(pcd->onlinetime));
-		ip_addr.s_addr = pcd->ip;
-		strcpy(ac.CertType, pcd->CustomerIDType.c_str());
-		strcpy(ac.SiteID, hotel::strHotelID);
-		strcpy(ac.SiteName, hotel::strHoteName);
-		ac.DateTime = GetDBTime((char*) strTime.c_str());
+	strcpy(ac.SiteID, hotel::strHotelID);
+	strcpy(ac.SiteName, hotel::strHoteName);
 
+	strcpy(ac.CertType, pcd->CustomerIDType.c_str());
+	strcpy(ac.CertNo, pcd->CustomerID.c_str());
 
-		utf8_gbk(ac.ClientName ,PROLEN_CLIENTNAME, pcd->CustomerName.c_str(),pcd->CustomerName.length());
+	utf8_gbk(ac.ClientName ,PROLEN_CLIENTNAME, pcd->CustomerName.c_str(),pcd->CustomerName.length());
 
-		strcpy(ac.CertNo, pcd->CustomerID.c_str());
-		strcpy(ac.ComputerIp, inet_ntoa(ip_addr));
-		strcpy(ac.ComputerMac, pcd->MAC_ADDR);
-		strcpy(ac.ComputerName, pcd->RoomNum.c_str());
-		strcpy(ac.ServType, na->strType);
+	snprintf(ac.ComputerIp, sizeof(ac.ComputerIp), "%03d.%03d.%03d.%03d",
+			((u_char*) &(pcd->ip))[0], ((u_char*) &(pcd->ip))[1],
+			((u_char*) &(pcd->ip))[2], ((u_char*) &(pcd->ip))[3]);
 
-		log_printf(L_DEBUG_OUTPUT,"房间号:%s\n",pcd->RoomNum.c_str());
-		log_printf(L_DEBUG_OUTPUT,"用户名:%s\n", pcd->CustomerName.c_str());
-		log_printf(L_DEBUG_OUTPUT,"ID号码:%s\n", ac.CertNo);
-		log_printf(L_DEBUG_OUTPUT,"机器IP:%s\n", ac.ComputerIp);
-		SendData(COMMAND_CUSTOMER, (char *) &ac, sizeof(ac));
-		break;
+	MAC_ADDR2macaddr(ac.ComputerMac, pcd->MAC_ADDR);
+	snprintf(ac.ComputerName,sizeof(ac.ComputerName),"%s%s%02d",
+			pcd->Build.c_str(),pcd->Floor.c_str(), atoi(pcd->RoomNum.c_str()));
 
-	case NetAcountType_QQ:
-	case NetAcountType_MSN:
-	case NetAcountType_HTTP:
-	case NetAcountType_POST:
-	default:
-		ip_addr.s_addr = na->ip;
+	strcpy(ac.ServType, na->strType);
 
-		formattime(strTime);
+	strSQL.Format(SQL_template, pcd->Build.c_str(),pcd->Floor.c_str(),atoi(pcd->RoomNum.c_str()), pcd->ip_addr.c_str(),
+			pcd->mac_addr.c_str(), pcd->CustomerIDType.c_str(),
+			pcd->CustomerID.c_str(), pcd->CustomerName.c_str(), na->strType,
+			na->data.c_str(), strTime.c_str());
+	ksql_run_query(strSQL);
 
-		for (int t = 0; t < 2; ++t) //最多就循环两次，避免死循环
-		{
-			if (pcd)
-			{
-				strSQL.Format(SQL_template, pcd->RoomNum.c_str(),
-						pcd->ip_addr.c_str(), pcd->mac_addr.c_str(),
-						pcd->CustomerIDType.c_str(), pcd->CustomerID.c_str(),
-						pcd->CustomerName.c_str(), na->strType,
-						na->data.c_str(), strTime.c_str());
-				log_printf(L_DEBUG_OUTPUT, strSQL.c_str());
-				if (!ksql_run_query(strSQL))
-					break;
-			}
-			else
-			{
-				log_printf(L_DEBUG_OUTPUT, "ip is ", inet_ntoa(ip_addr));
-			}
-		}
-
-		strcpy(ac.SiteID, hotel::strHotelID);
-		strcpy(ac.SiteName, hotel::strHoteName);
-		strcpy(ac.ServType, na->strType);
-		strcpy(ac.ComputerIp, pcd->ip_addr.c_str());
-		MAC_ADDR2macaddr(ac.ComputerMac, pcd->MAC_ADDR);
-		strcpy(ac.ComputerName, pcd->RoomNum.c_str());
-		strcpy(ac.Key1, na->data.c_str());
-		// strcpy(Account.Key2, row[10]);
-		//@NOTE: strcpy(ac.Key2,);
-		ip_addr.s_addr = na->dstip;
-		strcpy(ac.DestIp, inet_ntoa(ip_addr));
-		ac.DateTime = GetDBTime((char*) strTime.c_str());
-
-		utf8_gbk(ac.ClientName,PROLEN_CLIENTNAME , pcd->CustomerName.c_str(),pcd->CustomerName.length());
-
-		strcpy(ac.CertType, pcd->CustomerIDType.c_str());
-		strcpy(ac.CertNo, pcd->CustomerID.c_str());
 #ifdef DEBUG
-		std::cout << "场所编号: " << ac.SiteID << std::endl;
-		std::cout << "帐号类型: " << ac.ServType << std::endl;
-		std::cout << "帐号:" << ac.Key1 << std::endl;
-		std::cout << "密码:" << ac.Key2 << std::endl;
-		std::cout << "主机:" << ac.DestIp;
-		std::cout << "用户名:" << ac.ClientName << std::endl;
-		std::cout << "ID号码:" << ac.CertNo << std::endl;
-		std::cout << "机器IP:" << ac.ComputerIp << std::endl;
+		log_printf(L_DEBUG_OUTPUT, "%s\n",strSQL.c_str());
 #endif
-		SendData(COMMAND_ACCOUNT, (char *) &ac, sizeof(ac));
-		break;
-	}
+//	formattime(strTime,pcd->onlinetime);
+		//			strcpy(Account.SiteID,g_strHotelID);
+		//			strcpy(Account.SiteName,g_strHotelName);
+		//			strcpy(Account.ServType,row[8]);
+		//			strcpy(Account.ComputerIp,row[5]);
+		//			strcpy(Account.ComputerMac,row[6]);
+		//			strcpy(Account.ComputerName,row[1]);
+		//			strcpy(Account.Key1,row[10]);
+		//			strcpy(Account.Key2,row[7]);
+		//			strcpy(Account.DestIp,row[11]);
+		//			Account.DateTime=GetDBTime(row[9]);
+		//			strcpy(Account.ClientName,row[4]);
+		//			strcpy(Account.CertType,row[2]);
+		//			strcpy(Account.CertNo,row[3]);
+
+	strncpy(ac.Key1, na->data.c_str(), 60);
+	strncpy(ac.Key2, na->passwd.c_str(), sizeof(ac.Key2));
+
+	snprintf(ac.DestIp, sizeof(ac.DestIp), "%03d.%03d.%03d.%03d",
+			((u_char*) &(na->dstip))[0], ((u_char*) &(na->dstip))[1],
+			((u_char*) &(na->dstip))[2], ((u_char*) &(na->dstip))[3]);
+
+	snprintf(ac.Port, sizeof(ac.Port), "%d", na->dport);
+
+#ifdef DEBUG
+	std::cout << "场所编号: " << ac.SiteID << std::endl;
+	std::cout << "帐号类型: " << ac.ServType << std::endl;
+	std::cout << "帐号:" << ac.Key1 << std::endl;
+	std::cout << "密码:" << ac.Key2 << std::endl;
+	std::cout << "主机:" << ac.DestIp;
+	std::cout << "用户名:" << pcd->CustomerName << std::endl;
+	std::cout << "ID号码:" << ac.CertNo << std::endl;
+	std::cout << "机器IP:" << ac.ComputerIp << std::endl;
+#endif
+	SendData(COMMAND_ACCOUNT, (char *) &ac, sizeof(ac));
+}
+void RecordAccout(struct CustomerData & cd)
+{
+	SendData(COMMAND_CUSTOMER, (char *) &cd, sizeof(CustomerData));
 }
 
 void RecordNetAccount(std::string & pType,std::string & Log,in_addr_t ip)
 {
     std::string strTime;
     CString strSQL;
-    struct Clients_DATA *pcd;
+    struct Clients_DATA cd;
+    struct Clients_DATA *pcd=&cd;
     in_addr in_addr_ip;
     in_addr_ip.s_addr = ip;
 
-    pcd = get_client_data(ip);
+    if (get_client_data(ip, pcd) != 0)
+		return;
 
     formattime(strTime);
 
@@ -312,11 +232,11 @@ int InitRecordSQL(const std::string & passwd, const std::string & user,
     MYSQL_ROW row;
     pthread_mutexattr_t mutex_attr;
 
-    mysql_thread_init();
-
     log_printf(L_DEBUG_OUTPUT, "连接到数据库...");
 
  	mysql_init(&mysql);
+
+ 	pthread_mutex_destroy(&sql_mutex);
 
  	pthread_mutexattr_init(&mutex_attr);
  	pthread_mutexattr_settype(&mutex_attr,PTHREAD_MUTEX_RECURSIVE);
@@ -326,13 +246,14 @@ int InitRecordSQL(const std::string & passwd, const std::string & user,
 
  	pthread_mutex_lock(&sql_mutex);
 
- 	//mysql_set_character_set(&mysql,"utf-8");
+// 	mysql_set_character_set(&mysql,"utf-8");
 
     if(!mysql_real_connect(&mysql,host.c_str(),user.c_str(),passwd.c_str(),database.c_str(), 0, 0, 0))
     {
     	pthread_mutex_unlock(&sql_mutex);
         std::cerr << "Error connecting to database:"
                 << mysql_error(&mysql) << std::endl;
+        mysql_close(&mysql);
         return mysql_errno(&mysql);
     }
     mysql_set_character_set(&mysql,"utf8");
@@ -346,12 +267,14 @@ int InitRecordSQL(const std::string & passwd, const std::string & user,
 	{
 
 		strcpy(hotel::strServerIP, row[1]);
+//		strcpy(hotel::strServerIP, "192.168.50.168");
 		strcpy(hotel::strHotelID, row[2]);
 		strcpy(hotel::str_ethID + 3, row[3]);
 
 		utf8_gbk(hotel::strHoteName,sizeof(hotel::strHoteName),row[4],strlen(row[4]));
 
 		strcpy(hotel::strWebIP, row[5]);
+
 
 
 		log_printf(L_DEBUG_OUTPUT,"hotel name is %s\n",row[4]);
@@ -373,24 +296,53 @@ int InitRecordSQL(const std::string & passwd, const std::string & user,
 
 	}
 	//进行判断是否为旧式数据库格式
-	std::cout << "检查数据库格式为......";
-	std::cout.flush();
+	log_printf(L_ERROR,"检查数据库格式为......");
 
 	if(mysql_query( &mysql,"select * from room_list"))
 	{
 		ksql_free_result(res);
 		hotel::Is_Old_DB = true;
 //		sleep(1);
-		std::cout << "老数据库格式\t兼容模式运行" <<std::endl;
+		log_printf(L_ERROR,"老数据库格式\t退出\n");
+
+		return -1;
 		// 老旧的上网数据库。
 	}else
 	{
 		hotel::Is_Old_DB = false;
-		std::cout << "新数据库格式\tOK" <<std::endl;
+		log_printf(L_ERROR,"新数据库格式\tOK\n");
 	}
 	mysql_free_result(mysql_use_result(&mysql));
 
     return 0;
+}
+
+void ksql_close()
+{
+	mysql_close(&mysql);
+}
+
+bool ksql_is_server_gone()
+{
+	char	SQL_NULL[]="SELECT t.`nIndex` FROM t_sysparam t LIMIT 0,0";
+	pthread_mutex_lock(&sql_mutex);
+	if(mysql_query(&mysql, SQL_NULL))
+	{
+		pthread_mutex_unlock(&sql_mutex);
+		return true;
+	}
+	else
+	{
+		int ret = mysql_field_count(&mysql);
+		if(ret)
+		{
+			MYSQL_RES* res =  mysql_use_result(&mysql);
+			if(res)
+				mysql_free_result(res);
+		}
+		pthread_mutex_unlock(&sql_mutex);
+	}
+	return false;
 }
 
 int ksql_run_query(const char *p)
@@ -427,7 +379,11 @@ void* * ksql_query_and_use_result(const char* query)
 	if(mysql_query(&mysql,query))
 	{
 		pthread_mutex_unlock(&sql_mutex);
-		log_printf(L_DEBUG_OUTPUT,"err make query  %s\n",mysql_error(&mysql));
+		log_printf(L_ERROR,"Err make query  %s\n",mysql_error(&mysql));
+		if(mysql_errno(&mysql)==CR_SERVER_GONE_ERROR)
+		{
+			close(open("/tmp/monitor.socket",O_RDWR));
+		}
 		return NULL;
 	}
 	res = mysql_store_result(&mysql);
@@ -449,22 +405,6 @@ void ksql_query_and_use_result( void (*callback)( MYSQL_ROW row,void*p ),const c
 	ksql_free_result(res);
 }
 
-void** ksql_query_and_use_result_quite(const char* query)
-{
-	MYSQL_RES *	res;
-	pthread_mutex_lock(&sql_mutex);
-
-	if(mysql_query(&mysql,query))
-	{
-		pthread_mutex_unlock(&sql_mutex);
-		log_printf(L_DEBUG_OUTPUT,"err make query  %s\n",mysql_error(&mysql));
-		return NULL;
-	}
-	res = mysql_store_result(&mysql);
-	pthread_mutex_unlock(&sql_mutex);
-	return (void**) res;
-}
-
 void ksql_thread_init()
 {
 	mysql_thread_init();
@@ -473,4 +413,18 @@ void ksql_thread_init()
 void ksql_thread_end()
 {
 	mysql_thread_end();
+}
+
+void InsertCustomerLog(const char * build,const char * floor,const char * room, const char * name ,
+		const char * idtype , const char * id, const char * type,const char * ip, const char * mac, const char * time)
+{
+	CString sqlstr;
+
+	sqlstr.Format("insert into t_customerlog ("
+			"BuildNum,RoomFloor,RoomNum,CustomerName,CustomerIDType,"
+			"CustomerIDNum,MachineIP,MachineMac,nType,HappyTime) "
+			"values ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')",
+			build,floor,room,name,idtype,id,ip,mac,type,time);
+	//log_printf(L_DEBUG_OUTPUT,"%s\n",sqlstr.c_str());
+	ksql_run_query(sqlstr);
 }

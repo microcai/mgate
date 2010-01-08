@@ -16,10 +16,18 @@ _EXTERN_ void
 	run_cmd(const CString & strcmd );
 
 _EXTERN_ bool
-	GetMac(const char *ip, char MAC_ADDR[],char mac_addr[]);
+	GetMac(const char *ip, char MAC_ADDR[],u_char mac_addr[]);
 
 _EXTERN_ int
-	enum_and_load_modules(const char*,struct so_data *);
+	unload_modules(const char * so_name);
+_EXTERN_ void
+	reload_modules(const char * so_name,const char*path_to_modules);
+_EXTERN_ void
+	load_modules(const char * so_name,const char*path_to_modules);
+_EXTERN_ int
+	enum_and_load_modules(const char*);
+_EXTERN_ int
+	enum_and_reload_modules(const char*path_to_modules);
 
 _EXTERN_    void*
     register_protocol_handler(PROTOCOL_HANDLER, int,int IPPROTOCOL_TYPE);
@@ -27,20 +35,20 @@ _EXTERN_    void*
 _EXTERN_    int
     un_register_protocol_handler(void*p);
 
-_EXTERN_    PROTOCOL_HANDLER*
-    get_registerd_handler(int port,int IPPROTOCOL_TYPE);
+_EXTERN_	void
+	get_registerd_handler(PROTOCOL_HANDLER * out_hander, int in_count ,int port, int IPPROTOCOL_TYPE);
 
 _EXTERN_ u_int16_t
     checksum(u_int16_t *buffer, int size);
 _EXTERN_ int
-	is_client_online( char mac_addr[6], in_addr_t ip);
+	is_client_online( u_char mac_addr[6], in_addr_t ip);
 _EXTERN_ int
-    set_client_offline(in_addr_t ip);
+	set_client_offline(const char* b,const char* f,const char* r);
 
 _EXTERN_ void
-	set_client_online(in_addr_t ip,struct Clients_DATA* data) throw();
-_EXTERN_ struct Clients_DATA*
-	get_client_data(in_addr_t ip);
+	set_client_online(in_addr_t ip,struct Clients_DATA* data);
+_EXTERN_ int
+	get_client_data(in_addr_t ip,struct Clients_DATA*);
 _EXTERN_ void
 	redirect_to_local_http( u_int32_t ,const u_char *,struct iphdr* );
 _EXTERN_ void
@@ -55,6 +63,10 @@ _EXTERN_ void
 	log_printf(enum LOG_PRINT_LEVEL level,const char* fmt,...);
 _EXTERN_ int
 	utf8_gbk(char *outbuf, size_t outlen, const char *inbuf, size_t inlen);
+_EXTERN_ int
+	gbk_utf8(char *outbuf, size_t outlen, const char *inbuf, size_t inlen);
+_EXTERN_ struct tm *
+	GetCurrentTime();
 
 #endif	/* _LIBMICROCAI_FUNCTIONS_H */
 

@@ -1,0 +1,66 @@
+#!/bin/sh
+#
+### BEGIN INIT INFO
+# Provides: monitor
+# Required-Start: dhcpd httpd mysqld dnsmasq
+# Required-Stop: 
+# Should-Start: portreserve
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: The Hotel monitor
+# Description: The Hotel monitor
+### END INIT INFO
+
+
+# Source function library.
+. /etc/init.d/functions
+
+PATH=$PATH:/usr/local/bin
+
+start () {
+	echo -n $"Starting $prog: "
+
+	# start daemon
+	killall runmonitor > /dev/NULL 2>/dev/null
+	killall monitor > /dev/NULL 2>/dev/null
+	killall monitor > /dev/NULL 2>/dev/null
+	runmonitor & 
+        RETVAL=0
+	echo
+	[ $RETVAL = 0 ] && touch /tmp/monitor.socket
+	return 0
+}
+
+stop () {
+	# stop daemon
+	echo -n $"Stopping $prog: "
+	killall runmonitor > /dev/NULL 2>/dev/null
+	killall monitor > /dev/NULL 2>/dev/null
+	killall monitor > /dev/NULL 2>/dev/null
+	RETVAL=0
+	echo
+	[ $RETVAL = 0 ]
+	return 0
+}
+
+restart() {
+	stop
+	start
+}
+
+case $1 in
+	start)
+		start
+	;;
+	stop)
+		stop
+	;;
+	restart)
+		restart
+	;;
+	*)
+	echo $"Usage: $prog {start|stop}"
+	exit 3
+esac
+
+exit $RETVAL

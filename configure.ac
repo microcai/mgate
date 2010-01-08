@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.1])
-AC_INIT([monitor], [1.0.0], [BUG-REPORT-ADDRESS])
+AC_INIT([monitor], [1.1.0], [BUG-REPORT-ADDRESS])
 AM_INIT_AUTOMAKE([-Wall -Werror])
 
 AC_SUBST_FILE(RPATH_EXT)
@@ -20,27 +20,10 @@ AC_CONFIG_HEADERS([config.h])
 # Checks for programs.
 AC_PROG_CXX
 # Checks for library functions.
-AC_CHECK_LIB([net], [main],[ AC_CHECK_HEADER( pcap.h) ],[AC_MSG_ERROR(need libnet)])
-AC_CHECK_LIB([pcap], [main],[AC_CHECK_HEADER(libnet.h)],[AC_MSG_ERROR(need libpcap)])
-
-# Checks for typedefs, structures, and compiler characteristics.
-AC_HEADER_STDBOOL
-AC_C_INLINE
-AC_TYPE_SIZE_T
-AC_TYPE_UINT16_T
-AC_TYPE_UINT32_T
-
-# Checks for library functions.
-AC_FUNC_MALLOC
-AC_FUNC_MMAP
-AC_CHECK_FUNCS([inet_ntoa memset munmap setenv socket strerror strstr])
-# Checks for header files.
-AC_CHECK_HEADERS([arpa/inet.h memory.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h unistd.h])
-
-# Checks for libraries.
-# FIXME: Replace `main' with a function in `-lpthread':
 AC_CHECK_LIB([pthread], [main])
 
+AC_CHECK_LIB([net], [main],[ AC_CHECK_HEADER( pcap.h) ],[AC_MSG_ERROR(need libnet)])
+AC_CHECK_LIB([pcap], [main],[AC_CHECK_HEADER(libnet.h)],[AC_MSG_ERROR(need libpcap)])
 
 AC_CHECK_LIB([mysqlclient -L/usr/lib/mysql], [mysql_query] ,
 				#found
@@ -74,7 +57,25 @@ AC_CHECK_LIB([mysqlclient -L/usr/lib/mysql], [mysql_query] ,
 
 AC_SUBST(LD_MYSQL_FLAGS)		    
 
-AC_CHECK_FILE(/var/www/cgi-bin,[], [ AC_MSG_ERROR( httpd not found!)]) 
+# Checks for typedefs, structures, and compiler characteristics.
+AC_HEADER_STDBOOL
+AC_C_INLINE
+AC_TYPE_SIZE_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
+
+# Checks for library functions.
+AC_FUNC_MALLOC
+AC_FUNC_MMAP
+AC_CHECK_FUNCS([inet_ntoa memset munmap setenv socket strerror strstr])
+# Checks for header files.
+AC_CHECK_HEADERS([arpa/inet.h memory.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h unistd.h])
+
+# Checks for libraries.
+# FIXME: Replace `main' with a function in `-lpthread':
+
+
+AC_CHECK_FILE(/var/www/html,[], [ AC_MSG_ERROR( httpd not found!)]) 
 #AC_CONFIG_FILES([modules/Makefile])
 AC_CONFIG_FILES( [Makefile libdreamtop/Makefile monitor/Makefile modules/Makefile])
 

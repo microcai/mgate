@@ -43,7 +43,7 @@ u_int16_t checksum(u_int16_t *buffer, int size)
     return (uint16_t) (~cksum);
 }
 
-bool GetMac(const char *ip, char MAC_ADDR[],char mac_addr[])
+bool GetMac(const char *ip, char MAC_ADDR[],u_char mac_addr[])
 {
 	//向内核发送发起ARP查询
 	int s = socket(PF_INET, SOCK_DGRAM, 0);
@@ -113,16 +113,154 @@ int utf8_gbk(char *outbuf, size_t outlen, const char *inbuf, size_t inlen)
 	return 0;
 }
 
-void nat_disable_ip(const char *  ip)
+int gbk_utf8(char *outbuf, size_t outlen, const char *inbuf, size_t inlen)
+{
+	iconv_t cd;
+	char **pin = (char**)&inbuf;
+	char **pout = &outbuf;
+
+	cd = iconv_open("UTF-8", "GBK");
+	if (cd == 0)
+		return -1;
+
+	memset(outbuf, '\0', outlen);
+	if (iconv(cd, pin, &inlen, pout, &outlen) == (size_t) -1)
+	{
+		return -1;
+	}
+	iconv_close(cd);
+
+	return 0;
+}
+
+void nat_disable_ip(const char * ip)
 {
 	CString cmd;
-	cmd.Format("iptables -D FORWARD -s %s -j ACCEPT", ip);
+	cmd.Format(
+			"iptables -t nat -D  POSTROUTING  --source  %s -j MASQUERADE -o eth+",
+			ip);
 	run_cmd(cmd);
 }
 
 void nat_enbale_ip(const char * ip)
 {
 	CString cmd;
-	cmd.Format("iptables -A FORWARD -s %s -j ACCEPT", ip);
+	cmd.Format(
+			"iptables -t nat -A POSTROUTING --source %s -j MASQUERADE -o eth+",
+			ip);
 	run_cmd(cmd);
+}
+
+struct tm * GetCurrentTime()
+{
+	time_t t;
+	time(&t);
+	return localtime(&t);
+}
+
+double GetDBTime(struct tm * ptm)
+{
+	u_short wYear = ptm->tm_year + 1900;
+	u_short wMonth = ptm->tm_mon + 1;
+	u_short wDay = ptm->tm_mday;
+	u_short wHour = ptm->tm_hour;
+	u_short wMinute = ptm->tm_min;
+	u_short wSecond = ptm->tm_sec;
+	int _afxMonthDays[13] =
+	{ 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 };
+
+	bool bLeapYear = ((wYear & 3) == 0) && ((wYear % 100) != 0 || (wYear % 400)
+			== 0);
+	long nDate = wYear * 365L + wYear / 4 - wYear / 100 + wYear / 400
+			+ _afxMonthDays[wMonth - 1] + wDay;
+
+	if (wMonth <= 2 && bLeapYear)
+		--nDate;
+	nDate -= 693959L;
+
+	double dblTime = (((long) wHour * 3600L) + ((long) wMinute * 60L)
+			+ ((long) wSecond)) / 86400.;
+
+	double dbTime = (double) nDate + ((nDate >= 0) ? dblTime : -dblTime);
+	return dbTime;
+}
+
+double GetDBTime(char *pTime)
+{
+	int nYear = 0, nMon = 0, nDay = 0, nHour = 0, nMin = 0, nSec = 0;
+	char *p = strstr(pTime, "-");
+	if (!p)
+		return 0;
+	char strTemp[8];
+	memset(strTemp, 0, 8);
+	strncpy(strTemp, pTime, p - pTime);
+	nYear = atoi(strTemp);
+	pTime = p + 1;
+
+	p = strstr(pTime, "-");
+	if (!p)
+		return 0;
+	memset(strTemp, 0, 8);
+	strncpy(strTemp, pTime, p - pTime);
+	nMon = atoi(strTemp);
+	pTime = p + 1;
+
+	p = strstr(pTime, " ");
+	if (!p)
+		return 0;
+	memset(strTemp, 0, 8);
+	strncpy(strTemp, pTime, p - pTime);
+	nDay = atoi(strTemp);
+	pTime = p + 1;
+
+	p = strstr(pTime, ":");
+	if (!p)
+		return 0;
+	memset(strTemp, 0, 8);
+	strncpy(strTemp, pTime, p - pTime);
+	nHour = atoi(strTemp);
+	pTime = p + 1;
+
+	p = strstr(pTime, ":");
+	if (!p)
+		return 0;
+	memset(strTemp, 0, 8);
+	strncpy(strTemp, pTime, p - pTime);
+	nMin = atoi(strTemp);
+	pTime = p + 1;
+	if (!pTime)
+		return 0;
+
+	nSec = atoi(pTime);
+
+	int _afxMonthDays[13] =
+	{ 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 };
+
+	unsigned short int wYear = nYear;
+	unsigned short int wMonth = nMon;
+	unsigned short int wDay = nDay;
+	unsigned short int wHour = nHour;
+	unsigned short int wMinute = nMin;
+	unsigned short int wSecond = nSec;
+
+	//  Check for leap year and set the number of days in the month
+
+	bool bLeapYear = ((wYear & 3) == 0) && ((wYear % 100) != 0 || (wYear % 400)
+			== 0);
+
+	//yuqingzh delete	int nDaysInMonth =_afxMonthDays[wMonth] - _afxMonthDays[wMonth-1] +((bLeapYear && wDay == 29 && wMonth == 2) ? 1 : 0);
+
+	long nDate = wYear * 365L + wYear / 4 - wYear / 100 + wYear / 400
+			+ _afxMonthDays[wMonth - 1] + wDay;
+
+	if (wMonth <= 2 && bLeapYear)
+		--nDate;
+
+	nDate -= 693959L;
+
+	double dblTime = (((long) wHour * 3600L) + ((long) wMinute * 60L)
+			+ ((long) wSecond)) / 86400.;
+
+	double dbTime = (double) nDate + ((nDate >= 0) ? dblTime : -dblTime);
+	return dbTime;
 }

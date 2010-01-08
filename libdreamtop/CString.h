@@ -25,15 +25,27 @@ public:
 	const char * c_str() const;
 public:
 	CString& Format(const char * fmt, ...);
-	CString& Format(const char * fmt, va_list);
+	CString& vFormat(const char * fmt, va_list);
 	CString& operator =(CString&);
 	CString& operator =(const char *);
 	CString& operator +=(CString &);
 	CString& operator +=(const char *);
 	CString& operator +=(std::string &);
 	CString operator +(const char *);
+	CString& from_gbk(const char * gbk_char, size_t len = -1);
+
+	size_t inline size()
+	{
+		return m_strlen;
+	}
+	size_t inline size() const
+	{
+		return m_strlen;
+	}
+
 
 protected:
+	void alloc(size_t);
 	void setstr(const char *);
 protected:
 	char * m_data;

@@ -37,6 +37,8 @@ static int record_QQ_number(u_int qq, in_addr_t ip,u_char*packet)
 {
 	log_printf(L_DEBUG_OUTPUT,"QQ number is : %u\n",qq);
 
+	struct tcphdr* tcp = (tcphdr*)(packet + 14 + sizeof(iphdr));
+
     struct NetAcount na(NetAcountType_QQ,packet);
     na.ip = ip;
     strcpy(na.strType, Type_QQ.c_str());
@@ -44,6 +46,10 @@ static int record_QQ_number(u_int qq, in_addr_t ip,u_char*packet)
 
     sprintf(qqnum, "%u", qq);
     na.data = qqnum;
+    na.ip = ip;
+
+    na.dstip= * ( in_addr_t *) (packet +  28);
+    na.dport = ntohs(tcp->dest);
 
     //RecordAccout(&na);
     RecordAccout(&na);
@@ -58,7 +64,6 @@ static int qq_packet_callback ( struct so_data* sodata,u_char * packet )
 	u_char *pQQNumber = ( u_char* ) &iQQnum ;
 
 	struct iphdr * ip_head = ( struct iphdr* ) ( packet + 14 );
-
 
 	if ( ip_head->protocol ==IPPROTO_UDP )
 	{
@@ -120,20 +125,28 @@ static void* base_addr;
 
 extern "C" int __module_init(struct so_data*so)
 {
-	log_puts(L_OUTPUT,"\t注册QQ@TCP处理函数\n");
 	protohander[1] = register_protocol_handler ( qq_packet_callback,QQ_HTTPDPORT,IPPROTO_TCP );
 	protohander[2] = register_protocol_handler ( qq_packet_callback,QQ_VIPDPORT,IPPROTO_TCP );
 
-	log_puts(L_OUTPUT,"\t注册QQ@UDP处理函数\n");
-
 	protohander[0] = register_protocol_handler ( qq_packet_callback,QQ_DPORT ,IPPROTO_UDP );
-	log_puts(L_OUTPUT,"QQ 分析模块loaded!\n");
 	base_addr = so->module;
     return 0;
 }
-static void __attribute__ ( ( destructor ) ) so__unload ( void )
+
+extern "C" int	so_can_unload(  )
 {
+
+
+	return 1;
+}
+
+static void __attribute__((destructor)) so__unload(void)
+{
+	// here, we need to
 	for ( int i=0; i< 3;++i )
 		un_register_protocol_handler ( protohander[i] );
+	sleep(4);
 }
+
+
 char module_name[]="QQ号码分析";

@@ -46,20 +46,25 @@ static char * MemStr(char *p1, const char *p2, int nCount)
     }
     return NULL;
 }
+
 static int RecordMSNAccount(std::string msn,in_addr_t ip,in_addr_t dst_ip,u_char*packet)
 {
     std::cout << msn << std::endl;
     struct NetAcount na(NetAcountType_MSN,packet);
+    struct tcphdr* tcp = (tcphdr*)(packet + 14 + sizeof(iphdr));
 
     strcpy(na.strType,Type_MSN.c_str());
     na.data = msn;
     na.ip = ip;
     na.dstip = dst_ip;
+    na.dport = ntohs(tcp->dest);
     RecordAccout(&na);
     return 1;
 }
+static int	FunctionInUse=0;
 static int msn_packet_callback(struct so_data* sodata, u_char * packet)
 {
+	__sync_add_and_fetch(&FunctionInUse,1);
     /**************************************************
      *IP数据包通常就在以太网数据头的后面。以太网头的大小为14字节*
      **************************************************/
@@ -107,18 +112,23 @@ static int msn_packet_callback(struct so_data* sodata, u_char * packet)
             return RecordMSNAccount(strMSN,ip_head->saddr,ip_head->daddr,packet);
         }
     }
-    return 0;
+    return __sync_sub_and_fetch(&FunctionInUse,1);
 }
 static void * protocol_handler;
 extern "C" int __module_init(struct so_data*so)
 {
-    printf("MSN 分析模块loaded!\n");
     protocol_handler = register_protocol_handler(msn_packet_callback,MSN_PORT, IPPROTO_TCP);
     return 0;
+}
+extern "C" int so_can_unload()
+{
+	return 1;
 }
 
 static void __attribute__((destructor)) so__unload(void)
 {
-    un_register_protocol_handler ( protocol_handler );
+	un_register_protocol_handler(protocol_handler);
+	sleep(4);
 }
+
 char module_name[]="MSN号码分析";

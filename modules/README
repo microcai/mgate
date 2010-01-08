@@ -7,8 +7,8 @@ file:
 	>kqq.cpp		kingstone's QQ analyze module
 	>kmsn.cpp		kingstone's msn analyze module
 	>kurl.cpp		kingstone's URL analyze module
-	>kpolice.cpp	kingstone's police port module
-	>kroom.cpp		kingstone's room manager module
+	>kpolice.cpp	kingstone's police port module	
+	>kServer.cpp	kingstone's jingcheng interactive module
 ____________________________________________________________________________________
 
 	模块启动时 (名字为 __modules_init 的导出函数会在模块被加载的时候被调用 ）使用
@@ -17,9 +17,9 @@ ________________________________________________________________________________
 	第三个参数为协议类型。为IPPROTOCOL_TCP 或者 IPPROTOCOL_UDP
 
 	注册成功后会返回一个句柄。这个句柄将用来调用 un_register_protocol_handler
-	调用 un_register_protocol_handler不是必须的。
-	除非需要中途退出
-
+	如果需要可以动态卸载模块 调用 un_register_protocol_handler 是必须的。
+		
+	
 	回调函数的结构是 int callkack（void* reserved,u_char * packet）
 	packet 就是抓到的数据包，包括以太网帧头
 
@@ -48,6 +48,12 @@ ________________________________________________________________________________
 	需要将数据传递到下一个具有相同类型的处理函数去处理，返回 1 表示本函数完成了处理，不必调用下
 	一个函数。（这个是对于 用 0 做端口地址注册的函数）
 	
+	extern "C" so_can_unload() 的编写
+	
+	如果需要模块可以被卸载并换上新的，需要编写此函数并在此中调用un_register_protocol_handler
+	并返回 1
+	如果返回 0 或着没有编写次函数，模块将不能被卸载
+			
 	
 	模块要有一个名字，名字在导出变量 module_name 中定义。模块名字供将来使用。目前只是在启动的时候
 	打印而已。
@@ -68,10 +74,4 @@ ________________________________________________________________________________
 	注意：避免循环依赖。如果循环依赖那么调用循序是未定义的。这个依赖于文件系统存放文件的先后循序，后被
 	搜索到的有最先机会运行。	
 ____________________________________________________________________________________
-	
-	模块参数问题。
-	
-	如果模块需要参数，可以将参数写到 ./lib/module.conf ，模块加载时将通过 so_data 参数传递打开的文件
-	的内容。整个文件的内容是被映射到内存的。使用 GetToken(const char const * strings,const char*key)
-	来获得 key 所 = 后面的字符串。没有就返回空字符串 “” 。
-	
+

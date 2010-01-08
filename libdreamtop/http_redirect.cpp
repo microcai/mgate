@@ -83,7 +83,6 @@ void redirect_to_local_http(u_int32_t local_ip, const u_char *packet_content,
 		 * 回复一个syn ack 就是了
 		 *********************************/
 
-		log_printf(L_DEBUG_OUTPUT, "http syn form %s\n", ntoa(ip_head->saddr));
 
 		libnet = libnet_init(LIBNET_LINK_ADV, hotel::str_ethID, errbuf);
 
@@ -128,8 +127,6 @@ void redirect_to_local_http(u_int32_t local_ip, const u_char *packet_content,
 
 		libnet_write(libnet);
 
-		log_printf(L_DEBUG_OUTPUT,"send re-locat page\n");
-
 		libnet_destroy(libnet);
 
 	}
@@ -151,7 +148,6 @@ void redirect_to_local_http(u_int32_t local_ip, const u_char *packet_content,
 				ETHERTYPE_IP, 0, 0, libnet, 0);
 		libnet_write(libnet);
 		libnet_destroy(libnet);
-		log_printf(L_DEBUG_OUTPUT,"connection closed\n");
 	}
 	return;
 }

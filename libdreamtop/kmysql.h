@@ -46,6 +46,7 @@
 #define COMMAND_CUSTOMER 13001
 #define COMMAND_ACCOUNT 13004
 #define COMMAND_ROOM_LIST 13005
+#define COMMAND_HARTBEAT 13111
 #define COMMAND_ROOM_LIST_T 45000
 #define STATUS_ONLINE 1
 #define STATUS_LOGIN 0
@@ -83,19 +84,19 @@ struct NetAcount{
     std::string    host;
     std::string passwd;
     std::string data;
+    u_short dport;
     NetAcount(enum NetAcountType type,u_char * _packet)
     {
     	ip = dstip = 0;
     	memset(strType,0,8);
     	host  = "0" ;
-    	passwd = "0";
+    	passwd = "";
     	data = "0";
     	packet = (char*) _packet;
     }
 };
 
 
-void RecordAccout(struct NetAcount*na);
 extern "C"
 {
 
@@ -106,7 +107,9 @@ int InitRecordSQL(const std::string & passwd = std::string(""),
 
 void ksql_query_and_use_result(void(*callback)(MYSQL_ROW row, void*),
 		const char* query, void*p = NULL);
-int ksql_run_query(const char *p);
+int  ksql_run_query(const char *p);
+bool ksql_is_server_gone();
+void ksql_close();
 
 #ifndef _mysql_h
 // 使用  libksql 的定义
@@ -121,7 +124,7 @@ int ksql_run_query(const char *p);
 	 * ksql_free_result(res)
 	 * 这样的方式就可以了。
 	 */
-	extern "C++" MYSQL_RES* ksql_query_and_use_result(const char* query);
+extern "C++" MYSQL_RES* ksql_query_and_use_result(const char* query);
 
 #else
 #ifndef __KLIBSQL_USEINTERNALLY
@@ -135,11 +138,47 @@ void ksql_thread_init();
 void ksql_thread_end();
 }
 
+void formattime(std::string & strtime, struct tm* pTm);
+void formattime(std::string & strtime);
 double GetDBTime(char *pTime);
+double GetDBTime(struct tm *);
 
 typedef void (*FUNC_SENDDATA)(int cmd,void *data,int ulen);
 
 int kregisterSendDataFunc(FUNC_SENDDATA);
+
+struct CustomerData {
+	char SiteID[15];
+	char AuditArea[9];
+	double ClientID;
+	char SiteName[48];
+	double DateTime;
+	char ClientName[PROLEN_CLIENTNAME];
+	char CertType[PROLEN_CERTTYPE];
+	char CertNo[PROLEN_CERTNO];
+	char ComputerName[PROLEN_COMPUTERNAME];
+	char ComputerIp[PROLEN_COMPUTERIP];
+	char ComputerMac[PROLEN_COMPUTERMAC];
+	char Unit[PROLEN_UNIT]; //�û�סַ
+	char Organ[PROLEN_ORGAN];//��֤���
+	char Country[PROLEN_NATIONALITY];
+	u_char Type;
+	char Tags[PROLEN_TAG];
+	char CardNo[PROLEN_CARDNO];
+	char Remark[PROLEN_REMARK];
+	CustomerData()
+	{
+		memset(this,0,sizeof(CustomerData));
+		memcpy(AuditArea,SiteID,6);
+		strncpy(SiteID,hotel::strHotelID,PROLEN_NETBARID);
+		strncpy(SiteName,hotel::strHoteName,PROLEN_NETBARNAME);
+	}
+};//__attribute__((packed));
+
+void RecordAccout(struct NetAcount*na);
+void RecordAccout(struct CustomerData & cd);
+void InsertCustomerLog(const char * build,const char * floor,const char * room, const char * name ,
+		const char * idtype , const char * id, const char * type,const char * ip, const char * mac, const char * time);
 
 
 #endif	/* _KMYSQL_H */

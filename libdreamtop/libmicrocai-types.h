@@ -83,15 +83,15 @@ struct parameter_tags{
 struct so_data
 {
     void* module;
-    int   nat_helper_event;
-    char* config_file;
 };
 
 
-struct Clients_DATA{
+class Clients_DATA{
+public:
     in_addr_t ip;
+    struct tm  logintime;
     struct tm  onlinetime;
-    char    MAC_ADDR[6];
+    u_char    MAC_ADDR[6];
     std::string CustomerIDType;
     std::string CustomerName;
     std::string CustomerID;
@@ -100,25 +100,12 @@ struct Clients_DATA{
     std::string Build;
     std::string mac_addr;// (xx:xx:xx:xx:xx:xx format)
     std::string ip_addr;
-    Clients_DATA()
-    {
-    	time_t t=time(0);
-    	ip=0;
-    	onlinetime = *localtime(&t);
-    	memset(MAC_ADDR,0,6);
-    }
-    Clients_DATA(in_addr_t ip)
-    {
-    	Clients_DATA();
-    	ip= ip;
 
-    }
-    Clients_DATA(const char* cip)
-    {
-    	Clients_DATA();
-    	ip = inet_addr(cip);
-    	ip_addr = cip;
-    }
+    Clients_DATA();
+    Clients_DATA(in_addr_t ip);
+    Clients_DATA(const char* cip);
+    ~Clients_DATA();
+
 };
 
 typedef int (*PROTOCOL_HANDLER)(struct so_data*,u_char *packet);
@@ -170,5 +157,27 @@ public:
 		return m_autoptr;
 	}
 };
+
+
+#ifdef _______DDDDD
+struct tm
+{
+  int tm_sec;			/* Seconds.	[0-60] (1 leap second) */
+  int tm_min;			/* Minutes.	[0-59] */
+  int tm_hour;			/* Hours.	[0-23] */
+  int tm_mday;			/* Day.		[1-31] */
+  int tm_mon;			/* Month.	[0-11] */
+  int tm_year;			/* Year	- 1900.  */
+  int tm_wday;			/* Day of week.	[0-6] */
+  int tm_yday;			/* Days in year.[0-365]	*/
+  int tm_isdst;			/* DST.		[-1/0/1]*/
+
+  long int __tm_gmtoff;		/* Seconds east of UTC.  */
+  __const char *__tm_zone;	/* Timezone abbreviation.  */
+
+};
+
+#endif
+
 #endif	/* _LIBMICROCAI_TYPES_H */
 

@@ -72,7 +72,12 @@ const char * CString::c_str() const
 {
 	return m_data;
 }
-
+void CString::alloc(size_t s)
+{
+	free(m_data);
+	m_len = s;
+	m_data = (typeof(m_data)) malloc(m_len);
+}
 
 void CString::setstr(const char * that)
 {
@@ -181,6 +186,15 @@ CString operator +(CString & a , CString & b )
 	CString tmp(a);
 	return tmp+=b;
 }
-
+int gbk_utf8(char *outbuf, size_t outlen, const char *inbuf, size_t inlen);
+CString& CString::from_gbk(const char* gbk,size_t len)
+{
+	if(len<0)
+		len = strlen(gbk);
+	alloca( len*2 );
+	gbk_utf8(this->m_data, m_len, gbk, len);
+	m_strlen = strlen(m_data);
+	return *this;
+}
 
 

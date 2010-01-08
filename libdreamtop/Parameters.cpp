@@ -92,8 +92,7 @@ void ParseParameters(int * argc, char ** argv[], struct parameter_tags p_[])
 						if (p->parameter_len == sizeof(long))
 							*(long*) p->parameter = atol((*argv)[i]+p->prefix_len+1);
 						else if (p->parameter_len == sizeof(int))
-							*(int*) p->parameter = atoi((*argv)[i]+p->prefix_len+1);
-						else
+							*(int*) p->parameter = atoi((*argv)[i]);
 							throw std::exception();
 					}
 					(*argv)[i]=0;

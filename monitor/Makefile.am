@@ -1,9 +1,15 @@
 AUTOMAKE_OPTIONS = foreign
 
-bin_PROGRAMS = monitor
+
+sbindir=/etc/init.d/
+
+bin_PROGRAMS = monitor 
+bin_SCRIPTS = runmonitor
+sbin_SCRIPTS = monitord
+
 monitor_SOURCES = ip_filter.cpp main.cpp protocol_def.h 
 						 
-monitor_DEPENDENCIES = 
+monitor_DEPENDENCIES = monitord
 
 monitor_CXXFLAGS = -I $(top_srcdir)/libdreamtop
 
