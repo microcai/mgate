@@ -57,11 +57,13 @@ static void	ip_filter_callback( u_char *userdata, const struct pcap_pkthdr * pkg
     //local communication is ignored
     if((ip_head->daddr & net_mask) == (net_ip & net_mask)) return;
 
-    if( is_client_online(ip_head->saddr)==0)
+    if( is_client_online( (char*)(packet_content + ETH_ALEN), ip_head->saddr)==0)
     {
+#ifndef DEBUG
     	if(ip_head->protocol == IPPROTO_TCP)
     		return redirect_to_local_http( net_ip, packet_content, ip_head );
     	return ;
+#endif
     }
 
 

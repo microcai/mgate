@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
+#include "CString.h"
 #include "libmicrocai-macros.h"
 #include "libmicrocai-types.h"
 #include "functions.h"

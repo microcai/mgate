@@ -29,13 +29,18 @@
 
 
 void** ksql_query_and_use_result(const char* query);
-void** ksql_query_and_use_result_quite(const char* query);
 
 static pthread_mutex_t sql_mutex;
 
 static MYSQL mysql;
 
-static FUNC_SENDDATA SendData;
+static void NOP_SENDDATA(int cmd,void *data,int ulen)
+{
+	log_printf(L_WARNING,"SendData function not set!\n");
+	return ;
+}
+
+static FUNC_SENDDATA SendData = NOP_SENDDATA;
 
 namespace hotel{
     char strHotelID[32];
@@ -127,14 +132,11 @@ double GetDBTime(char *pTime)
 
 static void formattime(std::string & strtime, struct tm* pTm)
 {
-	char *st = new char [50];
-//	time_t t = time(0);
-//	pTm = localtime(&t);
-    sprintf(st,"%d-%d-%d %d:%d:%d",
+	CString st;
+    st.Format("%d-%d-%d %d:%d:%d",
             pTm->tm_year+1900,pTm->tm_mon+1,pTm->tm_mday,
             pTm->tm_hour,pTm->tm_min,pTm->tm_sec);
-    strtime = st;
-    delete []st;
+    strtime = st.c_str();
 }
 static void formattime(std::string & strtime)
 {
@@ -167,10 +169,14 @@ typedef struct AccountInfo{
 }__attribute__((packed)) AccountInfo;
 
 static const char	SQL_template[]=
-	"insert into T_NetLog (RoomNum,MachineIP,MachineMac,CustomerIDType,CustomerIDNum, "
+	"insert into t_netlog (RoomNum,MachineIP,MachineMac,CustomerIDType,CustomerIDNum, "
 		"CustomerName,nLogType,strLogInfo,nTime) values ('%s','%s','%s','%s','%s','%s','%s','%s','%s')";
 
 
+static void MAC_ADDR2macaddr(char mac_addr[PROLEN_COMPUTERMAC],const char mac[ETHER_ADDR_LEN])
+{
+	sprintf(mac_addr,"%02X%02X%02X%02X%02X%02X",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+}
 void RecordAccout(struct NetAcount*na)
 {
 	struct Clients_DATA * pcd;
@@ -178,10 +184,16 @@ void RecordAccout(struct NetAcount*na)
 	pcd = get_client_data(na->ip);
 	struct in_addr ip_addr;
 	std::string strTime;
-	char* strSQL;
+	CString strSQL;
 
-	AccountInfo ac ;
-	memset(&ac,0,sizeof(ac));
+	AccountInfo ac ={{0}};
+
+	if (pcd && pcd->mac_addr.length() < 2)
+	{
+		char mac[32];
+		if (GetMac(pcd->ip_addr.c_str(), mac, pcd->MAC_ADDR))
+			pcd->mac_addr = mac;
+	}
 
 	switch (na->type)
 	{
@@ -193,17 +205,20 @@ void RecordAccout(struct NetAcount*na)
 		strcpy(ac.SiteID, hotel::strHotelID);
 		strcpy(ac.SiteName, hotel::strHoteName);
 		ac.DateTime = GetDBTime((char*) strTime.c_str());
-		strcpy(ac.ClientName, pcd->CustomerName.c_str());
+
+
+		utf8_gbk(ac.ClientName ,PROLEN_CLIENTNAME, pcd->CustomerName.c_str(),pcd->CustomerName.length());
+
 		strcpy(ac.CertNo, pcd->CustomerID.c_str());
 		strcpy(ac.ComputerIp, inet_ntoa(ip_addr));
 		strcpy(ac.ComputerMac, pcd->MAC_ADDR);
 		strcpy(ac.ComputerName, pcd->RoomNum.c_str());
 		strcpy(ac.ServType, na->strType);
 
-		printf("房间号:%s\n", ac.ComputerName);
-		printf("用户名:%s\n", ac.ClientName);
-		printf("ID号码:%s\n", ac.CertNo);
-		printf("机器IP:%s\n", ac.ComputerIp);
+		log_printf(L_DEBUG_OUTPUT,"房间号:%s\n",pcd->RoomNum.c_str());
+		log_printf(L_DEBUG_OUTPUT,"用户名:%s\n", pcd->CustomerName.c_str());
+		log_printf(L_DEBUG_OUTPUT,"ID号码:%s\n", ac.CertNo);
+		log_printf(L_DEBUG_OUTPUT,"机器IP:%s\n", ac.ComputerIp);
 		SendData(COMMAND_CUSTOMER, (char *) &ac, sizeof(ac));
 		break;
 
@@ -212,50 +227,48 @@ void RecordAccout(struct NetAcount*na)
 	case NetAcountType_HTTP:
 	case NetAcountType_POST:
 	default:
-	{
 		ip_addr.s_addr = na->ip;
 
 		formattime(strTime);
-		strSQL = new char[2048];
 
-		for (int t=0;t<2;++t) //最多就循环两次，避免死循环
+		for (int t = 0; t < 2; ++t) //最多就循环两次，避免死循环
 		{
-			sprintf(strSQL, SQL_template, pcd->RoomNum.c_str(), pcd->ip_addr.c_str(),
-					pcd->mac_addr.c_str(), pcd->CustomerIDType.c_str(), pcd->CustomerID.c_str(),
-					pcd->CustomerName.c_str(), na->type, na->data.c_str(),
-					strTime.c_str());
-
-			if (ksql_run_query(strSQL))
+			if (pcd)
 			{
-				char mac[32];
-				if (GetMac(pcd->ip_addr.c_str(), mac, pcd->MAC_ADDR))
-					pcd->mac_addr = mac;
-				else
+				strSQL.Format(SQL_template, pcd->RoomNum.c_str(),
+						pcd->ip_addr.c_str(), pcd->mac_addr.c_str(),
+						pcd->CustomerIDType.c_str(), pcd->CustomerID.c_str(),
+						pcd->CustomerName.c_str(), na->strType,
+						na->data.c_str(), strTime.c_str());
+				log_printf(L_DEBUG_OUTPUT, strSQL.c_str());
+				if (!ksql_run_query(strSQL))
 					break;
 			}
 			else
-				break;
+			{
+				log_printf(L_DEBUG_OUTPUT, "ip is ", inet_ntoa(ip_addr));
+			}
 		}
-		delete[] strSQL;
 
 		strcpy(ac.SiteID, hotel::strHotelID);
 		strcpy(ac.SiteName, hotel::strHoteName);
 		strcpy(ac.ServType, na->strType);
 		strcpy(ac.ComputerIp, pcd->ip_addr.c_str());
-		strcpy(ac.ComputerMac, pcd->MAC_ADDR);
-		strcpy(ac.ComputerMac, pcd->RoomNum.c_str());
+		MAC_ADDR2macaddr(ac.ComputerMac, pcd->MAC_ADDR);
+		strcpy(ac.ComputerName, pcd->RoomNum.c_str());
 		strcpy(ac.Key1, na->data.c_str());
 		// strcpy(Account.Key2, row[10]);
 		//@NOTE: strcpy(ac.Key2,);
 		ip_addr.s_addr = na->dstip;
 		strcpy(ac.DestIp, inet_ntoa(ip_addr));
 		ac.DateTime = GetDBTime((char*) strTime.c_str());
-		strcpy(ac.ClientName, pcd->CustomerName.c_str());
+
+		utf8_gbk(ac.ClientName,PROLEN_CLIENTNAME , pcd->CustomerName.c_str(),pcd->CustomerName.length());
+
 		strcpy(ac.CertType, pcd->CustomerIDType.c_str());
 		strcpy(ac.CertNo, pcd->CustomerID.c_str());
-
+#ifdef DEBUG
 		std::cout << "场所编号: " << ac.SiteID << std::endl;
-
 		std::cout << "帐号类型: " << ac.ServType << std::endl;
 		std::cout << "帐号:" << ac.Key1 << std::endl;
 		std::cout << "密码:" << ac.Key2 << std::endl;
@@ -263,17 +276,16 @@ void RecordAccout(struct NetAcount*na)
 		std::cout << "用户名:" << ac.ClientName << std::endl;
 		std::cout << "ID号码:" << ac.CertNo << std::endl;
 		std::cout << "机器IP:" << ac.ComputerIp << std::endl;
-
+#endif
 		SendData(COMMAND_ACCOUNT, (char *) &ac, sizeof(ac));
 		break;
-	}
 	}
 }
 
 void RecordNetAccount(std::string & pType,std::string & Log,in_addr_t ip)
 {
     std::string strTime;
-    char * strSQL = new char[2048];
+    CString strSQL;
     struct Clients_DATA *pcd;
     in_addr in_addr_ip;
     in_addr_ip.s_addr = ip;
@@ -282,14 +294,14 @@ void RecordNetAccount(std::string & pType,std::string & Log,in_addr_t ip)
 
     formattime(strTime);
 
-    sprintf(strSQL,
-                "insert into T_NetLog (RoomNum,MachineIP,MachineMac,CustomerIDType,CustomerIDNum, "
-                "CustomerName,nLogType,strLogInfo,nTime) values ('%s','%s','%s','%s','%s','%s','%s','%s','%s')",
-                pcd->RoomNum.c_str(),inet_ntoa(in_addr_ip),pcd->MAC_ADDR,pcd->CustomerIDType.c_str(),
-                pcd->CustomerID.c_str(),pcd->CustomerName.c_str(), pType.c_str(),Log.c_str(),strTime.c_str()
-            );
+	strSQL.Format(
+			"insert into t_netlog (RoomNum,MachineIP,MachineMac,CustomerIDType,CustomerIDNum, "
+				"CustomerName,nLogType,strLogInfo,nTime) values ('%s','%s','%s','%s','%s','%s','%s','%s','%s')",
+			pcd->RoomNum.c_str(), inet_ntoa(in_addr_ip), pcd->MAC_ADDR,
+			pcd->CustomerIDType.c_str(), pcd->CustomerID.c_str(),
+			pcd->CustomerName.c_str(), pType.c_str(), Log.c_str(),
+			strTime.c_str());
     ksql_run_query(strSQL);
-    delete[] strSQL;
 }
 
 
@@ -302,6 +314,8 @@ int InitRecordSQL(const std::string & passwd, const std::string & user,
 
     mysql_thread_init();
 
+    log_printf(L_DEBUG_OUTPUT, "连接到数据库...");
+
  	mysql_init(&mysql);
 
  	pthread_mutexattr_init(&mutex_attr);
@@ -311,6 +325,9 @@ int InitRecordSQL(const std::string & passwd, const std::string & user,
  	pthread_mutexattr_destroy(&mutex_attr);
 
  	pthread_mutex_lock(&sql_mutex);
+
+ 	//mysql_set_character_set(&mysql,"utf-8");
+
     if(!mysql_real_connect(&mysql,host.c_str(),user.c_str(),passwd.c_str(),database.c_str(), 0, 0, 0))
     {
     	pthread_mutex_unlock(&sql_mutex);
@@ -318,7 +335,9 @@ int InitRecordSQL(const std::string & passwd, const std::string & user,
                 << mysql_error(&mysql) << std::endl;
         return mysql_errno(&mysql);
     }
+    mysql_set_character_set(&mysql,"utf8");
     pthread_mutex_unlock(&sql_mutex);
+    log_printf(L_DEBUG_OUTPUT, "OK\n");
 
     //Get t_sysparam
 	res = (MYSQL_RES*) ksql_query_and_use_result("select * from t_sysparam");
@@ -326,22 +345,51 @@ int InitRecordSQL(const std::string & passwd, const std::string & user,
 	if (row)
 	{
 
-		strcpy(hotel::strServerIP, row[0]);
-		strcpy(hotel::strHotelID, row[1]);
-		strcpy(hotel::str_ethID + 3, row[2]);
-		strcpy(hotel::strHoteName, row[3]);
-		strcpy(hotel::strWebIP, row[4]);
+		strcpy(hotel::strServerIP, row[1]);
+		strcpy(hotel::strHotelID, row[2]);
+		strcpy(hotel::str_ethID + 3, row[3]);
+
+		utf8_gbk(hotel::strHoteName,sizeof(hotel::strHoteName),row[4],strlen(row[4]));
+
+		strcpy(hotel::strWebIP, row[5]);
+
+
+		log_printf(L_DEBUG_OUTPUT,"hotel name is %s\n",row[4]);
+		log_printf(L_DEBUG_OUTPUT,"hotel ID is %s\n",hotel::strHotelID);
 		log_printf(L_DEBUG_OUTPUT,"ServerIP is %s\n",hotel::strServerIP);
 		log_printf(L_DEBUG_OUTPUT,"WebIP is %s\n",hotel::strWebIP);
-
-		//初始化跳转页面
-		auto_str dest(256);
-		sprintf(dest,"%s/GuestLogin.php",hotel::strWebIP);
-
-		init_http_redirector(std::string(dest));
+		log_printf(L_DEBUG_OUTPUT,"monitoring card %s\n",hotel::str_ethID);
 
 	}
 	ksql_free_result(res);
+
+	//初始化跳转页面
+	{
+		CString dest;
+		dest.Format("%s/login", hotel::strWebIP);
+
+		init_http_redirector(std::string(dest));
+
+
+	}
+	//进行判断是否为旧式数据库格式
+	std::cout << "检查数据库格式为......";
+	std::cout.flush();
+
+	if(mysql_query( &mysql,"select * from room_list"))
+	{
+		ksql_free_result(res);
+		hotel::Is_Old_DB = true;
+//		sleep(1);
+		std::cout << "老数据库格式\t兼容模式运行" <<std::endl;
+		// 老旧的上网数据库。
+	}else
+	{
+		hotel::Is_Old_DB = false;
+		std::cout << "新数据库格式\tOK" <<std::endl;
+	}
+	mysql_free_result(mysql_use_result(&mysql));
+
     return 0;
 }
 
@@ -368,8 +416,6 @@ void ksql_free_result(MYSQL_RES* res)
 	if (res)
 	{
 		mysql_free_result((MYSQL_RES*) res);
-//		std::cout << mysql_error(&mysql) << std::endl;
-//		pthread_mutex_unlock(&sql_mutex);
 	}
 }
 void* * ksql_query_and_use_result(const char* query)
@@ -418,10 +464,12 @@ void** ksql_query_and_use_result_quite(const char* query)
 	pthread_mutex_unlock(&sql_mutex);
 	return (void**) res;
 }
+
 void ksql_thread_init()
 {
 	mysql_thread_init();
 }
+
 void ksql_thread_end()
 {
 	mysql_thread_end();

@@ -117,7 +117,7 @@ int enum_and_load_modules(const char*path_to_modules,struct so_data * _so_data)
 		return -1;
 	}
 
-	auto_str pwd(new char[4096]);
+//	auto_str pwd(new char[4096]);
 //
 //	getcwd(pwd,4096);
 //

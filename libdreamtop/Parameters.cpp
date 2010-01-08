@@ -163,9 +163,13 @@ std::string GetToken(const char* strings,const char * key,const char*default_val
 	{
 		if(strncmp(p,key,l)==0)
 		{
+			while(*p==' ') p++;
 			p+=l+1;
 			char const * pp = p;
-			while(*pp && *pp!='\n')
+			while(*pp=='=') pp++;
+			while(*pp==' ') pp++;
+
+			while(*pp && *pp!='\n' && *pp!='\r' && *pp!=' ')
 			{
 				ret+= *pp;
 				pp++;

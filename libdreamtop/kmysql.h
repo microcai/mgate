@@ -123,12 +123,6 @@ int ksql_run_query(const char *p);
 	 */
 	extern "C++" MYSQL_RES* ksql_query_and_use_result(const char* query);
 
-
-	/*
-	 * 同 ksql_query_and_use_result ，不同的地方在于失败不会在标准错误输出上打印失败原因，
-	 * 但是会在内存记录 log 里添加失败时间和原因。
-	 */
-	extern "C++" MYSQL_RES* ksql_query_and_use_result_quite(const char* query);
 #else
 #ifndef __KLIBSQL_USEINTERNALLY
 #error ("必须不可以包含 <mysql/mysql.h>")

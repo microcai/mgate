@@ -23,7 +23,11 @@
 static u_int8_t httphead[512];
 
 static u_int8_t httphead_t[] =
-"HTTP/1.0 302 Found\n\rLocation: http://%s\n\rConnection: close\n\r\n\r<head><meta http-equiv=\"Refresh\"content=\"0 ; url=http://%s\"></head></html>";
+"HTTP/1.0 302 Found\n"
+"Location: http://%s\n"
+"Connection:close\n\n"
+"<html>\n\t<head>\n\t\t<meta http-equiv=\"Refresh\"content=\"0 ; "
+"url=http://%s\">\n\t</head>\n</html>\n";
 
 static inline char* ntoa(in_addr_t ip)
 {
@@ -35,6 +39,7 @@ static inline char* ntoa(in_addr_t ip)
 
 void init_http_redirector(std::string dest)
 {
+	log_printf(L_DEBUG_OUTPUT,(char*) httphead_t, dest.c_str(), dest.c_str());
 	sprintf((char*) httphead, (char*) httphead_t, dest.c_str(), dest.c_str());
 }
 

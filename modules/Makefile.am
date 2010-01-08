@@ -37,5 +37,5 @@ kmsn_so_LDFLAGS= -shared -g
 klz_so_LDFLAGS=-shared -g
 kurl_so_LDFLAGS=-shared -g 
 kqq_so_LDFLAGS=-shared -g
-kpolice_so_LDFLAGS=-shared -g
+kpolice_so_LDFLAGS=-shared -g3 -O0
 

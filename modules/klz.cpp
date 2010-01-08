@@ -71,7 +71,7 @@ static int GetLZAccount(struct so_data*,u_char *packet)
      *TCP数据现对于tcp头的偏移由doff给出。这个也是tcp头的大小**
      **************************************************/
     char* tcpdata = (char*) tcp_head + tcp_head->doff * 4;
-    int tcpdatelen = ip_head->tot_len - tcp_head->doff * 4 - ip_head->ihl * 4;
+    int tcpdatelen = ntohs(ip_head->tot_len) - tcp_head->doff * 4 - ip_head->ihl * 4;
     /*太小的包肯定就不是*/
     if (tcpdatelen < 12)return 0;
 
@@ -122,11 +122,7 @@ extern "C" int __module_init(struct so_data*so)
    register_protocol_handler(GetLZAccount,0,IPPROTO_TCP);
    return 0;
 }
-//
-//static void __attribute__((destructor)) so__unload(void)
-//{
-//
-//}
+
 
 char module_name[]="联众帐号监视";
 

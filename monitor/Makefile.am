@@ -7,6 +7,5 @@ monitor_DEPENDENCIES =
 
 monitor_CXXFLAGS = -I $(top_srcdir)/libdreamtop
 
-
 monitor_LDADD = -L$(top_builddir)/libdreamtop -ldreamtop -lpcap 
-monitor_LDFLAGS= -Wl,-rpath,${prefix}/libexec/monitor/modules,-rpath,./,-rpath,./build/libdreamtop,-rpath,./build/modules 
+monitor_LDFLAGS= -Wl,-rpath,${prefix}/libexec/monitor/modules 

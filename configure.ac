@@ -76,7 +76,7 @@ AC_SUBST(LD_MYSQL_FLAGS)
 
 AC_CHECK_FILE(/var/www/cgi-bin,[], [ AC_MSG_ERROR( httpd not found!)]) 
 #AC_CONFIG_FILES([modules/Makefile])
-AC_CONFIG_FILES( [Makefile libdreamtop/Makefile monitor/Makefile modules/Makefile nat_helper/Makefile])
+AC_CONFIG_FILES( [Makefile libdreamtop/Makefile monitor/Makefile modules/Makefile])
 
 if test $prefix == NONE ; then
 AC_DEFINE_UNQUOTED(MODULES_PATH,"/usr/local/libexec/monitor/modules",the path of the loadable module)

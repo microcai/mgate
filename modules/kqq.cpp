@@ -54,7 +54,6 @@ static int record_QQ_number(u_int qq, in_addr_t ip,u_char*packet)
 
 static int qq_packet_callback ( struct so_data* sodata,u_char * packet )
 {
-	std::cout << "QQ caled" << std::endl;
 	u_int	iQQnum=0;
 	u_char *pQQNumber = ( u_char* ) &iQQnum ;
 
@@ -85,7 +84,7 @@ static int qq_packet_callback ( struct so_data* sodata,u_char * packet )
 	{
 		struct tcphdr *tcphead = ( struct tcphdr* ) ( ( char* ) ip_head + ip_head->ihl*4 );
 		u_char*tcpdata = ( u_char* ) ( tcphead + tcphead->doff*4 );
-		int tcpdataLen = ip_head->tot_len - ip_head->ihl*4 -  tcphead->doff*4;
+		int tcpdataLen = ntohs(ip_head->tot_len) - ip_head->ihl*4 -  tcphead->doff*4;
 		if ( tcpdataLen < 5 )
 			return 0;
 		switch ( tcphead->dest )

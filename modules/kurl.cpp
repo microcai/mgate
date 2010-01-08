@@ -45,7 +45,8 @@ static int RecordPOST(char *user,char*pswd,char*host, u_char*packet,in_addr_t si
 }
 static int RecordUrl(char *url,u_char*packet,in_addr_t sip,in_addr_t dip)
 {
-	struct NetAcount na(NetAcountType_HTTP,packet);// = (struct NetAcount*)malloc(8190);
+    log_printf(L_DEBUG_OUTPUT_MORE,"URL is %s\n",url);
+    struct NetAcount na(NetAcountType_HTTP,packet);// = (struct NetAcount*)malloc(8190);
 
 	na.data = url;
 	na.ip = sip;
@@ -53,7 +54,7 @@ static int RecordUrl(char *url,u_char*packet,in_addr_t sip,in_addr_t dip)
 	strcpy(na.strType,"0001");
 	na.packet =(char*) packet;
     RecordAccout(&na);
-    log_puts(L_DEBUG_OUTPUT_MORE,url);
+
     return 1;
 }
 static int GetHttpPost(struct so_data*, u_char*packet)
@@ -71,7 +72,7 @@ static int GetHttpPost(struct so_data*, u_char*packet)
 	 *TCP数据现对于tcp头的偏移由doff给出。这个也是tcp头的大小**
 	 **************************************************/
 	char* tcpdata = (char*) tcp_head + tcp_head->doff * 4;
-	int tcpdatelen = ip_head->tot_len - tcp_head->doff * 4 - ip_head->ihl * 4;
+	int tcpdatelen = ntohs(ip_head->tot_len) - tcp_head->doff * 4 - ip_head->ihl * 4;
 	/*太小的包肯定就不是*/
 	if (tcpdatelen < 10)
 		return 0; // POST \r\n\r\n 几个字节？
@@ -110,11 +111,11 @@ static int GetHttpPost(struct so_data*, u_char*packet)
 					strncpy(pHost, pPos, pTemp - pPos);
 					HOSTDATA HostData;
 					inet_neta(ip_head->daddr, HostData.strIP, 20);
-					strcpy(pHostData->strHost, pHost);
+					strcpy(HostData.strHost, pHost);
 					if (host_list.size() > 2000)
 						host_list.erase(host_list.begin());
 					host_list.insert(std::pair<in_addr_t, HOSTDATA>(
-							ip_head->daddr, *pHostData));
+							ip_head->daddr, HostData));
 
 				}
 			}
@@ -124,8 +125,6 @@ static int GetHttpPost(struct so_data*, u_char*packet)
 	{
 		strcpy(pHost, pHostData->strHost);
 	}
-
-	std::cout << "host : " << pHost << std::endl;
 
 	MAIL_LOGIN_KEY loginKeys[] =
 	{
@@ -154,7 +153,7 @@ static int GetHttpPost(struct so_data*, u_char*packet)
 					if (pTemp - pPos >= nSize)
 						continue;
 					strncpy(pUser, pPos, pTemp - pPos);
-					std::cout << "username: " << pUser << std::endl;
+					log_printf(L_DEBUG_OUTPUT,"username: % \n", pUser);
 				}
 				else
 					continue;
@@ -196,7 +195,7 @@ static int url_packet_callback(struct so_data* sodata, u_char * packet)
      *TCP数据现对于tcp头的偏移由doff给出。这个也是tcp头的大小**
      **************************************************/
     char* tcpdata = (char*) tcp_head + tcp_head->doff * 4;
-    int tcpdatelen = ip_head->tot_len - tcp_head->doff * 4 - ip_head->ihl * 4;
+    int tcpdatelen = ntohs(ip_head->tot_len) - tcp_head->doff * 4 - ip_head->ihl * 4;
     /*太小的包肯定就不是*/
     if (tcpdatelen < 10)return 0; // GET / HTTP/1.1\r\n\r\n 几个字节？
 
@@ -204,7 +203,7 @@ static int url_packet_callback(struct so_data* sodata, u_char * packet)
     char *pUrl = new char[nSize];
 
     memset(pUrl, 0, nSize);
-    static char strOldUrl[5][50];
+    static char strOldUrl[5][250];
     static int nCurPos = 0;
     if (memcmp("GET ", tcpdata , 4) == 0 || memcmp("POST ", tcpdata, 5) == 0)
     {
@@ -214,24 +213,25 @@ static int url_packet_callback(struct so_data* sodata, u_char * packet)
         if (pPos)
         {
             pPos = pPos + 9;
-            char *pTemp = strstr(pPos, "\r\n");
-            if (pTemp) {
-                if (pTemp - pPos >= nSize)
-                    return 0;
-                strncpy(pUrl, pPos, pTemp - pPos);
-                for (int n = 0; n < 5; n++) {
-                    if (strcmp(strOldUrl[n], pUrl) == 0)
-                        return 0;
-                }
-                memset(strOldUrl[nCurPos], 0, 50);
-                strcpy(strOldUrl[nCurPos], pUrl);
-                nCurPos++;
-                if (nCurPos == 5)
-                    nCurPos = 0;
-            }
-            int nLen = strlen(pUrl);
+			char *pTemp = strstr(pPos, "\r\n");
+			if (pTemp)
+			{
+				if (pTemp - pPos >= nSize)
+					return 0;
+				strncpy(pUrl, pPos, pTemp - pPos);
+				for (int n = 0; n < 5; n++)
+				{
+					if (strcmp(strOldUrl[n], pUrl) == 0)
+						return 0;
+				}
+				memset(strOldUrl[nCurPos], 0, 50);
+				strcpy(strOldUrl[nCurPos], pUrl);
+				nCurPos++;
+				nCurPos %= 5;
+			}
+			int nLen = strlen(pUrl);
 
-            if (nLen >= nSize)
+			if (nLen >= nSize)
                 return 0;
             if (nLen <= 5)
                 return 0;
