@@ -108,6 +108,7 @@ int InitRecordSQL(const std::string & passwd = std::string(""),
 void ksql_query_and_use_result(void(*callback)(MYSQL_ROW row, void*),
 		const char* query, void*p = NULL);
 int  ksql_run_query(const char *p);
+int	 ksql_run_query_async(const char *p);
 bool ksql_is_server_gone();
 void ksql_close();
 

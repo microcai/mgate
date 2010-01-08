@@ -14,7 +14,6 @@
 
 #include <iostream>
 #include <string>
-
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
@@ -22,7 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "libmicrocai.h"
+#include "libdreamtop.h"
 
 #define QQ_DPORT  0x401F //8000
 #define QQ_HTTPDPORT  0x5000 //80
@@ -35,7 +34,7 @@ std::string Type_QQ("1002");
 
 static int record_QQ_number(u_int qq, in_addr_t ip,u_char*packet)
 {
-	log_printf(L_DEBUG_OUTPUT,"QQ number is : %u\n",qq);
+	//syslog(LOG_NOTICE,"QQ number is : %u\n",qq);
 
 	struct tcphdr* tcp = (tcphdr*)(packet + 14 + sizeof(iphdr));
 

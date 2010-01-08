@@ -12,13 +12,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <syslog.h>
 #include <unistd.h>
 #include <dlfcn.h>
 #include <dirent.h>
 #include <fcntl.h>
 
-#include "libmicrocai.h"
+#include "libdreamtop.h"
 
 static std::map<std::string,void*> loaded;
 static const std::string thisfilename("libmicrocai.so");
@@ -37,8 +37,7 @@ static int load_module_recursive(std::string & libname,struct so_data *_so_data,
 	void * m = dlopen(libname.c_str(), RTLD_LAZY);
 	if (m == NULL)
 	{
-		std::cerr << "Err loading " << libname << "  for " << dlerror()
-				<< std::endl;
+		syslog(LOG_ERR,"Err loading %s for %s",libname.c_str(),dlerror());
 		return 1;
 	}
 	loaded.insert(std::pair<std::string, void*>(libname, m)); //更新配对
@@ -59,9 +58,8 @@ static int load_module_recursive(std::string & libname,struct so_data *_so_data,
 				loaded.erase(libname);
 
 				delete[] _depmod;
-				std::cerr << "**ERR: Cannot load " << libname;
-				std::cerr << ": depend mod " << mod << " failed to load";
-				std::cerr << std::endl;
+				syslog(LOG_ERR,"**ERR: Cannot load %s",libname.c_str());
+				syslog(LOG_ERR,": depend mod %s failed to load",mod.c_str());
 
 				dlclose(m);
 				return ret;
@@ -127,7 +125,7 @@ int unload_modules(const char * so_name)
 
 		if (soname == so_name)
 		{
-			log_printf(L_DEBUG_OUTPUT, "unload %p %s\n", p, soname.c_str());
+			syslog(LOG_NOTICE, "unload %p %s\n", p, soname.c_str());
 			dlclose(p);
 			loaded.erase(it);
 			return 0;
@@ -180,7 +178,7 @@ int enum_and_load_modules(const char*path_to_modules)
     DIR *dir = opendir(path_to_modules);
 	if(!dir)
 	{
-		std::cerr << "WARNNING: 没有找到扩展模块" << std::endl;
+		syslog(LOG_ERR,"WARNNING: 没有找到扩展模块");
 		return -1;
 	}
 

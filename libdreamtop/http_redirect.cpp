@@ -18,7 +18,7 @@
 #include <string>
 
 #define	HTTP_PORT 20480
-#include "libmicrocai.h"
+#include "libdreamtop.h"
 
 static u_int8_t httphead[512];
 
@@ -39,7 +39,6 @@ static inline char* ntoa(in_addr_t ip)
 
 void init_http_redirector(std::string dest)
 {
-	log_printf(L_DEBUG_OUTPUT,(char*) httphead_t, dest.c_str(), dest.c_str());
 	sprintf((char*) httphead, (char*) httphead_t, dest.c_str(), dest.c_str());
 }
 

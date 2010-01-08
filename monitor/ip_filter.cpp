@@ -25,9 +25,9 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <pcap.h>
-#include <libnet.h>
 #include <stdio.h>
-#include "libmicrocai.h"
+
+#include "libdreamtop.h"
 #include "protocol_def.h"
 
 //
@@ -62,14 +62,14 @@ extern void *pcap_thread_func(struct pcap_thread_args *arg)
 	net_ip = arg->ip;
 	memcpy(mac_addr,arg->mac_addr,6);
 
-	u_char packet_content[ETHER_MAX_LEN*2];
+	u_char packet_content[65536];
 
 	for(;;)
 	{
 		static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 		pthread_mutex_lock(&lock);
 		while(pcap_next_ex(pcap_handle, &pcaphdr, &packet_contents) != 1);
-		memcpy(packet_content,packet_contents,ETHER_MAX_LEN*2);
+		memcpy(packet_content,packet_contents,pcaphdr->caplen);
 		pthread_mutex_unlock(&lock);
 
 //		recv(fno,packet_content,ETHER_MAX_LEN,0);
@@ -97,6 +97,7 @@ extern void *pcap_thread_func(struct pcap_thread_args *arg)
 		 *********************************************************************/
 	    port = *((u_int16_t*) (packet_content + ETH_HLEN + ip_head->ihl * 4 + 2));
 
+#ifdef ENABLE_HOTEL
 	    if( mac_is_alowed( (u_char*)packet_content + ETH_ALEN , ip_head->saddr)==false)
 	    {
 
@@ -104,7 +105,7 @@ extern void *pcap_thread_func(struct pcap_thread_args *arg)
 	    		redirect_to_local_http( net_ip, packet_content, ip_head );
 	    	continue;
 	    }
-
+#endif
 		//here we get a list of handler;
 	    bzero(handlerlist,sizeof(handlerlist));
 		get_registerd_handler(handlerlist, 1024, port, ip_head->protocol);

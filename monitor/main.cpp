@@ -34,6 +34,7 @@
 #include <sys/signal.h>
 #include <sys/inotify.h>
 #include <sys/poll.h>
+#include <sys/syslog.h>
 #include <dirent.h>
 #include <net/if.h>
 #include <netinet/in.h>
@@ -44,7 +45,7 @@
 #include <pcap.h>
 #include <errno.h>
 
-#include "libmicrocai.h"
+#include "libdreamtop.h"
 #include "protocol_def.h"
 
 static char socket_file[256] = "/tmp/monitor.socket";
@@ -63,7 +64,7 @@ static struct parameter_tags parameter[] =
 				"--flushdb", parameter_type::BOOL_short, (char*) &flush_db,
 				sizeof(flush_db), "--flush_db\t\t清空客房数据"), parameter_tags()
 };
-
+#ifdef ENABLE_HOTEL
 static void port_map(MYSQL_ROW row, void * p)
 {
 	CString cmd;
@@ -105,38 +106,7 @@ static void portmap_change(MYSQL_ROW row, void*p)
 	sprintf((char*) p, "delete from portmap_change where nIndex <= %s",row[0]);
 }
 
-static inline char hex2char(const char str[])
-{
-	u_char byte1, byte2;
-	if (str[0] >= 'a')
-		byte1 = str[0] - 'a' + 10;
-	else if (str[0] >= 'A')
-		byte1 = str[0] - 'A' + 10;
-	else
-		byte1 = str[0] - '0';
 
-	if (str[1] >= 'a')
-		byte2 = str[1] - 'a' + 10;
-	else if (str[1] >= 'A')
-		byte2 = str[1] - 'A' + 10;
-	else
-		byte2 = str[1] - '0';
-	u_char ret = byte1 << 4 | byte2;
-
-	return *(char*) (&ret);
-}
-
-static void  convertMAC(char mac[6],const char * strmac)
-{
-	for (int i = 0; i < 6; ++i)
-	{
-		mac[i] = hex2char(& strmac[i * 3] );
-	}
-}
-static void  convertMAC(u_char mac[6],const char * strmac)
-{
-	convertMAC((char*)mac,strmac);
-}
 
 static bool assert_mac(const char * strmac)
 {
@@ -228,7 +198,7 @@ static void room_change(MYSQL_ROW row, void*p)
 			set_client_data(mac, &cd);
 			if (!mac_is_alowed(mac))
 				mac_set_allowed(mac, true);
-			log_printf(L_DEBUG_OUTPUT, "登录 客户:%s\n", roomer_row[0]);
+			syslog(LOG_NOTICE,"登录 客户:%s\n", roomer_row[0]);
 		}
 		ksql_free_result(res);
 		break;
@@ -289,7 +259,7 @@ static void room_change(MYSQL_ROW row, void*p)
 
 			RecordAccout(Cd);
 
-			log_printf(L_DEBUG_OUTPUT, "退房 客户：%s\n", roomer_row[0]);
+			syslog(LOG_NOTICE, "退房 客户：%s\n", roomer_row[0]);
 
 			sql.Format("delete from roomer_list where nIndex='%s'",row[1]);
 			ksql_run_query(sql);
@@ -351,7 +321,7 @@ static void room_change(MYSQL_ROW row, void*p)
 				}
 			}
 			RecordAccout(Cd);
-			log_printf(L_DEBUG_OUTPUT, "登记客户:%s , ID = %s\n", roomer_row[0],roomer_row[2]);
+			syslog(LOG_NOTICE, "登记客户:%s , ID = %s\n", roomer_row[0],roomer_row[2]);
 		}
 		ksql_free_result(res);
 		break;
@@ -368,7 +338,7 @@ static void room_change(MYSQL_ROW row, void*p)
 				sql.Format("delete from roomer_list where nIndex='%s'",row[1]);
 				ksql_run_query(sql);
 
-				log_printf(L_DEBUG_OUTPUT,"添加白名单, mac = %s\n",roomer_row[3]);
+				syslog(LOG_NOTICE,"添加白名单, mac = %s\n",roomer_row[3]);
 			}
 		}
 		ksql_free_result(res);
@@ -387,7 +357,7 @@ static void room_change(MYSQL_ROW row, void*p)
 				sql.Format("delete from roomer_list where nIndex='%s'",row[1]);
 				ksql_run_query(sql);
 
-				log_printf(L_DEBUG_OUTPUT,"删除白名单, mac = %s\n",roomer_row[3]);
+				syslog(LOG_NOTICE,"删除白名单, mac = %s\n",roomer_row[3]);
 			}
 		}
 		ksql_free_result(res);
@@ -418,7 +388,6 @@ static void On_SQL_change()
 			int old = strSQL[0];
 			strSQL[0] = 'd';
 			ksql_run_query(strSQL); //清除 room_change
-			log_printf(L_DEBUG_OUTPUT, "room_change flushed\n");
 			strSQL[0] = old;
 		}
 	} while (strSQL[0] == -1);
@@ -538,12 +507,13 @@ static void pre_load(MYSQL_ROW row, void*)
 
 				mac_set_allowed(cd.MAC_ADDR,true,cd.ip);
 				set_client_data(cd.MAC_ADDR,&cd);
-				log_printf(L_DEBUG_OUTPUT,"预加载客户:%s ，mac='%s' \n",mrow[0],mrow[3]);
+				syslog(LOG_NOTICE,"预加载客户:%s ，mac='%s' \n",mrow[0],mrow[3]);
 			}
 		}
 		ksql_free_result(res);
 	}
 }
+#endif
 
 int main(int argc, char*argv[], char*env[])
 {
@@ -569,7 +539,12 @@ int main(int argc, char*argv[], char*env[])
 
 	time(&t);
 
-	log_printf(L_NOTICE, "%s loaded at %s\n", PACKAGE_NAME,	ctime(&t));
+#ifdef DEBUG
+	openlog(PACKAGE_TARNAME,LOG_PERROR|LOG_PID,LOG_USER);
+#else
+	openlog(PACKAGE_TARNAME,LOG_PID,LOG_USER);
+#endif
+	syslog(LOG_NOTICE, "%s loaded at %s", PACKAGE_NAME,	ctime(&t));
 
 	ParseParameters(&argc, &argv, parameter);
 
@@ -588,7 +563,7 @@ int main(int argc, char*argv[], char*env[])
 	}
 	else
 	{
-		log_printf(L_ERROR, "Err openning config file\n");
+		syslog(LOG_WARNING, "Err opening config file");
 		config_file = NULL;
 	}
 
@@ -603,11 +578,11 @@ int main(int argc, char*argv[], char*env[])
 	dnss = GetToken(config_file, "dns", "");
 	MAX_PCAP_THREAD = atoi(threads.c_str());
 
-	std::cout << "----------初始化数据库----------" << std::endl;
+	syslog(LOG_NOTICE,"----------初始化数据库----------");
 
 	while (InitRecordSQL(pswd, user, database, host))
 	{
-		log_printf(L_FAITAL, "\n**Cannotconnect to mysql server**\nretry\n");
+		syslog(LOG_CRIT, "\n**Cannotconnect to mysql server**\nretry\n");
 
 		sleep(3);
 	}
@@ -635,7 +610,7 @@ int main(int argc, char*argv[], char*env[])
 		arg.ip = ((sockaddr_in*) (&(rif.ifr_addr)))->sin_addr.s_addr;
 	else
 	{
-		log_printf(L_FAITAL,"nic %s not enabled!",hotel::str_ethID);
+		syslog(LOG_CRIT,"nic %s not enabled!",hotel::str_ethID);
 		sleep(10000);
 		return 1;
 	}
@@ -647,18 +622,19 @@ int main(int argc, char*argv[], char*env[])
 
 	close(tmp);
 
-	arg.pcap_handle = pcap_open_live(hotel::str_ethID, PCAP_ERRBUF_SIZE, 0, 0,
+	arg.pcap_handle = pcap_open_live(hotel::str_ethID, 65536, 0, 0,
 			errbuf);
 	if(!arg.pcap_handle)
 	{
-		log_printf(L_FAITAL, "ERROR:can not open %s for capturing!\n",
+		syslog(LOG_CRIT, "ERROR:can not open %s for capturing!\n",
 				hotel::str_ethID);
+		closelog();
 		return -1;
 	}
 
 	if (pcap_datalink(arg.pcap_handle) != DLT_EN10MB)
 	{
-		log_printf(L_FAITAL, "ERROR:%s is not an ethernet adapter\n",
+		syslog(LOG_CRIT, "ERROR:%s is not an ethernet adapter\n",
 				hotel::str_ethID);
 		return -1;
 	}
@@ -675,6 +651,8 @@ int main(int argc, char*argv[], char*env[])
 
 	pcap_freecode(&bpf_filter);
 
+	#ifdef ENABLE_HOTEL
+
 	run_cmd("iptables -F -t nat");
 	{
 		char * ptr;
@@ -689,6 +667,7 @@ int main(int argc, char*argv[], char*env[])
 		}
 
 	}
+	#endif
 
 	pthread_attr_init(&p_attr);
 	pthread_attr_setdetachstate(&p_attr, PTHREAD_CREATE_DETACHED);//不需要考虑线程的退出状态吧？！
@@ -701,14 +680,16 @@ int main(int argc, char*argv[], char*env[])
 
 	pthread_attr_destroy(&p_attr);
 
-	log_printf(L_DEBUG_OUTPUT, "预加载客户端\n");
+#ifdef ENABLE_HOTEL
+
+	syslog(LOG_CRIT, "预加载客户端\n");
 
 	//从 room_list 加载允许上网的客户和其信息
 
 	ksql_query_and_use_result(pre_load,"select nIndex,RoomBuild,RoomFloor,RoomNum,MAC_ADDR,IsBind,RoomerCount from room_list");
 	ksql_query_and_use_result(load_white,"select MAC_ADDR from whitelist LIMIT 0,1000");
 
-	log_printf(L_DEBUG_OUTPUT, "----------启动端口映射----------\n");
+	syslog(LOG_NOTICE, "----------启动端口映射----------\n");
 
 	ksql_query_and_use_result(port_map, "select * from portmap", 0);
 
@@ -807,5 +788,15 @@ int main(int argc, char*argv[], char*env[])
 		}
 	}
 	return 0;
+#else
+	if (ksql_is_server_gone())
+	{
+		ksql_close();
+		while (InitRecordSQL(pswd, user, database, host))
+			sleep(2);
+	}
+	sleep(5000);
+#endif
+
 }
 

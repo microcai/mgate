@@ -19,6 +19,7 @@
 #include <syscall.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <syslog.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <net/ethernet.h>
@@ -26,7 +27,7 @@
 #include <mysql/errmsg.h>
 
 #define		__KLIBSQL_USEINTERNALLY
-#include "libmicrocai.h"
+#include "libdreamtop.h"
 
 #define __PACKED__
 
@@ -203,8 +204,9 @@ static const char * create_sql[] =
 		"  `IDtype` int(11) DEFAULT NULL,\n"
 		"  `ID` varchar(32) CHARACTER SET utf8 DEFAULT NULL,\n"
 		"  PRIMARY KEY (`nIndex`)\n"
-		") ENGINE=MyISAM  DEFAULT CHARSET=utf8"
+		") ENGINE=MyISAM  DEFAULT CHARSET=utf8",
 
+		"\0"
 };
 
 struct AccountInfo
@@ -232,8 +234,7 @@ struct AccountInfo
 
 static void NOP_SENDDATA(int cmd,void *data,int ulen)
 {
-	log_printf(L_WARNING,"SendData function not set!\n");
-	return ;
+	syslog(LOG_WARNING,"SendData function not set!\n");
 }
 
 static FUNC_SENDDATA SendData = NOP_SENDDATA;
@@ -270,21 +271,25 @@ static const char	SQL_template[]=
 	"insert into t_netlog (RoomNum,MachineIP,MachineMac,CustomerIDType,CustomerIDNum, "
 		"CustomerName,nLogType,strLogInfo,nTime) values   ('%s%s%02d','%s','%s','%s','%s','%s','%s','%s','%s')";
 
-
+#ifdef ENABLE_HOTEL
 static void MAC_ADDR2macaddr(char mac_addr[PROLEN_COMPUTERMAC],const u_char mac[ETHER_ADDR_LEN])
 {
 	sprintf(mac_addr,"%02x%02x%02x%02x%02x%02x",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
 }
-
+#endif
 void RecordAccout(struct NetAcount*na)
 {
+	u_char * mac = (u_char*)( na->packet + 6);
+
+#ifdef ENABLE_HOTEL
 	struct Clients_DATA cd;
 	struct Clients_DATA *pcd = &cd;
 
-	u_char * mac = (u_char*)( na->packet + 6);
 
 	if (get_client_data(mac,pcd)!=0) // there is no ..... so, let's just ignore it.
 		return;
+#endif
+
 
 	std::string strTime;
 	CString strSQL;
@@ -295,6 +300,10 @@ void RecordAccout(struct NetAcount*na)
 
 	ac.DateTime = GetDBTime(GetCurrentTime());
 
+	strcpy(ac.SiteID, hotel::strHotelID);
+	strcpy(ac.SiteName, hotel::strHoteName);
+
+#ifdef ENABLE_HOTEL
 
 	if (pcd && pcd->mac_addr.size() < 2)
 	{
@@ -302,9 +311,6 @@ void RecordAccout(struct NetAcount*na)
 		if (GetMac(pcd->ip_addr.c_str(), mac, pcd->MAC_ADDR))
 			pcd->mac_addr = mac;
 	}
-
-	strcpy(ac.SiteID, hotel::strHotelID);
-	strcpy(ac.SiteName, hotel::strHoteName);
 
 	strncpy(ac.CertType, pcd->CustomerIDType.c_str(),sizeof(ac.CertType)-1);
 	strncpy(ac.CertNo, pcd->CustomerID.c_str(),sizeof(ac.CertNo)-1);
@@ -319,14 +325,28 @@ void RecordAccout(struct NetAcount*na)
 
 	snprintf(ac.ComputerName,sizeof(ac.ComputerName),"%c%c%02d",
 			*pcd->Build.c_str(),*pcd->Floor.c_str(), atoi(pcd->RoomNum.c_str()));
-
+#endif
 	strcpy(ac.ServType, na->strType);
+
+#ifdef ENABLE_HOTEL
 
 	strSQL.Format(SQL_template, pcd->Build.c_str(),pcd->Floor.c_str(),atoi(pcd->RoomNum.c_str()), pcd->ip_addr.c_str(),
 			pcd->mac_addr.c_str(), pcd->CustomerIDType.c_str(),
 			pcd->CustomerID.c_str(), pcd->CustomerName.c_str(), na->strType,
 			na->data.c_str(), strTime.c_str());
+#else
+	char strmac[32];
+	in_addr in_addr_ip;
+	in_addr_ip.s_addr = na->ip;
+
+	formatMAC(mac,strmac);
+
+	strSQL.Format("insert into t_customerlog () values ()",inet_ntoa(in_addr_ip),
+			strmac, na->strType,
+			na->data.c_str(), strTime.c_str());
+#endif
 	ksql_run_query(strSQL);
+	syslog(LOG_NOTICE,"%s",strSQL.c_str());
 
 	strncpy(ac.Key1, na->data.c_str(), 60);
 	strncpy(ac.Key2, na->passwd.c_str(), sizeof(ac.Key2));
@@ -344,11 +364,14 @@ void RecordAccout(struct NetAcount*na)
 	std::cout << "帐号:" << ac.Key1 << std::endl;
 	std::cout << "密码:" << ac.Key2 << std::endl;
 	std::cout << "主机:" << ac.DestIp;
+#ifdef ENABLE_HOTEL
 	std::cout << "用户名:" << pcd->CustomerName << std::endl;
+#endif
 	std::cout << "机器IP:" << ac.ComputerIp << std::endl;
 #endif
 	SendData(COMMAND_ACCOUNT, (char *) &ac, sizeof(ac));
 }
+
 void RecordAccout(struct CustomerData & cd)
 {
 	SendData(COMMAND_CUSTOMER, (char *) &cd, sizeof(CustomerData));
@@ -360,8 +383,6 @@ int InitRecordSQL(const std::string & passwd, const std::string & user,
 	MYSQL_RES *res;
     MYSQL_ROW row;
     pthread_mutexattr_t mutex_attr;
-
-    log_printf(L_DEBUG_OUTPUT, "连接到数据库...");
 
  	mysql_init(&mysql);
 
@@ -380,7 +401,7 @@ int InitRecordSQL(const std::string & passwd, const std::string & user,
 
         if(mysql_errno(&mysql)==1049)
         {
-        	log_printf(L_WARNING,"database %s does not exsit, create it.",database.c_str());
+        	syslog(LOG_ERR,"database %s does not exsit, create it.",database.c_str());
 
         	// 在这里重新建立数据库
         	if (mysql_real_connect(&mysql, host.c_str(), user.c_str(),
@@ -404,7 +425,8 @@ int InitRecordSQL(const std::string & passwd, const std::string & user,
     }
     mysql_set_character_set(&mysql,"utf8");
     pthread_mutex_unlock(&sql_mutex);
-    log_printf(L_DEBUG_OUTPUT, "OK\n");
+
+    syslog(LOG_NOTICE,"连接到数据库 OK\n");
 
     //Get t_sysparam
 	res = (MYSQL_RES*) ksql_query_and_use_result("select * from t_sysparam");
@@ -419,33 +441,35 @@ int InitRecordSQL(const std::string & passwd, const std::string & user,
 
 		utf8_gbk(hotel::strHoteName,sizeof(hotel::strHoteName),row[4],strlen(row[4]));
 
+#ifdef ENABLE_HOTEL
 		strcpy(hotel::strWebIP, row[5]);
+#endif
 
+		syslog(LOG_NOTICE,"hotel name is %s\n",row[4]);
+		syslog(LOG_NOTICE,"hotel ID is %s\n",hotel::strHotelID);
+		syslog(LOG_NOTICE,"ServerIP is %s\n",hotel::strServerIP);
+#ifdef ENABLE_HOTEL
+		syslog(LOG_NOTICE,"WebIP is %s\n",hotel::strWebIP);
+#endif
+		syslog(LOG_NOTICE,"monitoring card %s\n",hotel::str_ethID);
 
-
-		log_printf(L_DEBUG_OUTPUT,"hotel name is %s\n",row[4]);
-		log_printf(L_DEBUG_OUTPUT,"hotel ID is %s\n",hotel::strHotelID);
-		log_printf(L_DEBUG_OUTPUT,"ServerIP is %s\n",hotel::strServerIP);
-		log_printf(L_DEBUG_OUTPUT,"WebIP is %s\n",hotel::strWebIP);
-		log_printf(L_DEBUG_OUTPUT,"monitoring card %s\n",hotel::str_ethID);
-
-	}else
+	}else if (!res)
 	{
 
-    	log_printf(L_WARNING, "tables not exist, create them.\n");
+		syslog(LOG_WARNING, "tables not exist, create them.\n");
 		for (int i = 0; i < (int)(sizeof(create_sql) / sizeof(char*)); ++i)
 			mysql_query(&mysql, create_sql[i]);
-		std::cerr << "All tables created!" << std::endl;
+		syslog(L_NOTICE,"All tables created!");
 		exit(0);
 	}
 	ksql_free_result(res);
-
+#ifdef ENABLE_HOTEL
 	//初始化跳转页面
 	CString dest;
 	dest.Format("%s/login", hotel::strWebIP);
 
 	init_http_redirector(std::string(dest));
-
+#endif
     return 0;
 }
 
@@ -484,9 +508,21 @@ int ksql_run_query(const char *p)
 	pthread_mutex_unlock(&sql_mutex);
 	//尽量减少加锁的时间，增加并行。
 	if (ret)
-		log_printf(L_DEBUG_OUTPUT,"err make query  %s\n",mysql_error(&mysql));
+		syslog(LOG_ERR,"err make query  %s\n",mysql_error(&mysql));
 	return ret;
 }
+
+int ksql_run_query_async(const char *p)
+{
+	pthread_mutex_lock(&sql_mutex);
+	int ret = mysql_query(&mysql, p );
+	pthread_mutex_unlock(&sql_mutex);
+	//尽量减少加锁的时间，增加并行。
+	if (ret)
+		syslog(LOG_ERR,"err make query  %s\n",mysql_error(&mysql));
+	return ret;
+}
+
 MYSQL_ROW ksql_fetch_row(MYSQL_RES*res)
 {
 	if(res)
@@ -502,6 +538,7 @@ void ksql_free_result(MYSQL_RES* res)
 		mysql_free_result((MYSQL_RES*) res);
 	}
 }
+
 void* * ksql_query_and_use_result(const char* query)
 {
 	MYSQL_RES *	res;
@@ -511,7 +548,7 @@ void* * ksql_query_and_use_result(const char* query)
 	if(mysql_query(&mysql,query))
 	{
 		pthread_mutex_unlock(&sql_mutex);
-		log_printf(L_ERROR,"Err make query  %s\n",mysql_error(&mysql));
+		syslog(LOG_ERR,"Err make query  %s\n",mysql_error(&mysql));
 		if(mysql_errno(&mysql)==CR_SERVER_GONE_ERROR)
 		{
 			close(open("/tmp/monitor.socket",O_RDWR));
@@ -524,6 +561,7 @@ void* * ksql_query_and_use_result(const char* query)
 
 	return (void**)res;
 }
+
 void ksql_query_and_use_result( void (*callback)( MYSQL_ROW row,void*p ),const char* query,void*p)
 {
 	MYSQL_RES* res;
@@ -535,16 +573,6 @@ void ksql_query_and_use_result( void (*callback)( MYSQL_ROW row,void*p ),const c
 			callback(row, p);
 	}
 	ksql_free_result(res);
-}
-
-void ksql_thread_init()
-{
-	mysql_thread_init();
-}
-
-void ksql_thread_end()
-{
-	mysql_thread_end();
 }
 
 void InsertCustomerLog(const char * build,const char * floor,const char * room, const char * name ,

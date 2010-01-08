@@ -16,6 +16,10 @@
 	
 运行 shell 脚本来进行配置
 	./configure 
+	
+需要添加支持酒店系统的就要增加 --enable-hotel 参数
+
+	
 如果没有错误
 	就执行 
 	make all

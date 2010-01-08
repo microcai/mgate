@@ -13,10 +13,11 @@ _EXTERN_ void ParseParameters(int * argc, char ** argv[], struct parameter_tags 
 _EXTERN_ std::string GetToken(const char* strings,const char * key,const char* default_val="");
 
 _EXTERN_ void
-	run_cmd(const CString & strcmd );
-
-_EXTERN_ bool
-	GetMac(const char *ip, char MAC_ADDR[],u_char mac_addr[]);
+	formatMAC(const u_char * MAC_ADDR,char * strmac);
+_EXTERN_ void
+	convertMAC(char mac[6],const char * strmac);
+_EXTERN_ void
+	convertMAC(u_char mac[6],const char * strmac);
 
 _EXTERN_ int
 	unload_modules(const char * so_name);
@@ -40,6 +41,13 @@ _EXTERN_	void
 
 _EXTERN_ u_int16_t
     checksum(u_int16_t *buffer, int size);
+#ifdef ENABLE_HOTEL
+
+_EXTERN_ bool
+	GetMac(const char *ip, char MAC_ADDR[],u_char mac_addr[]);
+
+_EXTERN_ void
+	run_cmd(const CString & strcmd );
 
 _EXTERN_ bool
 	mac_is_alowed(u_char mac[6]);
@@ -57,16 +65,14 @@ _EXTERN_ void
 	redirect_to_local_http( u_int32_t ,const u_char *,struct iphdr* );
 _EXTERN_ void
 	init_http_redirector(std::string dest);
-_EXTERN_ void
-	log_puts(enum LOG_PRINT_LEVEL level,const std::string );
-_EXTERN_ void
-	log_printf(enum LOG_PRINT_LEVEL level,const char* fmt,...);
+#endif
+
+_EXTERN_ struct tm *
+	GetCurrentTime();
 _EXTERN_ int
 	utf8_gbk(char *outbuf, size_t outlen, const char *inbuf, size_t inlen);
 _EXTERN_ int
 	gbk_utf8(char *outbuf, size_t outlen, const char *inbuf, size_t inlen);
-_EXTERN_ struct tm *
-	GetCurrentTime();
 
 #endif	/* _LIBMICROCAI_FUNCTIONS_H */
 

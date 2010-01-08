@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
-
+#include <syslog.h>
 #include <sys/ioctl.h>
 #include <net/if_arp.h>
 #include <arpa/inet.h>
@@ -21,7 +21,7 @@
 #include <iconv.h>
 #include <errno.h>
 
-#include "libmicrocai.h"
+#include "libdreamtop.h"
 
 u_int16_t checksum(u_int16_t *buffer, int size)
 {
@@ -41,6 +41,54 @@ u_int16_t checksum(u_int16_t *buffer, int size)
     cksum += (cksum >> 16);
 
     return (uint16_t) (~cksum);
+}
+
+void formatMAC(const u_char * MAC_ADDR,char * strmac)
+{
+	sprintf(strmac, "%02x:%02x:%02x:%02x:%02x:%02x",
+			MAC_ADDR[0], MAC_ADDR[1], MAC_ADDR[2], MAC_ADDR[3], MAC_ADDR[4], MAC_ADDR[5]);
+
+}
+
+static inline char hex2char(const char str[])
+{
+	u_char byte1, byte2;
+	if (str[0] >= 'a')
+		byte1 = str[0] - 'a' + 10;
+	else if (str[0] >= 'A')
+		byte1 = str[0] - 'A' + 10;
+	else
+		byte1 = str[0] - '0';
+
+	if (str[1] >= 'a')
+		byte2 = str[1] - 'a' + 10;
+	else if (str[1] >= 'A')
+		byte2 = str[1] - 'A' + 10;
+	else
+		byte2 = str[1] - '0';
+	u_char ret = byte1 << 4 | byte2;
+
+	return *(char*) (&ret);
+}
+
+void  convertMAC(char mac[6],const char * strmac)
+{
+	for (int i = 0; i < 6; ++i)
+	{
+		mac[i] = hex2char(& strmac[i * 3] );
+	}
+}
+void  convertMAC(u_char mac[6],const char * strmac)
+{
+	convertMAC((char*)mac,strmac);
+}
+#ifdef ENABLE_HOTEL
+
+void run_cmd(const CString & strcmd )
+{
+	//在这里我不得不考虑system失败会导致的资源泄漏。
+	syslog(LOG_NOTICE,"run: %s\n",strcmd.c_str());
+	system(strcmd);
 }
 
 bool GetMac(const char *ip, char MAC_ADDR[],u_char mac_addr[])
@@ -71,7 +119,7 @@ bool GetMac(const char *ip, char MAC_ADDR[],u_char mac_addr[])
 			if(mac_addr)
 				memcpy(mac_addr,d,6);
 			if(MAC_ADDR)
-				sprintf(MAC_ADDR, "%02x:%02x:%02x:%02x:%02x:%02x", d[0], d[1], d[2], d[3], d[4], d[5]);
+				formatMAC(d,MAC_ADDR);
 			return true;
 		}
 		if (errno == ENXIO)
@@ -83,16 +131,7 @@ bool GetMac(const char *ip, char MAC_ADDR[],u_char mac_addr[])
 	return false;
 }
 
-
-void run_cmd(const CString & strcmd )
-{
-	//在这里我不得不考虑system失败会导致的资源泄漏。
-//	pthread_mutex_lock()
-	log_printf(L_DEBUG_OUTPUT,"run: %s\n",strcmd.c_str());
-//	pthread_atfork(0,0,0);
-	system(strcmd);
-}
-
+#endif
 int utf8_gbk(char *outbuf, size_t outlen, const char *inbuf, size_t inlen)
 {
 	iconv_t cd;

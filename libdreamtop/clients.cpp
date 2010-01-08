@@ -11,11 +11,13 @@
 #include <hash_map>
 #include <list>
 #include <map>
+#include <syslog.h>
 #include <pthread.h>
 #include <netinet/in.h>
 #include <stdio.h>
 
-#include "libmicrocai.h"
+#include "libdreamtop.h"
+
 using namespace __gnu_cxx;
 
 static void inet_ntoa(std::string & ret, in_addr_t ip)
@@ -113,14 +115,14 @@ volatile static hash_map<in_addr_t, MACADDR,_HashFn> enabled_ip(256);
 static std::list<ROOM>							room_list;
 static std::map<MACADDR,client*,myless>				clients;
 
-static void __attribute__((constructor)) __load(void)
-{
-	// here, we need to
-	pthread_rwlockattr_t attr;
-	pthread_rwlockattr_init(&attr);
-	pthread_rwlock_init(&lock,&attr);
-	pthread_rwlockattr_destroy(&attr);
-}
+//static void __attribute__((constructor)) __load(void)
+//{
+//	// here, we need to
+//	pthread_rwlockattr_t attr;
+//	pthread_rwlockattr_init(&attr);
+//	pthread_rwlock_init(&lock,&attr);
+//	pthread_rwlockattr_destroy(&attr);
+//}
 
 bool mac_is_alowed(u_char mac[6])
 {
@@ -183,10 +185,10 @@ bool mac_is_alowed(u_char mac[6],in_addr_t ip)
 					pct= cit->second ;
 					pct->current_ip = ip;
 					pct->ip = sip;
-					sql.Format("update roomer_list set IP_ADDR='%s' where nIndex='%d' and ID='%s'",
-							sip.c_str(),pct->nIndex,pct->id.c_str());
+					sql.Format("update roomer_list set IP_ADDR='%s' where nIndex='%d'",
+							sip.c_str(),pct->nIndex);
 					ksql_run_query(sql);
-					log_printf(L_DEBUG_OUTPUT,"%s\n",sql.c_str());
+					syslog(LOG_NOTICE,"map ip %s to %s\n",sip.c_str(),sql.c_str());
 				}
 				return ret;
 			}

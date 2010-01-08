@@ -16,12 +16,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/epoll.h>
+#include <sys/syslog.h>
 #include <netinet/in.h>
 #include <net/ethernet.h>
+
 //We need md5
 #include <fcntl.h>
 #include <errno.h>
-#include "libmicrocai.h"
+#include "libdreamtop.h"
 #define	 SERVER_SIDE
 #include "kServer.hpp"
 
@@ -191,7 +193,7 @@ static int On_ONLINE(char * command)
 
 			MakeItChange(nIndex,3);
 
-			log_printf(L_DEBUG_OUTPUT,"从金城登记 :% ...ok\n",name.c_str());
+			syslog(LOG_NOTICE,"从金城登记 :%s ...ok\n",name.c_str());
 
 			notice_mainthread();
 
@@ -264,7 +266,7 @@ static int On_OFFLINE(char * command)
 				sqlstr.Format("insert  into room_change (RoomerId,ActionType) values ('%s',2)",trow[0]);
 				ksql_run_query(sqlstr);
 				//记录日志
-				log_printf(L_DEBUG_OUTPUT,"从金城退掉 :%s \n",trow[1]);
+				syslog(LOG_NOTICE,"从金城退掉 :%s \n",trow[1]);
 
 				InsertCustomerLog(build.c_str(),floor.c_str(),room.c_str(), trow[1], trow[2],trow[3],
 						 "1", trow[4] ? trow[4] : "",
@@ -351,7 +353,7 @@ static int On_CHANGE(char * command)
 				" where r.`ID`='%s' and r.`IDtype`='%s' and l.nIndex=r.RoomId ",
 				ID.c_str(), Idtype.c_str());
 
-		log_printf(L_DEBUG_OUTPUT,"换房 ， sql : %s\n",sql.c_str());
+		syslog(LOG_NOTICE,"从金城换房 ， sql : %s\n",sql.c_str());
 
 		res = ksql_query_and_use_result(sql);
 
@@ -475,7 +477,7 @@ static int OnRead(active_client * pac)
 		memcpy(pac->lastdata,BUFFER,recvd);
 		// 发送加密令牌
 		Send_SB_OK(pac->passwd_token,pac);
-		log_printf(L_DEBUG_OUTPUT,"%s\n",pac->lastdata);
+		syslog(LOG_NOTICE,"%s\n",pac->lastdata);
 		return 0;
 	}
 }
@@ -518,9 +520,7 @@ static void* server_thread(void*p)
 				{
 					epoll_ctl(epfd,EPOLL_CTL_DEL,pac->sockfd,0);
 					close(pac->sockfd);
-					log_printf(L_DEBUG_OUTPUT,"client closed\n");
 					delete pac;
-					log_printf(L_DEBUG_OUTPUT,"client real closed\n");
 				}
 				else
 					exit(0);
@@ -535,9 +535,7 @@ static void* server_thread(void*p)
 					{
 						epoll_ctl(epfd,EPOLL_CTL_DEL,pac->sockfd,0);
 						close(pac->sockfd);
-						log_printf(L_DEBUG_OUTPUT,"client closed\n");
 						delete pac;
-						log_printf(L_DEBUG_OUTPUT,"client real closed\n");
 					}
 				}
 				else

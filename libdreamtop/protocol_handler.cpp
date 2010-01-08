@@ -8,7 +8,7 @@
  */
 #include <stdlib.h>
 #include <pthread.h>
-#include "libmicrocai.h"
+#include "libdreamtop.h"
 
 static struct handler * head = 0, *tail = 0;
 static pthread_rwlock_t	rwlock=PTHREAD_RWLOCK_INITIALIZER;

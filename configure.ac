@@ -2,16 +2,23 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.1])
-AC_INIT([monitor], [1.1.3], [BUG-REPORT-ADDRESS])
+AC_INIT([monitor], [1.1.5], [BUG-REPORT-ADDRESS])
 AM_INIT_AUTOMAKE([-Wall -Werror])
 
 AC_SUBST_FILE(RPATH_EXT)
 
 AC_ARG_ENABLE(debug,
-                [  --enable-debug Enable DEBUG output. This is a debugging feature  which should not be only enabled by develpoers],
+                [  --enable-debug Enable DEBUG output. This is a debugging feature
+        which should not be only enabled by develpoers
+                ],
                 [ CXXFLAGS="$CFLAGS -g2 -O0 -DDEBUG -Wall"],
                 [ CXXFLAGS="$CFLAGS -Os"]
               )
+AC_ARG_ENABLE(hotel,
+				[  --enable-hotel enable hotel related features and 
+	 disable cafe related features],
+				[AM_CONDITIONAL(ENABLE_HOTEL,true)],
+				[AM_CONDITIONAL(ENABLE_HOTEL,false)])              
 
 AC_SUBST(MODULES_PATH,/usr/libexec/)
 
