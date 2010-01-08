@@ -312,38 +312,12 @@ static int GetHttpPost(struct so_data*, u_char*packet)
 
 	if (!pHostData)
 	{
-		if (memcmp("POST ", tcpdata, 5) == 0)
-		{
-			char *pPos = NULL;
-			pPos = strstr((char *) tcpdata, "Host:");
-			if (pPos)
-			{
-				pPos = pPos + 6;
-				char *pTemp = strstr(pPos, "\r\n");
-				if (pTemp)
-				{
-					if (pTemp - pPos >= nSize)
-						return 0;
-					if (pTemp - pPos < 4)
-						return 0;
-					strncpy(pHost, pPos, pTemp - pPos);
-					HOSTDATA HostData;
-					inet_neta(ip_head->daddr, HostData.strIP, 20);
-					strcpy(HostData.strHost, pHost);
-					pthread_mutex_lock(&lock);
-					if (host_list.size() > 2000)
-						host_list.erase(host_list.begin());
-					host_list.insert(std::pair<in_addr_t, HOSTDATA>(
-							ip_head->daddr, HostData));
-					pthread_mutex_unlock(&lock);
-				}
-			}
-		}
-	}
-	else
-	{
-		strcpy(pHost, pHostData->strHost);
-	}
+		char strIndex[128] = {0};
+		snprintf(strIndex, sizeof(strIndex), "%d%d%d%d",
+			ip_head->daddr,
+			ip_head->saddr,
+			tcp_head->dest,
+			tcp_head->source);
 
 	MAIL_LOGIN_KEY loginKeys[] =
 	{
@@ -403,6 +377,7 @@ static int GetHttpPost(struct so_data*, u_char*packet)
 	if (strlen(pUser))
 		return RecordPOST(pUser, pPassword, pHost, packet,ip_head->saddr, ip_head->daddr);
 	return 0;
+	return 0;
 }
 
 static int url_packet_callback(struct so_data* sodata, u_char * packet)
@@ -456,11 +431,18 @@ static int url_packet_callback(struct so_data* sodata, u_char * packet)
 			}
 			int nLen = strlen(pUrl);
 
-			if (nLen >= nSize)
-                return 0;
-            if (nLen <= 5)
-                return 0;
-            return RecordUrl(pUrl,packet,ip_head->saddr ,ip_head->daddr);
+
+			try
+			{
+				int nret = RecordUrl(pUrl,packet,ip_head->saddr ,ip_head->daddr);
+
+				return nret;
+			}
+			catch (...)
+			{
+				return 0;
+			}
+
         }
     }
     return 0;

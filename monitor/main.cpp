@@ -497,13 +497,14 @@ static void pre_load(MYSQL_ROW row, void*)
 }
 #endif
 
+static void on_term(int )
+{
+//	ksql_close();
+	exit(0);
+}
+
 int main(int argc, char*argv[], char*env[])
 {
-	//调用 检查自动升级。
-	Check_update("www.google.com","");
-
-	exit (0);
-
 	pthread_attr_t p_attr;
 	pthread_t pcap_tcp;
 	time_t t;
@@ -530,6 +531,12 @@ int main(int argc, char*argv[], char*env[])
 #else
 	openlog(PACKAGE_TARNAME,LOG_PID,LOG_USER);
 #endif
+#if 00
+	//调用 检查自动升级。
+	while(1){Check_update("localhost","");sleep(1);}
+#endif
+	//exit (0);
+
 	syslog(LOG_NOTICE, "%s loaded at %s", PACKAGE_NAME,	ctime(&t));
 
 	ParseParameters(&argc, &argv, parameter);
@@ -575,6 +582,10 @@ int main(int argc, char*argv[], char*env[])
 		sleep(3);
 	}
 
+	signal(15,on_term);
+	signal(2,on_term);
+
+
 	if(flush_db)
 	{
 		ksql_run_query("truncate roomer_list");
@@ -599,9 +610,10 @@ int main(int argc, char*argv[], char*env[])
 	else
 	{
 		syslog(LOG_CRIT,"nic %s not enabled!",hotel::str_ethID);
-		sleep(10000);
+		sleep(20);
 		return 1;
 	}
+
 	ioctl(tmp, SIOCGIFNETMASK, &rif);
 	arg.mask = ((sockaddr_in*) (&(rif.ifr_addr)))->sin_addr.s_addr;
 
@@ -703,7 +715,8 @@ int main(int argc, char*argv[], char*env[])
 
 		inotify_event *inotifyevent = (inotify_event*) errbuf;
 
-		switch (poll(pfd, 1, 5000))
+		int timedout = 1;
+		switch (poll(pfd, 1, timedout *1000))
 		{
 		case 0:
 			if (ksql_is_server_gone())
@@ -714,7 +727,14 @@ int main(int argc, char*argv[], char*env[])
 			}
 			On_SQL_change();
 			//调用 检查自动升级。
-			Check_update(update_server.c_str(),update_trunk.c_str());
+			switch(Check_update(update_server.c_str(),update_trunk.c_str()))
+			{
+				case -1:
+				timedout=5;
+				break;
+				case 0:
+				timedout=1;
+			}
 
 			break;
 		case 1:
@@ -733,34 +753,6 @@ int main(int argc, char*argv[], char*env[])
 					//******************************************************
 					On_SQL_change();
 				}
-//				else if (inotifyevent->wd == module_dir_watch)
-//				{
-//					//					if (inotifyevent->mask & IN_DELETE)
-//					//					{
-//					//						log_printf(L_DEBUG_OUTPUT, "need unload modules %s\n",
-//					//								inotifyevent->name);
-//					//						//enum_and_reload_modules(module_dir);
-//					//						unload_modules(inotifyevent->name);
-//					//					}
-//					//					if(inotifyevent->mask & IN_OPEN)
-//					//					{
-//					//						log_printf(L_FAITAL, "DON'T OVERWRITE modules %s\nUSE install command!\n",
-//					//								inotifyevent->name);
-//					//
-//					//						char ** targv = (char **)malloc((argc+1)*sizeof(char*));
-//					//						memcpy(targv,argv,argc*sizeof(char*));
-//					//						targv[argc] = NULL;
-//					//						closefds();
-//					//						execvp(argv[0],targv);
-//					//					}
-//					if (inotifyevent->mask & IN_CLOSE_WRITE)
-//					{
-//						log_printf(L_DEBUG_OUTPUT, "need reload modules %s\n",
-//								inotifyevent->name);
-//						//enum_and_reload_modules(module_dir);
-//						reload_modules(inotifyevent->name, module_dir);
-//					}
-//				}
 			}
 			else
 			{
@@ -782,9 +774,21 @@ int main(int argc, char*argv[], char*env[])
 #else
 	if (ksql_is_server_gone())
 	{
-		ksql_close();
-		while (InitRecordSQL(pswd, user, database, host))
-			sleep(2);
+		if (ksql_is_server_gone())
+		{
+			ksql_close();
+			while (InitRecordSQL(pswd, user, database, host))
+				sleep(2);
+		}
+		switch (Check_update(update_server.c_str(), update_trunk.c_str()))
+		{
+		case (-1):
+			sleep(5);
+			break;
+		case 0:
+			sleep(1);
+			break;
+		}
 	}
 	sleep(5000);
 #endif

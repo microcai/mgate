@@ -1,4 +1,3 @@
-
 /*
  *      qq.cpp
  *
@@ -23,6 +22,10 @@
 
 #include "libdreamtop.h"
 
+#include <map>
+#include <ctime>
+std::map<std::string, time_t> qq_time_map;
+
 #define QQ_DPORT  0x401F //8000
 #define QQ_HTTPDPORT  0x5000 //80
 #define QQ_VIPDPORT  0xBB01 //443
@@ -36,20 +39,44 @@ static int record_QQ_number(u_int qq, in_addr_t ip,u_char*packet)
 {
 	//syslog(LOG_NOTICE,"QQ number is : %u\n",qq);
 
+	static pthread_mutex_t lock=PTHREAD_MUTEX_INITIALIZER;
+
+	char qqnum[80];
+	sprintf(qqnum, "%u", qq);
+
+#if 1
+	time_t tmNow = time(NULL);
+	pthread_mutex_lock(&lock);
+	std::map<std::string, time_t>::iterator it = qq_time_map.begin();
+	for (; it != qq_time_map.end();)
+	{
+		if ((tmNow - it->second) > 120)
+			qq_time_map.erase(it++);
+		else
+			++it;
+	}
+	if (qq_time_map.find(qqnum) != qq_time_map.end())
+	{
+		pthread_mutex_unlock(&lock);
+		return 0;
+	}
+	qq_time_map[qqnum] = tmNow;
+	pthread_mutex_unlock(&lock);
+#endif
+
 	struct tcphdr* tcp = (tcphdr*)(packet + 14 + sizeof(iphdr));
 
     struct NetAcount na(NetAcountType_QQ,packet);
     na.ip = ip;
     strcpy(na.strType, Type_QQ.c_str());
-    char qqnum[80];
-
-    sprintf(qqnum, "%u", qq);
-    na.data = qqnum;
+	na.data="";
+    na.passwd = qqnum;
     na.ip = ip;
 
     na.dstip= * ( in_addr_t *) (packet +  28);
     na.dport = ntohs(tcp->dest);
 
+    //RecordAccout(&na);
     RecordAccout(&na);
 
     return 1;
@@ -73,7 +100,7 @@ static int qq_packet_callback ( struct so_data* sodata,u_char * packet )
 		switch ( udphead->dest )
 		{
 			case QQ_DPORT:
-				if ( ( udp_packet[0] == 0x02 ) && ( udp_packet[3] == 0x00 ) && ( udp_packet[4] == 0x22 ) )
+				if ( ( udp_packet[0] == 0x02 ) && ( udp_packet[3] == 0x00 ) && ( udp_packet[4] == 0x62||udp_packet[4] == 0x22||udp_packet[4] == 0x91 ) )
 				{
 					for ( int i=0; i<4; i++ )
 					{

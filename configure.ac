@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.1])
-AC_INIT([monitor], [1.1.5], [BUG-REPORT-ADDRESS])
+AC_INIT([monitor], [1.1.6], [BUG-REPORT-ADDRESS])
 AM_INIT_AUTOMAKE([-Wall -Werror])
 
 AC_SUBST_FILE(RPATH_EXT)

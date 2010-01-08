@@ -435,7 +435,6 @@ int InitRecordSQL(const std::string & passwd, const std::string & user,
 	{
 
 		strcpy(hotel::strServerIP, row[1]);
-//		strcpy(hotel::strServerIP, "192.168.50.168");
 		strcpy(hotel::strHotelID, row[2]);
 		strcpy(hotel::str_ethID + 3, row[3]);
 
