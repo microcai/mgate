@@ -44,32 +44,21 @@
 
 #include "libmicrocai.h"
 #include "protocol_def.h"
-#include "my_log.h"
+
 
 void pcap_thread_func( struct pcap_thread_args * );
 
-char	net_interface[256] = "eth0";
 static char	socket_file[256] = "/tmp/monitor.socket";
-static int nat_helper_event;
 
-extern u_int8_t httphead[];
-extern u_int8_t httphead_t[];
-
-static u_int8_t		page[255]="192.168.1.1/GuestLogin.php";
 
 #ifdef DEBUG
-static char			config_file[256]="build/modules""/module.conf";
-static char			module_dir[256]="build/modules";
+static char			config_file[256]="/module.conf";
+static char			module_dir[256]="./build/modules";
 #else
-static char			config_file[256]=MODULES_PATH"module.conf";
+static char			config_file[256]="/etc/module.conf";
 static char			module_dir[256]= MODULES_PATH;
 #endif
-struct parameter_tags parameter[] =	{
-		parameter_tags("-d", parameter_type::STRING, net_interface,sizeof(net_interface)),
-		parameter_tags("--dev",parameter_type::STRING, net_interface, sizeof(net_interface),"-d,--dev\t网卡，默认是eth1"),
-		parameter_tags("--page",parameter_type::STRING, (char*) page, sizeof(page)),
-		parameter_tags("-p", parameter_type::STRING, (char*) page,sizeof(page), "-p,--page\t跳转页面，默认是192.168.0.1/"),
-		parameter_tags("-f", parameter_type::STRING, (char*) page,sizeof(page)),
+static struct parameter_tags parameter[] =	{
 		parameter_tags("--config", parameter_type::STRING, config_file,sizeof(config_file), "-f,--config\t模块参数配置文件，默认是 ./lib/module.conf"),
 		parameter_tags("--module_dir", parameter_type::STRING, module_dir,sizeof(module_dir), "--module_dir\t\t模块位置"),
 		parameter_tags()
@@ -125,7 +114,7 @@ static void Wait4Client()
 
 		recvfrom(socketfd,cmd_line,160,0,0,0);
 		log_puts(L_DEBUG_OUTPUT_MORE,cmd_line);
-		Wake_all(nat_helper_event);
+		Wake_all();
 	}
 
     close(socketfd);
@@ -136,6 +125,13 @@ static void Wait4Client()
 
 int main(int argc, char*argv[], char*env[])
 {
+#ifdef DEBUG
+	{
+		auto_str p(new char[800]);
+		getcwd(p,800);
+		log_printf(L_DEBUG_OUTPUT,"current dir is :%s\n",(char*)p);
+	}
+#endif
 	pthread_t pcap_tcp, pcap_udp;
 
 	struct so_data pa;
@@ -144,10 +140,13 @@ int main(int argc, char*argv[], char*env[])
 
 	struct pcap_thread_args arg1={0}, arg2={0};
 	struct ifreq rif={{{0}}};
-
+    time_t t;
+    t = ::time(0);
+    log_printf( L_DEBUG_OUTPUT_MORE,"%s loaded at %s\n",PACKAGE_NAME,ctime(&t));
 	ParseParameters(&argc,&argv,parameter);
 
-	strcpy(rif.ifr_name,net_interface);
+
+	strcpy(rif.ifr_name,hotel::str_ethID);
 
 	int tmp = socket(AF_INET, SOCK_DGRAM, 0);
 	ioctl(tmp, SIOCGIFADDR, &rif);
@@ -156,39 +155,29 @@ int main(int argc, char*argv[], char*env[])
 	arg2.mask = arg1.mask = ((sockaddr_in*) (&(rif.ifr_addr)))->sin_addr.s_addr;
 	close(tmp);
 
-	nat_helper_event = eventfd(0,0);
-	fcntl(nat_helper_event,F_SETFD,O_CLOEXEC|O_NOATIME); //  不要被 fork继承啊
-
-
-	pa.nat_helper_event = nat_helper_event;
-
 	setuid(0);
 
-	conf_fd = open(config_file, O_RDONLY|O_EXCL|O_CLOEXEC); //  不要被 fork继承啊
+	conf_fd = open(config_file, O_RDONLY|O_CLOEXEC); //  不要被 fork继承啊
 
 	if (conf_fd > 0)
 	{
-		fstat(conf_fd,&st);
-		pa.config_file = (char*)mmap(0,st.st_size?st.st_size:1,PROT_READ,MAP_PRIVATE,conf_fd,0);
+		fstat(conf_fd, &st);
+		pa.config_file = (char*) mmap(0, st.st_size ? st.st_size : 1, PROT_READ, MAP_PRIVATE, conf_fd, 0);
 		close(conf_fd);
 	}
 	else
 	{
-		log_printf(L_ERROR,"Err openning config file\n");
+		log_printf(L_ERROR, "Err openning config file\n");
 		pa.config_file = NULL;
 	}
 
-	if(enum_and_load_modules(module_dir,&pa))
+	if (enum_and_load_modules(module_dir, &pa))
 		return (0);
-	if(conf_fd>0)
-		munmap(pa.config_file,st.st_size?st.st_size:1);
+	if (conf_fd > 0)
+		munmap(pa.config_file, st.st_size ? st.st_size : 1);
 
-	//初始化跳转页面
-	sprintf((char*) httphead, (char*) httphead_t, page, page);
-
-
-	strncpy(arg1.eth, net_interface, 8);
-	strncpy(arg2.eth, net_interface, 8);
+	strncpy(arg1.eth, hotel::str_ethID, 8);
+	strncpy(arg2.eth, hotel::str_ethID, 8);
 
 	strncpy(arg1.bpf_filter_string, "tcp", 200);
 	strncpy(arg2.bpf_filter_string, "udp", 200);

@@ -14,10 +14,6 @@
 #include <stdlib.h>
 
 #include "libmicrocai.h"
-#include "kmysql.h"
-
-static int nat_helper_event;
-static bool	Is_Old_DB=false;
 
 static void loadroomlist(MYSQL_ROW row,void*)
 {
@@ -33,7 +29,7 @@ static void loadroomlist(MYSQL_ROW row,void*)
 	{
 		char sql[1024];
 		cd.mac_addr = macaddr;
-		if(Is_Old_DB)
+		if(hotel::Is_Old_DB)
 			sprintf(sql,"update t_room_list set MachineMac=\'%s\' where nIndex=%s",cd.mac_addr.c_str(),row[7]);
 		else
 			sprintf(sql,"update room_list set MAC_ADDR=\'%s\' where \'Index\'=%s",cd.mac_addr.c_str(),row[7]);
@@ -53,7 +49,7 @@ static int TimedOut_InterVal=61000;
 static void Wait_for_sql_change_or_timedout()
 {
 //	等待61秒看看
-	Wait_For_event(nat_helper_event, TimedOut_InterVal);
+	Wait_For_event(TimedOut_InterVal);
 }
 
 
@@ -93,7 +89,7 @@ static void portmap_change(MYSQL_ROW row, void*p)
 	cmd +=  row[4];//lport
 
 	run_cmd(cmd);
-	if(Is_Old_DB)
+	if(hotel::Is_Old_DB)
 		sprintf((char*)p,"delete from t_portmap_tmp where nIndex <= %s",row[0]);
 	else
 		sprintf((char*)p,"delete from portmap_change where \'Index\' <= %s",row[0]);
@@ -108,7 +104,7 @@ static void room_change(MYSQL_ROW row,void*p)
 	if (Is_ADD) //添加
 	{
 		char* sql = new char[1024];
-		if (Is_Old_DB)
+		if (hotel::Is_Old_DB)
 		{
 			sprintf(sql,
 					"select CustomerName,CustomerIDType,CustomerIDNum,MachineIP,BuildNum,RoomFloor,RoomNum,nIndex from t_room_list where MachineIP =\'%s\'",
@@ -142,7 +138,7 @@ static void room_change(MYSQL_ROW row,void*p)
 
 		set_client_offline(ip);
 	}
-	if(Is_Old_DB)
+	if(hotel::Is_Old_DB)
 		sprintf((char*)p,"delete from t_customer_ln where nIndex <= %s",row[0]);
 	else
 		sprintf((char*)p,"delete from room_change where \'Index\' <= %s",row[0]);
@@ -157,7 +153,7 @@ static void *kroomthread(void*)
 
 	for (;;)
 	{
-		std::cout << "waited" <<std::endl;
+		log_printf(L_DEBUG_OUTPUT,"%s:%s waited timeout\n",__FILE__,__func__);
 
 		Wait_for_sql_change_or_timedout();
 
@@ -165,7 +161,7 @@ static void *kroomthread(void*)
 		//管理上下网
 
 		ksql_query_and_use_result(room_change,
-				Is_Old_DB ? "select nIndex,nType,MachineIP from t_customer_ln order by nIndex asc"
+				hotel::Is_Old_DB ? "select nIndex,nType,MachineIP from t_customer_ln order by nIndex asc"
 						    :"select * from room_change order by \'Index\' asc",
 				strSQL);
 
@@ -175,7 +171,7 @@ static void *kroomthread(void*)
 			strSQL[0]=0;
 		}
 
-		if(Is_Old_DB)
+		if(hotel::Is_Old_DB)
 		{
 			ksql_query_and_use_result(portmap_change, "select nIndex,nType,proto,wanPort,lanPort,lanIpAddr from t_portmap_tmp order by nIndex asc",strSQL);
 		}else
@@ -189,7 +185,7 @@ static void *kroomthread(void*)
 			strSQL[0]=0;
 		}
 
-		if(Is_Old_DB) //旧数据库格式白名单是另外搞的，嘿嘿
+		if(hotel::Is_Old_DB) //旧数据库格式白名单是另外搞的，嘿嘿
 		{
 			// 白名单变动得查看看 t_legalip_tmp
 			int type;
@@ -229,14 +225,13 @@ static void *kroomthread(void*)
 		}
 	}
 	ksql_thread_end();
+	return 0;
 }
 
 extern "C" int __module_init(struct so_data*so)
 {
 
 	pthread_t p;
-
-	nat_helper_event = so->nat_helper_event;
 
 	std::cout << "\t初始化 iptables" << std::endl;
 	std::string cmd;
@@ -259,16 +254,19 @@ extern "C" int __module_init(struct so_data*so)
 	std::cout << std::endl;
 
 	//解析出参数来
-	std::string pswd;
+	std::string pswd,user,host,database;
 
 	pswd=GetToken(so->config_file,"password");
-	TimedOut_InterVal = atoi(GetToken(so->config_file,"interval").c_str());
-	if(TimedOut_InterVal==0)
-		TimedOut_InterVal=61000;
+	user=GetToken(so->config_file,"username","root");
+	host=GetToken(so->config_file,"sql_host","localhost");
+	database=GetToken(so->config_file,"database","hotel");
+	TimedOut_InterVal = atoi(GetToken(so->config_file,"interval","61000").c_str());
+
+	log_printf(L_DEBUG_OUTPUT,"user=%s,pawd=%s,host=%s,db=%s,timeout=%d\n",user.c_str(),pswd.c_str(),host.c_str(),database.c_str(),TimedOut_InterVal);
 
 	std::cout << "----------初始化数据库----------" << std::endl;
 
-	if(InitRecordSQL(pswd))
+	if(InitRecordSQL(pswd,user,database,host))
 			return -1;
 
 
@@ -279,20 +277,20 @@ extern "C" int __module_init(struct so_data*so)
 	if(!res)
 	{
 		ksql_free_result(res);
-		Is_Old_DB = true;
+		hotel::Is_Old_DB = true;
 //		sleep(1);
 
 		std::cout << "老数据库格式\t兼容模式运行" <<std::endl;
 		// 老旧的上网数据库。
 	}else
 	{
-		Is_Old_DB = false;
+		hotel::Is_Old_DB = false;
 		std::cout << "新数据库格式\tOK" <<std::endl;
 	}
 
 	std::cout << "\t加载允许上网客户" << std::endl;
 	//从 room_list 加载允许上网的客户和其信息
-	if(Is_Old_DB)
+	if(hotel::Is_Old_DB)
 		ksql_query_and_use_result(loadroomlist,
 				"select CustomerName,CustomerIDType,CustomerIDNum,MachineIP,BuildNum,RoomFloor,RoomNum,nIndex from t_room_list where bLogin=1",
 				0);
@@ -300,7 +298,7 @@ extern "C" int __module_init(struct so_data*so)
 		ksql_query_and_use_result(loadroomlist,
 				"select Name,IDtype,ID,IP_ADDR,RoomBuild,RoomFloor,RoomNum,\'Index\' from room_list where IsEmpty=0 and state>0 ",
 				0);
-	if (Is_Old_DB)
+	if (hotel::Is_Old_DB)
 	{
 		std::cout << "----------加载白名单----------" << std::endl;
 
@@ -322,7 +320,7 @@ extern "C" int __module_init(struct so_data*so)
 	}
 	std::cout << "----------启动端口映射----------" << std::endl;
 
-	if (Is_Old_DB)
+	if (hotel::Is_Old_DB)
 	{
 		ksql_query_and_use_result(port_map,"select \'nIndex\',proto,wanPort,lanPort,lanIpAddr  from t_portmap",0);
 	}

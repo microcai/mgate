@@ -117,6 +117,13 @@ int enum_and_load_modules(const char*path_to_modules,struct so_data * _so_data)
 		return -1;
 	}
 
+	auto_str pwd(new char[4096]);
+//
+//	getcwd(pwd,4096);
+//
+//	chdir(path_to_modules);
+
+
 	std::cout << "**********************开始加载扩展模块*******************************" << std::endl;
 
 	while ((dt = readdir(dir)))
@@ -146,6 +153,7 @@ int enum_and_load_modules(const char*path_to_modules,struct so_data * _so_data)
 			}
 		}
 	}
+//	chdir(pwd);
 	closedir(dir);
 	std::cout << "**********************模块加载完毕**********************************" << std::endl;
 

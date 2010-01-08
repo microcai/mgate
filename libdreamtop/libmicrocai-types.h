@@ -16,7 +16,15 @@
 
 typedef char* LPSTR;
 
-
+enum LOG_PRINT_LEVEL{
+	L_OUTPUT,
+	L_FAITAL,
+	L_ERROR,
+	L_WARNING,
+	L_NOTICE,
+	L_DEBUG_OUTPUT_MORE,
+	L_DEBUG_OUTPUT
+};
 enum enum_PROTOL{
 	HTTP=80,
  	QQ,
@@ -125,6 +133,42 @@ struct handler
 	int protocol_type;//IPPROTOCOL_TCP or IPPROTOCOL_UDP
 	PROTOCOL_HANDLER handler;
 };
+template< typename ptr_type >
+class auto_ptr{
+private:
+	ptr_type* m_autoptr;
+public:
+	auto_ptr(ptr_type* obj)
+	{
+		m_autoptr = obj;
+	}
+	~auto_ptr(){
+		delete m_autoptr;
+	}
+	operator ptr_type * ()
+	{
+		return m_autoptr;
+	}
+};
 
+class auto_str{
+private:
+	char * m_autoptr;
+public:
+	auto_str(char* obj)
+	{
+		m_autoptr = obj;
+	}
+	auto_str(size_t sz){
+		m_autoptr = new char[sz];
+	}
+	~auto_str(){
+		delete[] m_autoptr;
+	}
+	operator char * ()
+	{
+		return m_autoptr;
+	}
+};
 #endif	/* _LIBMICROCAI_TYPES_H */
 

@@ -24,16 +24,14 @@
 #include <time.h>
 #include <string.h>
 
-#include "libmicrocai.h"
 #define		__KLIBSQL_USEINTERNALLY
+#include "libmicrocai.h"
 
-#include "kmysql.h"
-#include "my_log.h"
 
 void** ksql_query_and_use_result(const char* query);
 void** ksql_query_and_use_result_quite(const char* query);
 
-static pthread_mutex_t sql_mutex=PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t sql_mutex;
 
 static MYSQL mysql;
 
@@ -44,10 +42,11 @@ namespace hotel{
     char strHoteName[32];
     char strServerIP[32];
     char strWebIP[32];
-    char str_ethID[32];
+    char str_ethID[32]="eth0";
+    bool Is_Old_DB=false;
 }
 
-int kregisterSendDataFunc(FUNC_SENDDATA f){	SendData = f;}
+int kregisterSendDataFunc(FUNC_SENDDATA f){	SendData = f;return 0;}
 
 double GetDBTime(char *pTime)
 {
@@ -181,8 +180,8 @@ void RecordAccout(struct NetAcount*na)
 	std::string strTime;
 	char* strSQL;
 
-	AccountInfo ac =
-	{ 0 };
+	AccountInfo ac ;
+	memset(&ac,0,sizeof(ac));
 
 	switch (na->type)
 	{
@@ -285,9 +284,9 @@ void RecordNetAccount(std::string & pType,std::string & Log,in_addr_t ip)
 
     sprintf(strSQL,
                 "insert into T_NetLog (RoomNum,MachineIP,MachineMac,CustomerIDType,CustomerIDNum, "
-                "CustomerName,nLogType,strLogInfo,nTime) values ('%s','%s','%s','%d','%s','%s','%s','%s','%s')",
+                "CustomerName,nLogType,strLogInfo,nTime) values ('%s','%s','%s','%s','%s','%s','%s','%s','%s')",
                 pcd->RoomNum.c_str(),inet_ntoa(in_addr_ip),pcd->MAC_ADDR,pcd->CustomerIDType.c_str(),
-                pcd->CustomerID.c_str(),pcd->CustomerName.c_str(),  pType.c_str(),Log.c_str(),strTime.c_str()
+                pcd->CustomerID.c_str(),pcd->CustomerName.c_str(), pType.c_str(),Log.c_str(),strTime.c_str()
             );
     ksql_run_query(strSQL);
     delete[] strSQL;
@@ -299,11 +298,17 @@ int InitRecordSQL(const std::string & passwd, const std::string & user,
 {
 	MYSQL_RES *res;
     MYSQL_ROW row;
+    pthread_mutexattr_t mutex_attr;
 
     mysql_thread_init();
 
  	mysql_init(&mysql);
- 	pthread_mutex_init(&sql_mutex,0);
+
+ 	pthread_mutexattr_init(&mutex_attr);
+ 	pthread_mutexattr_settype(&mutex_attr,PTHREAD_MUTEX_RECURSIVE);
+
+ 	pthread_mutex_init(&sql_mutex,&mutex_attr);
+ 	pthread_mutexattr_destroy(&mutex_attr);
 
  	pthread_mutex_lock(&sql_mutex);
     if(!mysql_real_connect(&mysql,host.c_str(),user.c_str(),passwd.c_str(),database.c_str(), 0, 0, 0))
@@ -322,13 +327,18 @@ int InitRecordSQL(const std::string & passwd, const std::string & user,
 	{
 
 		strcpy(hotel::strServerIP, row[0]);
-		strcpy(hotel::strWebIP, row[4]);
 		strcpy(hotel::strHotelID, row[1]);
-		strcpy(hotel::strHoteName, row[2]);
-		strcpy(hotel::str_ethID, row[3]);
+		strcpy(hotel::str_ethID, row[2]);
+		strcpy(hotel::strHoteName, row[3]);
+		strcpy(hotel::strWebIP, row[4]);
+		log_printf(L_DEBUG_OUTPUT,"ServerIP is %s\n",hotel::strServerIP);
+		log_printf(L_DEBUG_OUTPUT,"WebIP is %s\n",hotel::strWebIP);
 
-		std::cout << "ServerIP is " << hotel::strServerIP << std::endl;
-		std::cout << "WebIP is " << hotel::strWebIP << std::endl;
+		//初始化跳转页面
+		auto_str dest(256);
+		sprintf(dest,"%s/GuestLogin.php",hotel::strWebIP);
+
+		init_http_redirector(std::string(dest));
 
 	}
 	ksql_free_result(res);

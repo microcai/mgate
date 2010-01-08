@@ -38,10 +38,10 @@ kurl_so_CXXFLAGS = $(MODULE_COMM_FLAGS)
 kurl_so_LDADD = $(MODULE_COMM_LD)
 kurl_so_DEPENDENIES= libksql.so
 
-kmsn_so_LDFLAGS= -shared
-klz_so_LDFLAGS=-shared
-kurl_so_LDFLAGS=-shared
-kroom_so_LDFLAGS=-shared
-kqq_so_LDFLAGS=-shared
-kpolice_so_LDFLAGS=-shared
+kmsn_so_LDFLAGS= -shared -g 
+klz_so_LDFLAGS=-shared -g
+kurl_so_LDFLAGS=-shared -g 
+kroom_so_LDFLAGS=-shared -g
+kqq_so_LDFLAGS=-shared -g
+kpolice_so_LDFLAGS=-shared -g
 

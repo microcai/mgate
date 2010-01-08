@@ -23,8 +23,6 @@
 #include <string.h>
 
 #include "libmicrocai.h"
-#include "kmysql.h"
-#include "my_log.h"
 
 #define QQ_DPORT  0x401F //8000
 #define QQ_HTTPDPORT  0x5000 //80
@@ -37,7 +35,7 @@ std::string Type_QQ("1002");
 
 static int record_QQ_number(u_int qq, in_addr_t ip,u_char*packet)
 {
-    std::cout << "QQ number is :" << qq << std::endl;
+	log_printf(L_DEBUG_OUTPUT,"QQ number is : %u\n",qq);
 
     struct NetAcount na(NetAcountType_QQ,packet);
     na.ip = ip;

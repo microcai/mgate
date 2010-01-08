@@ -19,8 +19,6 @@
 #include <netinet/tcp.h>
 
 #include "libmicrocai.h"
-#include "kmysql.h"
-#include "my_log.h"
 
 
 #define MAX_LZ_PORT 3999
@@ -47,7 +45,7 @@ static bool CheckAccout(char *pAccount, int nLen)
 	}
 	return 1;
 }
-
+#if 0
 static int RecordLZ(char*LZ,u_char*packet,in_addr_t ip)
 {
 	struct NetAcount na(NetAcountType_LZ,packet);
@@ -58,20 +56,20 @@ static int RecordLZ(char*LZ,u_char*packet,in_addr_t ip)
 	RecordAccout(&na);
 	return 1;
 }
-
+#endif
 static int GetLZAccount(struct so_data*,u_char *packet)
 {
     /**************************************************
      *IP数据包通常就在以太网数据头的后面。以太网头的大小为14字节*
-    /**************************************************/
+     **************************************************/
     struct iphdr * ip_head = (struct iphdr*) (packet + ETH_HLEN);
     /**************************************************
      *TCP头也就在IP头的后面。IP头的大小为20字节，不过最好从头里读取
-    /**************************************************/
+     **************************************************/
     struct tcphdr * tcp_head = (struct tcphdr*) (packet + ETH_HLEN + ip_head->ihl * 4);
     /**************************************************
      *TCP数据现对于tcp头的偏移由doff给出。这个也是tcp头的大小**
-    /**************************************************/
+     **************************************************/
     char* tcpdata = (char*) tcp_head + tcp_head->doff * 4;
     int tcpdatelen = ip_head->tot_len - tcp_head->doff * 4 - ip_head->ihl * 4;
     /*太小的包肯定就不是*/

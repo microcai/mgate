@@ -32,15 +32,4 @@ struct pcap_thread_args{
 
 };
 
-static inline int stob ( char*s )
-{
-	if ( strncmp ( s,"yes",3 ) )
-		return 0;
-	else
-		return 1;
-}
-
-
-void redirect_to_local_http( u_int32_t ,const u_char *,struct iphdr* );
-
 #endif

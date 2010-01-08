@@ -10,10 +10,10 @@
 #include <map>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include <sys/time.h>
 
 #include <sys/ioctl.h>
-#include <sys/eventfd.h>
-#include <sys/poll.h>
 #include <net/if_arp.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -22,8 +22,6 @@
 #include <errno.h>
 
 #include "libmicrocai.h"
-#include "my_log.h"
-
 
 u_int16_t checksum(u_int16_t *buffer, int size)
 {
@@ -44,114 +42,30 @@ u_int16_t checksum(u_int16_t *buffer, int size)
 
     return (uint16_t) (~cksum);
 }
-
-static struct handler * head = 0, *tail = 0;
-void* register_protocol_handler(PROTOCOL_HANDLER handler, int port, int IPPROTOCOL_TYPE)
+static pthread_cond_t wait_cond=PTHREAD_COND_INITIALIZER;
+void Wake_all()
 {
-    struct handler *p = new struct handler();
-    p->magic = 'M';
-    p->port = port;
-    p->protocol_type = IPPROTOCOL_TYPE;
-    p->handler = handler;
-    if (tail) {
-        tail->next = p;
-        p->pre = tail;
-        tail = p;
-    } else {
-        tail = head = p;
-        head->pre = 0;
-        tail->next = 0;
-    }
-    return (void *) p;
-}
-
-PROTOCOL_HANDLER* get_registerd_handler(int port, int IPPROTOCOL_TYPE)
-{
-    PROTOCOL_HANDLER*ret = 0;
-    int i = 0;
-    struct handler* p = head;
-    ret = (PROTOCOL_HANDLER*)malloc(4096);
-    memset(ret, 0, 4096);
-    while (p)
-    {
-        if (p->magic != 'M')break;
-        if ((p->port == port || p->port == 0) && p->protocol_type == IPPROTOCOL_TYPE)
-            ret[i++] = p->handler;
-        p = p->next;
-    }
-    if (i)return ret;
-    free(ret);
-    return 0;
-}
-
-int un_register_protocol_handler(void*p)
-{
-    if (p)
-    {
-        if (((struct handler *) p)->magic != 'M')
-            return -1;
-
-        if (((struct handler *) p)->pre)
-            ((struct handler *) p)->pre->next = ((struct handler *) p)->next;
-        else
-            head = ((struct handler *) p)->next;
-        if (((struct handler *) p)->next)
-            ((struct handler *) p)->next->pre = ((struct handler *) p)->pre;
-        else
-            tail = ((struct handler *) p)->pre;
-        delete (struct handler*)p;
-        return 0;
-    } else
-        return -1;
+	pthread_cond_broadcast( &wait_cond);
 }
 
 
-void Wake_all(int __event)
+int Wait_For_event(int timedout)
 {
-	eventfd_t v=1;
-	eventfd_write(__event,v);
-	pthread_yield();
-	eventfd_read(__event,&v);
-
-}
-
-
-int Wait_For_event(int __event,int timedout)
-{
-	pollfd f;
-	f.fd = __event;
-	f.events = POLLIN;
-	f.revents = 0;
-
-	int ret;
-
-	for(;;)
-	{
-		ret = poll(&f,1,timedout);
-		switch(ret)
-		{
-		case -1:
-			if(errno != EINTR)
-			return ret;
-			else continue;
-		case 0:
-			return 1;
-		case 1:
-			if (f.revents & POLLIN)
-				return 0;
-			else
-				return -1;
-		}
-	}
+	struct timespec tsm;
+	pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
+	tsm.tv_nsec = timedout %1000;
+	tsm.tv_sec = timedout / 1000;
+	pthread_mutex_lock(&m);
+	int ret = pthread_cond_timedwait(&wait_cond,&m, &tsm);
+	pthread_mutex_unlock(&m);
+	return ret;
 }
 
 bool GetMac(const char *ip, char MAC_ADDR[],char mac_addr[])
 {
 	//向内核发送发起ARP查询
 	int s = socket(PF_INET, SOCK_DGRAM, 0);
-	struct arpreq arpr =
-	{
-	{ 0 } };
+	struct arpreq arpr ={{0}};
 
 	arpr.arp_flags = ATF_MAGIC;
 	arpr.arp_pa.sa_family = AF_INET;
@@ -191,7 +105,7 @@ void run_cmd(const std::string & strcmd )
 {
 	//在这里我不得不考虑system失败会导致的资源泄漏。
 //	pthread_mutex_lock()
-	log_printf(L_DEBUG_OUTPUT,"run: %s\n",strcmd);
+	log_printf(L_DEBUG_OUTPUT,"run: %s\n",strcmd.c_str());
 //	pthread_atfork(0,0,0);
 	system(strcmd.c_str());
 }

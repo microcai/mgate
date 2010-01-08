@@ -61,22 +61,22 @@ static int RecordMSNAccount(std::string msn,in_addr_t ip,in_addr_t dst_ip,u_char
 static int msn_packet_callback(struct so_data* sodata, u_char * packet) {
     /**************************************************
      *IP数据包通常就在以太网数据头的后面。以太网头的大小为14字节*
-    /**************************************************/
+     **************************************************/
     struct iphdr * ip_head = (struct iphdr*) (packet + ETH_HLEN);
     /**************************************************
      *TCP头也就在IP头的后面。IP头的大小为20字节，不过最好从头里读取
-    /**************************************************/
+     **************************************************/
     struct tcphdr * tcp_head = (struct tcphdr*) (packet + 14 + ip_head->ihl * 4);
     /**************************************************
      *TCP数据现对于tcp头的偏移由doff给出。这个也是tcp头的大小**
-    /**************************************************/
+     **************************************************/
     char* tcpdata = (char*) tcp_head + tcp_head->doff * 4;
     int tcpdatelen = ip_head->tot_len - tcp_head->doff * 4 - ip_head->ihl * 4;
     /*太小的包肯定就不是*/
     if (tcpdatelen < 5)return 0;
 
     char strMSN[256];
-    int nSize;
+    int nSize=sizeof(strMSN);
 
     /*查找特定的MSN命令 USR */
     char *pData = MemStr((char *) tcpdata, "USR", tcpdatelen);

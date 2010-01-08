@@ -30,7 +30,6 @@
 #include <libnet.h>
 
 #include "libmicrocai.h"
-#include "my_log.h"
 #include "protocol_def.h"
 
 static u_int32_t net_ip;
@@ -107,26 +106,31 @@ extern void pcap_thread_func(struct pcap_thread_args *arg)
 	{
 		log_printf(L_ERROR, "无法打开 %s 抓 %s 数据包,请以root运行\n",arg->eth,
 				arg->bpf_filter_string);
-		pthread_exit(0);
+		return ;
 	}
 
 
 #ifdef DEBUG
-	std::cout << "listen on device " <<  arg->eth ;
 	struct in_addr p;
 	p.s_addr = net_ip;
-	std::cout << "and ip address " << inet_ntoa(p);
-	std::cout << std::endl;
+	log_printf(L_DEBUG_OUTPUT,"listen on device %s and ip address is %s\n",arg->eth,inet_ntoa(p));
 #endif
 
 	pcap_compile(pcap_handle,&bpf_filter,arg->bpf_filter_string,0,net_ip);
 
-	pcap_setfilter(pcap_handle,&bpf_filter);
+	pcap_setfilter(pcap_handle, &bpf_filter);
 
 	pcap_freecode(&bpf_filter);
 
-	if(pcap_datalink(pcap_handle)!=DLT_EN10MB)
+	if (pcap_datalink(pcap_handle) != DLT_EN10MB)
+	{
+		log_printf(L_ERROR,"ERROR:%s is not an ethernet adapter\n",arg->eth);
+#ifdef DEBUG
+		return;
+#else
 		exit(1);
+#endif
+	}
 	pcap_loop(pcap_handle,-1,ip_filter_callback,0);
 	pcap_close(pcap_handle);
 }

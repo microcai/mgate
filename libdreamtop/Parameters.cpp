@@ -153,12 +153,12 @@ void ParseParameters(int * argc, char ** argv[], struct parameter_tags p_[])
 	}
 	*argc = a;
 }
-std::string GetToken(const char* strings,const char * key)
+std::string GetToken(const char* strings,const char * key,const char*default_val)
 {
 	char const * p = strings;
 	long l = strlen(key);
+	if(!strings)return std::string(default_val);
 	std::string ret;
-	if(!strings)return ret;
 	while( *p)
 	{
 		if(strncmp(p,key,l)==0)
@@ -174,5 +174,7 @@ std::string GetToken(const char* strings,const char * key)
 		}
 		p++;
 	}
+	if(!ret.size())
+		ret=default_val;
 	return ret;
 }

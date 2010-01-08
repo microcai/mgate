@@ -13,7 +13,6 @@
 #include <netinet/in.h>
 
 #include "libmicrocai.h"
-#include "my_log.h"
 
 struct client_hash_table_struct
 {

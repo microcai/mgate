@@ -58,6 +58,7 @@ namespace hotel{
     extern char strServerIP[32];
     extern char strWebIP[32];
     extern char str_ethID[32];
+    extern bool	Is_Old_DB;
 }
 
 #ifndef _mysql_h

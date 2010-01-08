@@ -9,7 +9,7 @@ AC_SUBST_FILE(RPATH_EXT)
 
 AC_ARG_ENABLE(debug,
                 [  --enable-debug Enable DEBUG output. This is a debugging feature  which should not be only enabled by develpoers],
-                [ CXXFLAGS="$CFLAGS -g2 -O0 -DDEBUG"],
+                [ CXXFLAGS="$CFLAGS -g2 -O0 -DDEBUG -Wall"],
                 [ CXXFLAGS="$CFLAGS -Os"]
               )
 

@@ -13,6 +13,6 @@
 
 #include "libmicrocai-macros.h"
 #include "libmicrocai-types.h"
-#include "libmicrocai-functions.h"
-
+#include "functions.h"
+#include "kmysql.h"
 #endif

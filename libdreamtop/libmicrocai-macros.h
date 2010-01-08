@@ -14,13 +14,5 @@
 #define _EXTERN_ extern
 #endif
 
-#define _INLINE_ inline
-
-#define HOOK_CALLED_ONLINE 0
-#define HOOK_CALLED_OFFLINE 1
-
-#define IP_LIGLE    1
-#define IP_ILLIGLE -1
-
 #endif	/* _LIBMICROCAI_MACROS_H */
 
