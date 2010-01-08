@@ -187,7 +187,7 @@ bool mac_is_alowed(u_char mac[6],in_addr_t ip)
 					pct->ip = sip;
 					sql.Format("update roomer_list set IP_ADDR='%s' where nIndex='%d'",
 							sip.c_str(),pct->nIndex);
-					ksql_run_query(sql);
+					ksql_run_query_async(sql);
 					syslog(LOG_NOTICE,"map ip %s to %s\n",sip.c_str(),sql.c_str());
 				}
 				return ret;

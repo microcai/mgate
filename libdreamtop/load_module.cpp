@@ -179,7 +179,7 @@ int enum_and_load_modules(const char*path_to_modules)
 	if(!dir)
 	{
 		syslog(LOG_ERR,"WARNNING: 没有找到扩展模块");
-		return -1;
+		return 0;
 	}
 
 	std::cout << "**********************开始加载扩展模块*******************************" << std::endl;

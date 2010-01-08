@@ -35,7 +35,12 @@
 #define PROLEN_COMPUTERIP	40
 #define PROLEN_NETBARNAME	41
 #define PROLEN_PASSWD		51
+#ifdef ENABLE_HOTEL
 #define PROLEN_KEY1		61
+#else
+#define PROLEN_KEY1		501
+#endif
+
 #define PROLEN_ORGAN		71
 #define PROLEN_KEY2		81
 #define PROLEN_SENDTITLE	101
@@ -100,17 +105,15 @@ struct NetAcount{
 extern "C"
 {
 
-int InitRecordSQL(const std::string & passwd = std::string(""),
-		const std::string & user = std::string("root"),
-		const std::string & database = std::string("hotel"),
-		const std::string & host = std::string("localhost"));
-
 void ksql_query_and_use_result(void(*callback)(MYSQL_ROW row, void*),
 		const char* query, void*p = NULL);
 int  ksql_run_query(const char *p);
 int	 ksql_run_query_async(const char *p);
 bool ksql_is_server_gone();
 void ksql_close();
+
+void StartSQL();
+int WaitForSQLserver();
 
 #ifndef _mysql_h
 // 使用  libksql 的定义

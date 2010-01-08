@@ -523,7 +523,6 @@ int main(int argc, char*argv[], char*env[])
 	time_t t;
 
 	char errbuf[PCAP_ERRBUF_SIZE];
-	char *config_file;
 	struct bpf_program bpf_filter =
 	{ 0 };
 
@@ -556,39 +555,35 @@ int main(int argc, char*argv[], char*env[])
 
 	if (conf_fd > 0)
 	{
+		char *config_file;
+
 		fstat(conf_fd, &st);
 		config_file = (char*) mmap(0, st.st_size ? st.st_size : 1, PROT_READ,
 				MAP_PRIVATE, conf_fd, 0);
 		close(conf_fd);
+		prase_config(config_file,st.st_size ? st.st_size : 1);
+		munmap(config_file, st.st_size ? st.st_size : 1);
 	}
 	else
-	{
 		syslog(LOG_WARNING, "Err opening config file");
-		config_file = NULL;
-	}
 
 	//解析出参数来
-	std::string pswd, user, host, database,dnss,threads;
+	std::string dnss,threads,update_server,update_trunk;
 
-	pswd = GetToken(config_file, "db.config.password");
-	user = GetToken(config_file, "db.config.username", "root");
-	host = GetToken(config_file, "db.config.host", "localhost");
-	database = GetToken(config_file, "db.config.dbname", "hotel");
-	threads = GetToken(config_file,"threads","1");
-	dnss = GetToken(config_file, "dns", "");
+	threads = GetToken("threads","1");
+	dnss = GetToken("dns", "");
+	update_server = GetToken("update.server","");
+	update_trunk = GetToken("update.trunk","monitor");
 	MAX_PCAP_THREAD = atoi(threads.c_str());
 
-	syslog(LOG_NOTICE,"----------初始化数据库----------");
+	StartSQL();
 
-	while (InitRecordSQL(pswd, user, database, host))
-	{
-		syslog(LOG_CRIT, "\n**Cannotconnect to mysql server**\nretry\n");
-
-		sleep(3);
-	}
+	signal(15,on_term);
+	signal(2,on_term);
 
 	if(flush_db)
 	{
+
 		ksql_run_query("truncate roomer_list");
 		ksql_run_query("truncate room_list");
 		ksql_run_query("truncate room_change");
@@ -603,6 +598,8 @@ int main(int argc, char*argv[], char*env[])
 
 		return 0;
 	}
+
+	WaitForSQLserver();
 
 	strcpy(rif.ifr_name, hotel::str_ethID);
 	int tmp = socket(AF_INET, SOCK_DGRAM, 0);
@@ -642,8 +639,6 @@ int main(int argc, char*argv[], char*env[])
 	if (enum_and_load_modules(module_dir))
 		return (0);
 
-	if (conf_fd > 0)
-		munmap(config_file, st.st_size ? st.st_size : 1);
 
 	pcap_compile(arg.pcap_handle, &bpf_filter, "tcp or udp", 1, arg.mask);
 
@@ -718,30 +713,13 @@ int main(int argc, char*argv[], char*env[])
 		switch (poll(pfd, 1, 5000))
 		{
 		case 0:
-			if (ksql_is_server_gone())
-			{
-				ksql_close();
-				while (InitRecordSQL(pswd, user, database, host))
-					sleep(2);
-			}
 			On_SQL_change();
 			break;
 		case 1:
 			if (read(inotifyfd, inotifyevent, sizeof(errbuf)) > 0)
 			{
-
 				if (inotifyevent->wd == socket_file_watch)
-				{
-
-					if (ksql_is_server_gone())
-					{
-						ksql_close();
-						while (InitRecordSQL(pswd, user, database, host))
-							sleep(2);
-					}
-					//******************************************************
 					On_SQL_change();
-				}
 //				else if (inotifyevent->wd == module_dir_watch)
 //				{
 //					//					if (inotifyevent->mask & IN_DELETE)
@@ -791,9 +769,15 @@ int main(int argc, char*argv[], char*env[])
 #else
 	if (ksql_is_server_gone())
 	{
-		ksql_close();
-		while (InitRecordSQL(pswd, user, database, host))
-			sleep(2);
+		switch (Check_update(update_server.c_str(), update_trunk.c_str()))
+		{
+		case (-1):
+			sleep(5);
+			break;
+		case 0:
+			sleep(1);
+			break;
+		}
 	}
 	sleep(5000);
 #endif

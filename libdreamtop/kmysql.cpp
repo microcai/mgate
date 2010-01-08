@@ -10,16 +10,17 @@
  */
 
 #include <iostream>
-//#include <map>
+#include <queue>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
 #include <fcntl.h>
 #include <syscall.h>
-#include <unistd.h>
 #include <pthread.h>
 #include <syslog.h>
+#include <sys/poll.h>
+
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <net/ethernet.h>
@@ -345,7 +346,7 @@ void RecordAccout(struct NetAcount*na)
 			strmac, na->strType,
 			na->data.c_str(), strTime.c_str());
 #endif
-	ksql_run_query(strSQL);
+	ksql_run_query_async(strSQL);
 	syslog(LOG_NOTICE,"%s",strSQL.c_str());
 
 	strncpy(ac.Key1, na->data.c_str(), 60);
@@ -377,11 +378,9 @@ void RecordAccout(struct CustomerData & cd)
 	SendData(COMMAND_CUSTOMER, (char *) &cd, sizeof(CustomerData));
 }
 
-int InitRecordSQL(const std::string & passwd, const std::string & user,
+static int InitRecordSQL(const std::string & passwd, const std::string & user,
 		const std::string & database, const std::string & host)
 {
-	MYSQL_RES *res;
-    MYSQL_ROW row;
     pthread_mutexattr_t mutex_attr;
 
  	mysql_init(&mysql);
@@ -427,50 +426,165 @@ int InitRecordSQL(const std::string & passwd, const std::string & user,
     pthread_mutex_unlock(&sql_mutex);
 
     syslog(LOG_NOTICE,"连接到数据库 OK\n");
-
-    //Get t_sysparam
-	res = (MYSQL_RES*) ksql_query_and_use_result("select * from t_sysparam");
-	row = ksql_fetch_row(res);
-	if (row)
-	{
-
-		strcpy(hotel::strServerIP, row[1]);
-//		strcpy(hotel::strServerIP, "192.168.50.168");
-		strcpy(hotel::strHotelID, row[2]);
-		strcpy(hotel::str_ethID + 3, row[3]);
-
-		utf8_gbk(hotel::strHoteName,sizeof(hotel::strHoteName),row[4],strlen(row[4]));
-
-#ifdef ENABLE_HOTEL
-		strcpy(hotel::strWebIP, row[5]);
-#endif
-
-		syslog(LOG_NOTICE,"hotel name is %s\n",row[4]);
-		syslog(LOG_NOTICE,"hotel ID is %s\n",hotel::strHotelID);
-		syslog(LOG_NOTICE,"ServerIP is %s\n",hotel::strServerIP);
-#ifdef ENABLE_HOTEL
-		syslog(LOG_NOTICE,"WebIP is %s\n",hotel::strWebIP);
-#endif
-		syslog(LOG_NOTICE,"monitoring card %s\n",hotel::str_ethID);
-
-	}else if (!res)
-	{
-
-		syslog(LOG_WARNING, "tables not exist, create them.\n");
-		for (int i = 0; i < (int)(sizeof(create_sql) / sizeof(char*)); ++i)
-			mysql_query(&mysql, create_sql[i]);
-		syslog(L_NOTICE,"All tables created!");
-		exit(0);
-	}
-	ksql_free_result(res);
-#ifdef ENABLE_HOTEL
-	//初始化跳转页面
-	CString dest;
-	dest.Format("%s/login", hotel::strWebIP);
-
-	init_http_redirector(std::string(dest));
-#endif
     return 0;
+}
+static volatile int	ksql_inited=false;
+
+int WaitForSQLserver()
+{
+	while (ksql_inited!=2)
+	{
+		sched_yield();
+	}
+
+	return 0;
+}
+
+static void * KSQL_daemon(void*_p)
+{
+	int ksql_daemon_socket_recv ;
+	pollfd	pfd;
+
+	char	buf[4096];
+
+	struct
+	{
+		pthread_mutex_t p;
+		int fd[2];
+	} *p = (typeof(p))_p;
+
+	ksql_daemon_socket_recv = p->fd[0];
+	shutdown(ksql_daemon_socket_recv,1);
+
+	pthread_mutex_unlock(&p->p);
+
+	MYSQL_RES * res;
+	MYSQL_ROW	row;
+
+	std::string pswd, user, host, database;
+
+	pswd = GetToken("db.config.password");
+	user = GetToken("db.config.username", "root");
+	host = GetToken("db.config.host", "localhost");
+	database = GetToken("db.config.dbname", "hotel");
+
+	for (;;)
+	{
+		ksql_inited = 0;
+
+		while (InitRecordSQL(pswd, user, database, host))
+		{
+			syslog(LOG_ERR, "Cannot connect to MYSQL server, sleep and retry!");
+			sleep(2);
+		}
+
+		ksql_inited =1;
+
+		//Get t_sysparam
+		res = (typeof(res)) ksql_query_and_use_result(
+				"select * from t_sysparam");
+
+		row = ksql_fetch_row(res);
+		if (row)
+		{
+			strcpy(hotel::strServerIP, row[1]);
+			strcpy(hotel::strHotelID, row[2]);
+			strcpy(hotel::str_ethID + 3, row[3]);
+
+			utf8_gbk(hotel::strHoteName, sizeof(hotel::strHoteName), row[4],
+					strlen(row[4]));
+
+#ifdef ENABLE_HOTEL
+			strcpy(hotel::strWebIP, row[5]);
+#endif
+
+			syslog(LOG_NOTICE, "hotel name is %s\n", row[4]);
+			syslog(LOG_NOTICE, "hotel ID is %s\n", hotel::strHotelID);
+			syslog(LOG_NOTICE, "ServerIP is %s\n", hotel::strServerIP);
+#ifdef ENABLE_HOTEL
+			syslog(LOG_NOTICE,"WebIP is %s\n",hotel::strWebIP);
+#endif
+		}
+		else if (!res)
+		{
+			syslog(LOG_WARNING, "tables not exist, create them.\n");
+			for (int i = 0; i < (int) (sizeof(create_sql) / sizeof(char*)); ++i)
+				mysql_query(&mysql, create_sql[i]);
+			syslog(LOG_NEWS, "All tables created!");
+			exit(0);
+		}
+		ksql_free_result(res);
+#ifdef ENABLE_HOTEL
+		//初始化跳转页面
+		CString dest;
+		dest.Format("%s/login", hotel::strWebIP);
+
+		init_http_redirector(std::string(dest));
+#endif
+
+	//------------------------------------------
+		//现在，开始检测是否断开了数据库的连接，呵呵，断开连接就重新连接上
+		//并且为异步做服务，哈哈
+		ksql_inited = 2;
+
+		for(;;)
+		{
+			pfd.fd = ksql_daemon_socket_recv;
+
+			pfd.events = POLLIN;
+
+			while(poll(&pfd,1,10000))
+			{
+				//执行代码
+				read(ksql_daemon_socket_recv,buf,4096);
+				printf("%s\n",buf);
+				if (ksql_run_query(buf))
+					break;
+			}
+
+			if (ksql_is_server_gone())
+			{
+				ksql_close();
+				break;
+			}
+		}
+	}
+
+	return 0;
+}
+
+static int	ksql_daemon_socket=0;
+
+void StartSQL()
+{
+	if(ksql_daemon_socket)return ;
+
+	struct
+	{
+		pthread_mutex_t p;
+		int fd[2];
+	} p;
+
+	socketpair(AF_LOCAL, SOCK_CLOEXEC | SOCK_SEQPACKET, 0, p.fd);
+
+	ksql_daemon_socket = p.fd[1];
+	shutdown(ksql_daemon_socket,0);
+
+	pthread_mutex_init(&p.p, 0);
+	pthread_mutex_lock(&p.p);
+
+	pthread_t ksql_daemon;
+
+	pthread_create(&ksql_daemon, 0,
+			KSQL_daemon, &p);
+
+	pthread_detach(ksql_daemon);
+	pthread_mutex_lock(&p.p);
+	pthread_mutex_unlock(&p.p);
+	pthread_mutex_destroy(&p.p);
+
+	syslog(LOG_INFO,"starting ksql daemon");
+
 }
 
 void ksql_close()
@@ -480,47 +594,52 @@ void ksql_close()
 
 bool ksql_is_server_gone()
 {
-	char	SQL_NULL[]="SELECT t.`nIndex` FROM t_sysparam t LIMIT 0,0";
-	pthread_mutex_lock(&sql_mutex);
-	if(mysql_query(&mysql, SQL_NULL))
+	if (ksql_inited)
 	{
-		pthread_mutex_unlock(&sql_mutex);
-		return true;
+		char SQL_NULL[] = "SELECT t.`nIndex` FROM t_sysparam t LIMIT 0,0";
+		pthread_mutex_lock(&sql_mutex);
+		if (mysql_query(&mysql, SQL_NULL))
+		{
+			pthread_mutex_unlock(&sql_mutex);
+			return true;
+		}
+		else
+		{
+			int ret = mysql_field_count(&mysql);
+			if (ret)
+			{
+				MYSQL_RES* res = mysql_use_result(&mysql);
+				if (res)
+					mysql_free_result(res);
+			}
+			pthread_mutex_unlock(&sql_mutex);
+		}
+		return false;
 	}
 	else
-	{
-		int ret = mysql_field_count(&mysql);
-		if(ret)
-		{
-			MYSQL_RES* res =  mysql_use_result(&mysql);
-			if(res)
-				mysql_free_result(res);
-		}
-		pthread_mutex_unlock(&sql_mutex);
-	}
-	return false;
-}
-
-int ksql_run_query(const char *p)
-{
-	pthread_mutex_lock(&sql_mutex);
-	int ret = mysql_query(&mysql, p );
-	pthread_mutex_unlock(&sql_mutex);
-	//尽量减少加锁的时间，增加并行。
-	if (ret)
-		syslog(LOG_ERR,"err make query  %s\n",mysql_error(&mysql));
-	return ret;
+		return false;
 }
 
 int ksql_run_query_async(const char *p)
 {
-	pthread_mutex_lock(&sql_mutex);
-	int ret = mysql_query(&mysql, p );
-	pthread_mutex_unlock(&sql_mutex);
-	//尽量减少加锁的时间，增加并行。
-	if (ret)
-		syslog(LOG_ERR,"err make query  %s\n",mysql_error(&mysql));
-	return ret;
+	int ret = write(ksql_daemon_socket, p , strlen(p) + 1);
+	return ret<0?1:0;
+}
+
+int ksql_run_query(const char *p)
+{
+	if (ksql_inited)
+	{
+		pthread_mutex_lock(&sql_mutex);
+		int ret = mysql_query(&mysql, p);
+		pthread_mutex_unlock(&sql_mutex);
+		//尽量减少加锁的时间，增加并行。
+		if (ret)
+			syslog(LOG_ERR, "err make query  %s\n", mysql_error(&mysql));
+		return ret;
+	}
+	else
+		return false;
 }
 
 MYSQL_ROW ksql_fetch_row(MYSQL_RES*res)
@@ -541,38 +660,45 @@ void ksql_free_result(MYSQL_RES* res)
 
 void* * ksql_query_and_use_result(const char* query)
 {
-	MYSQL_RES *	res;
-
-	pthread_mutex_lock(&sql_mutex);
-
-	if(mysql_query(&mysql,query))
+	MYSQL_RES * res;
+	if (ksql_inited)
 	{
-		pthread_mutex_unlock(&sql_mutex);
-		syslog(LOG_ERR,"Err make query  %s\n",mysql_error(&mysql));
-		if(mysql_errno(&mysql)==CR_SERVER_GONE_ERROR)
+		pthread_mutex_lock(&sql_mutex);
+
+		if (mysql_query(&mysql, query))
 		{
-			close(open("/tmp/monitor.socket",O_RDWR));
+			pthread_mutex_unlock(&sql_mutex);
+			syslog(LOG_ERR, "Err make query  %s\n", mysql_error(&mysql));
+			if (mysql_errno(&mysql) == CR_SERVER_GONE_ERROR)
+			{
+				close(open("/tmp/monitor.socket", O_RDWR));
+			}
+			return NULL;
 		}
-		return NULL;
+		res = mysql_store_result(&mysql);
+
+		pthread_mutex_unlock(&sql_mutex);
+
+		return (void**) res;
 	}
-	res = mysql_store_result(&mysql);
-
-	pthread_mutex_unlock(&sql_mutex);
-
-	return (void**)res;
+	else
+		return NULL;
 }
 
 void ksql_query_and_use_result( void (*callback)( MYSQL_ROW row,void*p ),const char* query,void*p)
 {
 	MYSQL_RES* res;
-	MYSQL_ROW	row;
-	res = (MYSQL_RES*)ksql_query_and_use_result(query); //内部都开始使用自己封装的函数了。呵呵
-	while ((row = ksql_fetch_row(res)))
+	MYSQL_ROW row;
+	if (ksql_inited)
 	{
-		if(callback) //避免错误啊，呵呵
-			callback(row, p);
+		res = (MYSQL_RES*) ksql_query_and_use_result(query); //内部都开始使用自己封装的函数了。呵呵
+		while ((row = ksql_fetch_row(res)))
+		{
+			if (callback) //避免错误啊，呵呵
+				callback(row, p);
+		}
+		ksql_free_result(res);
 	}
-	ksql_free_result(res);
 }
 
 void InsertCustomerLog(const char * build,const char * floor,const char * room, const char * name ,
@@ -586,5 +712,5 @@ void InsertCustomerLog(const char * build,const char * floor,const char * room, 
 			"values ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')",
 			build,floor,room,name,idtype,id,ip,mac,type,time);
 	//log_printf(L_DEBUG_OUTPUT,"%s\n",sqlstr.c_str());
-	ksql_run_query(sqlstr);
+	ksql_run_query_async(sqlstr);
 }

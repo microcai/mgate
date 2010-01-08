@@ -11,7 +11,7 @@
 
 安装方法：
 	解压文件
-	tar -xvf monitor-1.0.0.tar.bz2
+	tar -xvf monitor-1.1.6.tar.bz2
 	cd monitor-1.0.0
 	
 运行 shell 脚本来进行配置

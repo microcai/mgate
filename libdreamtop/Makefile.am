@@ -17,7 +17,7 @@ libdreamtop_so_SOURCES = libmicrocai.cpp \
 						 libmicrocai-macros.h libmicrocai-queue.h \
 						 libmicrocai-types.h \
 						 Parameters.cpp load_module.cpp kmysql.cpp kmysql.h \
-						 protocol_handler.cpp 
+						 protocol_handler.cpp config.cpp
 						 
 if ENABLE_HOTEL
 libdreamtop_so_SOURCES += clients.cpp http_redirect.cpp	

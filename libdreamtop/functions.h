@@ -10,7 +10,8 @@
 
 _EXTERN_ void ParseParameters(int * argc, char ** argv[], struct parameter_tags p_[]);
 
-_EXTERN_ std::string GetToken(const char* strings,const char * key,const char* default_val="");
+_EXTERN_ int prase_config(const char * filecontent, size_t lengh );
+_EXTERN_ std::string GetToken(const char * key,const char* default_val="");
 
 _EXTERN_ void
 	formatMAC(const u_char * MAC_ADDR,char * strmac);
