@@ -1,0 +1,18 @@
+libmicrocai by Microcai
+
+	provide helper functions
+	Like GetConfig()
+	and checksum
+	
+	module will use register_protocol_handler(...) to register handlers
+	and the monitor will use get_registerd_handler() to get these handlers
+	then it calls every hanlder.
+	
+	monitor will enum and load modules by calling enum_and_load_modules(char*path_to_modules);
+	and if a modules been loaded, it will register hanlders.
+	
+	and provide common functions that can be used by other modules
+	
+	
+	
+	

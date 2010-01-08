@@ -1,0 +1,84 @@
+
+NOTE: This dir contains files that is closed source.
+	  And most of these is written by my boss and others.
+
+
+file:
+	>kqq.cpp		kingstone's QQ analyze module
+	>kmsn.cpp		kingstone's msn analyze module
+	>kurl.cpp		kingstone's URL analyze module
+	>kpolice.cpp	kingstone's police port module
+	>libksql.cpp	kingstone's SQL wrapper lib
+	>kroom.cpp		kingstone's room manager module
+____________________________________________________________________________________
+
+	模块启动时 (名字为 __modules_init 的导出函数会在模块被加载的时候被调用 ）使用
+	 register_protocol_handler向 monitor 注册处理	函数。
+	第一个参数为回调函数地址，第二个参数为监视的端口（为0表示所有端口）
+	第三个参数为协议类型。为IPPROTOCOL_TCP 或者 IPPROTOCOL_UDP
+
+	注册成功后会返回一个句柄。这个句柄将用来调用 un_register_protocol_handler
+	调用 un_register_protocol_handler不是必须的。
+	除非需要中途退出
+
+	回调函数的结构是 int callkack（void* reserved,u_char * packet）
+	packet 就是抓到的数据包，包括以太网帧头
+
+	模块内部可以做任何事情。模块通过libmicrocai相互通讯，主要是获得和修改客户数据。模块也通过
+    kmysql和kpolice通讯，哦，是和公安系统。
+
+------------------------------------------------------------------------------------
+	kpolice
+	kpolice不需要注册处理函数
+	kpolice将在启动时创建一个线程，这个线程负责随时响应公安系统的召唤。并且向kmysql注册记录发送
+    函数，有数据需要发送的时候，kmysql都要调用发送函数。当发送函数被调用的时候，这个函数只是
+    将需要发送的数据放到一个列队里头，并立即返回。kpolice将在网络允许的时候发送这个数据包。
+    kpolice使用了异步的方式进行通讯，数据将会在最快的时间内通过网络发送出去。
+    
+____________________________________________________________________________________
+	协议分析模块编写准则
+	
+	必须要导出__modules_init的函数，这个函数必须是__cdecl调用方式（C/C++默认调用方式）
+	
+	__modules_init返回 0 表示 模块初始化成功。返回 1 表示本模块初始化失败，请求卸载
+	返回 -1 表示本模块失败的初始化是不可逆转的，导致整个程序出错，请求立即结束程序的执行
+	注意，尽管需要结速程序的执行，最好交给主程序结束而不是自己调用 exit。
+	
+	__modules_init有一个参数，指向struct so_data.这个结构告诉初始化函数本模块的加载地址
+	如果需要处理特定协议，需要调用register_protocol_handler注册处理函数。处理函数返回 0 表示
+	需要将数据传递到下一个具有相同类型的处理函数去处理，返回 1 表示本函数完成了处理，不必调用下
+	一个函数。（这个是对于 用 0 做端口地址注册的函数）
+	
+	
+	模块要有一个名字，名字在导出变量 module_name 中定义。模块名字供将来使用。目前只是在启动的时候
+	打印而已。
+	如果需要写到sql数据库，请查看 kmysql.h的导出函数。最重要的是 
+	void ksql_query_and_use_result( void (*callback)( MYSQL_ROW row ),const char* query);
+	这个函数能查询SQL语句的结果并为每个结果调用回调函数。
+	
+	模块的文件名通常是k打头，k代表kingstone
+
+____________________________________________________________________________________
+
+	模块依赖的解决
+	
+	如果模块需要依赖某个或几个模块，要求必需在模个模块加载之前加载，可以导出一个字符串的变量 _depmod_
+	内容是依赖的模块名字。则monitor会保证运行 __modules_init之前先行运行所依赖的模块的
+	__modules_init。
+	
+	注意：避免循环依赖。如果循环依赖那么调用循序是未定义的。这个依赖于文件系统存放文件的先后循序，后被
+	搜索到的有最先机会运行。	
+____________________________________________________________________________________
+	
+	模块参数问题。
+	
+	如果模块需要参数，可以将参数写到 ./lib/module.conf ，模块加载时将通过 so_data 参数传递打开的文件
+	的内容。整个文件的内容是被映射到内存的。使用 GetToken(const char const * strings,const char*key)
+	来获得 key 所 = 后面的字符串。没有就返回空字符串 “” 。
+	
+	
+	
+	
+	
+		
+	
