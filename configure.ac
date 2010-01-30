@@ -4,6 +4,8 @@
 AC_PREREQ([2.63])
 AC_INIT([monitor], [1.2.0], [BUG-REPORT-ADDRESS])
 
+AC_CONFIG_MACRO_DIR([m4])
+
 AC_ARG_ENABLE(debug,
                 [AC_HELP_STRING([--enable-debug],
                 	[Enable DEBUG output. This feature which should be only enabled by developers])
@@ -14,6 +16,15 @@ AC_ARG_ENABLE(debug,
 AC_PROG_CXX
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([-Wall -Werror])
+
+# define GETTEXT_* variables
+GETTEXT_PACKAGE="$PACKAGE_NAME"
+AC_SUBST(GETTEXT_PACKAGE)
+AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Define to the read-only architecture-independent data directory.])
+
+AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION(0.16.1)
+
 
 AC_ARG_ENABLE(hotel,
 				[AC_HELP_STRING([--enable-hotel],[enable hotel related features and disable cafe related features])],
@@ -57,7 +68,7 @@ AS_IF([test "x$with_mysql" != "xno" ],
 		AC_CHECK_LIB([mysqlclient -L/usr/lib/mysql], [mysql_query] ,
 						#found
 						[
-							AM_CONDITIONAL(WITH_MYSQL,true)
+							AC_DEFINE_UNQUOTED(HAVE_MYSQL,[1],[if have mysql])
 							LD_MYSQL_FLAGS="-lmysqlclient -L/usr/lib/mysql";
 						],
 						#not found 
@@ -65,36 +76,35 @@ AS_IF([test "x$with_mysql" != "xno" ],
 							AC_CHECK_LIB([mysqlclient -L/usr/lib64/mysql], [mysql_query] ,
 											#found
 											[
+												AC_DEFINE_UNQUOTED(HAVE_MYSQL,[1],[if have mysql])
 												LD_MYSQL_FLAGS="-lmysqlclient -L/usr/lib64/mysql";												
-												AM_CONDITIONAL(WITH_MYSQL,true)
 											],
 											#not found
 											[
 												AC_CHECK_LIB([mysqlclient -L/usr/local/lib/mysql], [mysql_query],
 																#found
 																[
+																	AC_DEFINE_UNQUOTED(HAVE_MYSQL,[1],[if have mysql])
 																	LD_MYSQL_FLAGS="-lmysqlclient -L/usr/local/lib/mysql";
-																	AM_CONDITIONAL(WITH_MYSQL,true)																	
 																],
 																#not found
 																[
 																	AC_CHECK_LIB([mysqlclient -L/usr/local/lib64/mysql], [mysql_query],
 																					#found
 																					[
+																						AC_DEFINE_UNQUOTED(HAVE_MYSQL,[1],[if have mysql])
 																						LD_MYSQL_FLAGS="-lmysqlclient -L/usr/local/lib64/mysql";
-																						AM_CONDITIONAL(WITH_MYSQL,true)
 																					],
 																					#not found
 																					[
 																						AC_MSG_ERROR([no mysql-devel found, use --without-mysql to disable them ],[1])
-																						AM_CONDITIONAL(WITH_MYSQL,FALSE)
 																					])														
 																])
 											])
 						])	
-	]
-	)
+	])
 
+AM_CONDITIONAL(WITH_MYSQL,[test with_mysql="yes" ])
 
 AC_SUBST(LD_MYSQL_FLAGS)
 
@@ -115,7 +125,6 @@ AS_IF(	[test "x$with_sqlite3" != xno ],
 			AM_CONDITIONAL(WITH_SQLITE3,false)
 		])
 
-AM_CONDITIONAL(WITH_MYSQL,true)
 
 # Checks for library functions.
 AC_FUNC_MMAP
@@ -123,8 +132,17 @@ AC_CHECK_FUNCS([inet_ntoa memset munmap setenv socket strerror strstr])
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h memory.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h unistd.h])
 
+
 #AC_CONFIG_FILES([modules/Makefile])
-AC_CONFIG_FILES( [Makefile libdreamtop/Makefile monitor/Makefile modules/Makefile])
+AC_CONFIG_FILES( [
+					Makefile
+					libdreamtop/Makefile
+					monitor/Makefile
+					modules/Makefile
+					po/Makefile.in
+					monitor-hotel.spec
+					monitor-cafe.spec
+		])
 
 AS_IF([test "$prefix" = "NONE"],[prefix="/usr/local"])
 

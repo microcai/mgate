@@ -44,7 +44,11 @@
 #include <sys/mman.h>
 #include <pcap.h>
 #include <errno.h>
-
+#ifdef HAVE_GETTEXT
+#include <locale.h>
+#include <libintl.h>
+#define _(x) gettext(x)
+#endif
 #include "libdreamtop.h"
 #include "protocol_def.h"
 
@@ -505,6 +509,12 @@ static void on_term(int )
 
 int main(int argc, char*argv[], char*env[])
 {
+	setlocale(LC_ALL,"");
+	textdomain(GETTEXT_PACKAGE);
+#ifdef DEBUG
+	bindtextdomain(GETTEXT_PACKAGE,"/tmp/share/locale");
+#endif
+
 	pthread_attr_t p_attr;
 	pthread_t pcap_tcp;
 	time_t t;
@@ -536,7 +546,7 @@ int main(int argc, char*argv[], char*env[])
 #endif
 	//exit (0);
 
-	syslog(LOG_NOTICE, "%s loaded at %s", PACKAGE_NAME,	ctime(&t));
+	syslog(LOG_NOTICE, _("%s loaded at %s"), PACKAGE_NAME,	ctime(&t));
 
 	ParseParameters(&argc, &argv, parameter);
 
@@ -587,7 +597,7 @@ int main(int argc, char*argv[], char*env[])
 		ksql_run_query("truncate t_netlog");
 		ksql_run_query("truncate whitelist");
 
-		printf("all tables truncated!\n");
+		printf(_("all tables truncated!\n"));
 
 		return 0;
 	}
@@ -600,7 +610,7 @@ int main(int argc, char*argv[], char*env[])
 		arg.ip = ((sockaddr_in*) (&(rif.ifr_addr)))->sin_addr.s_addr;
 	else
 	{
-		syslog(LOG_CRIT,"nic %s not enabled!",hotel::str_ethID);
+		syslog(LOG_CRIT,_("nic %s not enabled!"),hotel::str_ethID);
 		sleep(20);
 		return 1;
 	}
@@ -617,7 +627,7 @@ int main(int argc, char*argv[], char*env[])
 			errbuf);
 	if(!arg.pcap_handle)
 	{
-		syslog(LOG_CRIT, "ERROR:can not open %s for capturing!\n",
+		syslog(LOG_CRIT, _("ERROR:can not open %s for capturing!\n"),
 				hotel::str_ethID);
 		closelog();
 		return -1;
@@ -625,7 +635,7 @@ int main(int argc, char*argv[], char*env[])
 
 	if (pcap_datalink(arg.pcap_handle) != DLT_EN10MB)
 	{
-		syslog(LOG_CRIT, "ERROR:%s is not an ethernet adapter\n",
+		syslog(LOG_CRIT, _("ERROR:%s is not an ethernet adapter\n"),
 				hotel::str_ethID);
 		return -1;
 	}

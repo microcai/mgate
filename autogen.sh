@@ -1,6 +1,7 @@
 #!/bin/sh
 set -x
-aclocal
+autopoint
+aclocal -I m4
 autoheader
 automake --foreign --add-missing --copy
 autoconf

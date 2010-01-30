@@ -26,10 +26,13 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <net/ethernet.h>
+#ifdef HAVE_MYSQL
 #include <mysql/mysql.h>
 #include <mysql/errmsg.h>
-
+#endif
+#ifdef WITH_SQLITE3
 #include <sqlite3.h>
+#endif
 
 #define		__KLIBSQL_USEINTERNALLY
 #include "libdreamtop.h"

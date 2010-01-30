@@ -3,16 +3,15 @@
 # 
 #  See COPYING for more details about this software's license
 # 
-libdreamtop_so_LDADD = 
+
+AM_CFLAGS = -fPIC 
 
 libexecdir=${prefix}/libexec/monitor/modules
 
 libexec_PROGRAMS = libdreamtop.so
 
-libdreamtop_so_LDADD += -ldl $(LD_MYSQL_FLAGS)
+libdreamtop_so_LDADD = -ldl $(LD_MYSQL_FLAGS)
 libdreamtop_so_LDFLAGS = -shared -symbolic
-
-libdreamtop_so_CXXFLAGS = -fPIC
 
 libdreamtop_so_SOURCES = libmicrocai.cpp md5.cpp md5.h \
 						 CString.cpp CString.h \
@@ -29,7 +28,7 @@ libdreamtop_so_LDADD += -lnet
 endif 
 
 if WITH_MYSQL
-libdreamtop_so_SOURCES += KSQL/kmysql.cpp KSQL/kmysql.h
+#libdreamtop_so_SOURCES += KSQL/kmysql.cpp KSQL/kmysql.h
 endif
 
 if WITH_SQLITE3

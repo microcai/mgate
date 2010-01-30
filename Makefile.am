@@ -1,23 +1,32 @@
 
+ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = libdreamtop monitor modules 
+SUBDIRS = libdreamtop monitor modules po
 dist_doc_DATA = README
-EXTRA_DIST = monitor-hotel.spec monitor-cafe.spec
+EXTRA_DIST = @PACKAGE_NAME@-hotel.spec.in @PACKAGE_NAME@-cafe.spec.in
 
+DISTCLEANFILES = @PACKAGE_NAME@-hotel.spec @PACKAGE_NAME@-cafe.spec
 
-buildrpms: dist-bzip2 monitor-hotel.spec monitor-cafe.spec
-	mkdir -p ~/rpmbuild/SOURCES/
-	mv monitor-*.tar.bz2 ~/rpmbuild/SOURCES/
-	
-if	ENABLE_HOTEL
-	if [ "" = "$(TARGET)" ] ;then \
-	QA_RPATHS=02 rpmbuild -bb $(top_srcdir)/monitor-hotel.spec ; \
-	else QA_RPATHS=02 rpmbuild -bb $(top_srcdir)/monitor-hotel.spec --target=$(TARGET) ; fi
+if	ENABLE_HOTEL			
+	spec = 	@PACKAGE_NAME@-hotel.spec
 else
-	if [ "" = "$(TARGET)" ] ;then \
-	QA_RPATHS=02 rpmbuild -bb $(top_srcdir)/monitor-cafe.spec ; \
-	else QA_RPATHS=02 rpmbuild -bb $(top_srcdir)/monitor-cafe.spec --target=$(TARGET) ; fi
+	spec = 	@PACKAGE_NAME@-cafe.spec 
 endif
-		
-	mv ~/rpmbuild/RPMS/*/monitor-*$(TARGET).rpm ./
-	rm ~/rpmbuild/SOURCES/monitor*
+
+rpm: dist @PACKAGE_NAME@-hotel.spec @PACKAGE_NAME@-cafe.spec
+	rpmbuild -bb \
+			--define "_sourcedir `pwd`" \
+			--define "_builddir `pwd`" \
+			--define "_specdir `pwd`" \
+			--define "_rpmdir `pwd`" \
+			--define "_srcrpmdir `pwd`" \
+			$(spec)
+
+srpm: dist @PACKAGE_NAME@.spec
+	rpmbuild -bs \
+			--define "_sourcedir `pwd`" \
+			--define "_builddir `pwd`" \
+			--define "_srcrpmdir `pwd`" \
+		    --define "_rpmdir `pwd`" \
+			--define "_specdir `pwd`" \
+			$(spec)
