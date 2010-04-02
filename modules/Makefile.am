@@ -3,7 +3,7 @@
 libexecdir=${prefix}/libexec/monitor/modules
 
 
-MODULE_COMM_FLAGS = -I$(top_srcdir)/libdreamtop -fpic
+MODULE_COMM_FLAGS = @GLIB2_CFLAGS@ -I$(top_srcdir)/libdreamtop -fpic
 MODULE_COMM_LD = -lpthread -L$(top_builddir)/libdreamtop -ldreamtop
 
 libexec_PROGRAMS =  kpolice.so  kurl.so kqq.so kmsn.so

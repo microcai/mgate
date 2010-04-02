@@ -15,6 +15,7 @@
 #include <syslog.h>
 #include <poll.h>
 #include <net/ethernet.h>
+#include <glib.h>
 #include "libdreamtop.h"
 #include "./KSQL/kmysql.h"
 #include "./KSQL/ksqlite.h"
@@ -249,12 +250,21 @@ static void * KSQL_daemon(void*_p)
 	KSQL_RES * res;
 	KSQL_ROW	row;
 
-	std::string pswd, user, host, database;
+	gchar * pswd, *user, *host, *database;
 
-	pswd = GetToken("db.config.password");
-	user = GetToken("db.config.username", "root");
-	host = GetToken("db.config.host", "localhost");
-	database = GetToken("db.config.dbname", "hotel");
+	extern GKeyFile * gkeyfile;
+
+	pswd = g_key_file_get_string(gkeyfile,"monitor","db.config.password",NULL);
+	if(!pswd) pswd = "";
+	user = g_key_file_get_string(gkeyfile,"monitor","db.config.username",NULL);
+	if(!user) user = "root";
+
+	host = g_key_file_get_string(gkeyfile,"monitor","db.config.host", NULL);
+	if(!host) host = "localhost";
+
+	database = g_key_file_get_string(gkeyfile,"monitor","db.config.dbname", NULL);
+	if(!host)
+		host = "hotel";
 
 #ifdef WITH_SQLITE3
 	//初始化 SQLite 数据库。不可以失败!
@@ -338,7 +348,7 @@ static void * KSQL_daemon(void*_p)
 			while(poll(&pfd,1,10000))
 			{
 				//执行代码
-				read(ksql_daemon_socket_recv,buf,4096);
+				(void)read(ksql_daemon_socket_recv,buf,4096);
 				printf("%s\n",buf);
 				if (ksql_run_query(buf))
 					break;

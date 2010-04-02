@@ -58,20 +58,9 @@
 
 static char socket_file[256] = "/tmp/monitor.socket";
 
-static char config_file_name[256] = "/var/www/application/config/config.ini";
-static char module_dir[256] = MODULES_PATH;
-static int flush_db = 0;
+static const gchar * config_file_name = "/var/www/application/config/config.ini";
+static const gchar * module_dir = MODULES_PATH;
 
-static struct parameter_tags parameter[] =
-{
-		parameter_tags("--config", parameter_type::STRING, config_file_name,
-				sizeof(config_file_name),
-				"-f,--config\t模块参数配置文件，默认是 ./lib/module.conf"), parameter_tags(
-				"--module_dir", parameter_type::STRING, module_dir,
-				sizeof(module_dir), "--module_dir\t\t模块位置"), parameter_tags(
-				"--flushdb", parameter_type::BOOL_short, (char*) &flush_db,
-				sizeof(flush_db), "--flush_db\t\t清空客房数据"), parameter_tags()
-};
 #ifdef ENABLE_HOTEL
 static void port_map(KSQL_ROW row, void * p)
 {
@@ -521,19 +510,10 @@ int main(int argc, char*argv[], char*env[])
 	bindtextdomain(GETTEXT_PACKAGE,"/tmp/share/locale");
 #endif
 
-	static struct parameter_tags parameter[] =
-	{
-			parameter_tags("--config", parameter_type::STRING, config_file_name,
-					sizeof(config_file_name),
-					"-f,--config\t模块参数配置文件，默认是 ./lib/module.conf"), parameter_tags(
-					"--module_dir", parameter_type::STRING, module_dir,
-					sizeof(module_dir), "--module_dir\t\t模块位置"), parameter_tags(
-					"--flushdb", parameter_type::BOOL_short, (char*) &flush_db,
-					sizeof(flush_db), "--flush_db\t\t清空客房数据"), parameter_tags()
-	};
-
 	gboolean createdb = FALSE;
 	gchar *  domain_dir = NULL;
+	gboolean flush_db = FALSE;
+
 
 	GOptionEntry args[] =
 	{
@@ -577,7 +557,11 @@ int main(int argc, char*argv[], char*env[])
 
 	syslog(LOG_NOTICE, _("%s loaded at %s"), PACKAGE_NAME,	ctime(&t));
 
-	ParseParameters(&argc, &argv, parameter);
+	GOptionContext * context;
+	context = g_option_context_new("");
+	g_option_context_add_main_entries(context,args,PACKAGE_NAME);
+	g_option_context_parse(context,&argc,&argv,NULL);
+	g_option_context_free(context);
 
 	umask(0);
 
@@ -585,28 +569,32 @@ int main(int argc, char*argv[], char*env[])
 
 	conf_fd = open(config_file_name, O_RDONLY | O_CLOEXEC); //  不要被 fork继承啊
 
-	if (conf_fd > 0)
-	{
-		char *config_file;
+	GKeyFile * gkeyfile = g_key_file_new();
 
-		fstat(conf_fd, &st);
-		config_file = (char*) mmap(0, st.st_size ? st.st_size : 1, PROT_READ,
-				MAP_PRIVATE, conf_fd, 0);
-		close(conf_fd);
-		prase_config(config_file,st.st_size ? st.st_size : 1);
-		munmap(config_file, st.st_size ? st.st_size : 1);
-	}
-	else
+	if (g_key_file_load_from_file(gkeyfile, config_file_name,
+			G_KEY_FILE_KEEP_TRANSLATIONS, NULL))
 		syslog(LOG_WARNING, "Err opening config file");
 
 	//解析出参数来
-	std::string dnss,threads,update_server,update_trunk;
 
-	threads = GetToken("threads","1");
-	dnss = GetToken("dns", "");
-	update_server = GetToken("update.server","");
-	update_trunk = GetToken("update.trunk","monitor");
-	MAX_PCAP_THREAD = atoi(threads.c_str());
+	GError * err = NULL;
+
+	gchar * update_server, *update_trunk;
+
+	MAX_PCAP_THREAD = g_key_file_get_integer(gkeyfile,"monitor","threads",&err);
+
+	if(err)
+	{
+		MAX_PCAP_THREAD = 1;
+		g_error_free(err);
+		err = NULL;
+	}
+
+	gchar * dns = g_key_file_get_string(gkeyfile,"monitor","dns",&err);
+
+	update_server = g_key_file_get_string(gkeyfile,"update","server",&err);
+
+	update_trunk = g_key_file_get_string(gkeyfile,"update","trunk",&err);
 
 	StartSQL();
 
@@ -684,7 +672,7 @@ int main(int argc, char*argv[], char*env[])
 	run_cmd("iptables -F -t nat");
 	{
 		char * ptr;
-		ptr = strtok((char *) dnss.c_str(), ",");
+		ptr = strtok(dns, ",");
 		while (ptr)
 		{
 			CString cmd;
@@ -785,7 +773,7 @@ int main(int argc, char*argv[], char*env[])
 #else
 	for (;;)
 	{
-		switch (Check_update(update_server.c_str(), update_trunk.c_str()))
+		switch (Check_update(update_server, update_trunk))
 		{
 		case (-1):
 			sleep(5);

@@ -23,6 +23,7 @@
 #include <netinet/ip.h>
 #include <iconv.h>
 #include <errno.h>
+#include <glib.h>
 
 #include "libdreamtop.h"
 
@@ -288,3 +289,5 @@ double GetDBTime(char *pTime)
 	double dbTime = (double) nDate + ((nDate >= 0) ? dblTime : -dblTime);
 	return dbTime;
 }
+
+GKeyFile *  gkeyfile;

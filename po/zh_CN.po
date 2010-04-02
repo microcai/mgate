@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
-"POT-Creation-Date: 2010-04-02 16:26+0800\n"
+"POT-Creation-Date: 2010-04-02 17:45+0800\n"
 "PO-Revision-Date: 2010-01-30 19:08+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
@@ -15,27 +15,43 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: UTF-8\n"
 
-#: monitor/main.cpp:549
+#: monitor/main.cpp:540
+msgid "flash the db"
+msgstr ""
+
+#: monitor/main.cpp:541
+msgid "Create database"
+msgstr ""
+
+#: monitor/main.cpp:542
+msgid "set domain dir root"
+msgstr ""
+
+#: monitor/main.cpp:542
+msgid "dir"
+msgstr ""
+
+#: monitor/main.cpp:578
 #, c-format
 msgid "%s loaded at %s"
 msgstr "%s 启动于 %s"
 
-#: monitor/main.cpp:600
+#: monitor/main.cpp:637
 #, c-format
 msgid "all tables truncated!\n"
 msgstr "所有的表都已经清空！ :)\n"
 
-#: monitor/main.cpp:613
+#: monitor/main.cpp:650
 #, c-format
 msgid "nic %s not enabled!"
 msgstr ""
 
-#: monitor/main.cpp:630
+#: monitor/main.cpp:667
 #, c-format
 msgid "ERROR:can not open %s for capturing!\n"
 msgstr "错误：无法打开 %s 进行抓包\n"
 
-#: monitor/main.cpp:638
+#: monitor/main.cpp:675
 #, c-format
 msgid "ERROR:%s is not an ethernet adapter\n"
 msgstr ""

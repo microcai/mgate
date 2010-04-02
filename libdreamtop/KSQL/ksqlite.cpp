@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <syslog.h>
 #include <sqlite3.h>
-
+#include <glib.h>
 #include "libdreamtop.h"
 #include "ksqlite.h"
 
@@ -190,12 +190,16 @@ void InitSqlite()
 {
 	sqlite3_initialize();
 
-	std::string sqlite_db;
+	gchar * sqlite_db;
 
-	sqlite_db = GetToken("db.sqlite", "/var/lib/monitor.sqlite");
-	if (sqlite3_open(sqlite_db.c_str(), &sqldb) != SQLITE_OK)
+	extern GKeyFile *  gkeyfile;
+
+	sqlite_db = g_key_file_get_string(gkeyfile,"sqlite","db.sqlite",NULL);
+	if (!sqlite_db)
+		sqlite_db = "/var/lib/monitor.sqlite";
+	if (sqlite3_open(sqlite_db, &sqldb) != SQLITE_OK)
 	{
-		syslog(LOG_ERR, "open db '%s' failed", sqlite_db.c_str());
+		syslog(LOG_ERR, "open db '%s' failed", sqlite_db);
 	}
 }
 

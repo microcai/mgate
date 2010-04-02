@@ -5,13 +5,13 @@
 # 
 
 AM_CFLAGS = -fPIC
-AM_CXXFLAGS = -fPIC 
+AM_CXXFLAGS = -fPIC @GLIB2_CFLAGS@
 
 libexecdir=${prefix}/libexec/monitor/modules
 
 libexec_PROGRAMS = libdreamtop.so
 
-libdreamtop_so_LDADD = -ldl $(LD_MYSQL_FLAGS)
+libdreamtop_so_LDADD = -ldl $(LD_MYSQL_FLAGS) @GLIB2_LIBS@
 libdreamtop_so_LDFLAGS = -shared
 
 libdreamtop_so_SOURCES = libmicrocai.cpp md5.c md5.h \
@@ -19,8 +19,8 @@ libdreamtop_so_SOURCES = libmicrocai.cpp md5.c md5.h \
 						 libdreamtop.h functions.h \
 						 libmicrocai-macros.h libmicrocai-queue.h \
 						 libmicrocai-types.h \
-						 Parameters.cpp load_module.cpp ksql.h ksql.cpp \
-						 protocol_handler.cpp config.cpp
+						 load_module.cpp ksql.h ksql.cpp \
+						 protocol_handler.cpp 
 						 
 if ENABLE_HOTEL
 libdreamtop_so_SOURCES += clients.cpp http_redirect.cpp
