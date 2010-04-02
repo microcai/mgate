@@ -1,7 +1,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = libdreamtop monitor modules po
+SUBDIRS = src modules po
 dist_doc_DATA = README
 EXTRA_DIST = @PACKAGE_NAME@-hotel.spec.in @PACKAGE_NAME@-cafe.spec.in
 

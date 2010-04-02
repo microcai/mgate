@@ -138,8 +138,7 @@ AC_CHECK_HEADERS([arpa/inet.h memory.h netinet/in.h stdlib.h string.h sys/ioctl.
 #AC_CONFIG_FILES([modules/Makefile])
 AC_CONFIG_FILES( [
 					Makefile
-					libdreamtop/Makefile
-					monitor/Makefile
+					src/Makefile
 					modules/Makefile
 					po/Makefile.in
 					monitor-hotel.spec
