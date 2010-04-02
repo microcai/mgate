@@ -5,6 +5,9 @@
  *
  * See COPYING for more details about this software's license
  */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include <iostream>
 #include <string>
@@ -20,10 +23,18 @@
 
 #include "libdreamtop.h"
 
+#ifdef HAVE_GETTEXT
+#include <locale.h>
+#include <libintl.h>
+#define _(x) gettext(x)
+#define N_(x) (x)
+#endif
+
+
 static std::map<std::string,void*> loaded;
 static const std::string thisfilename("libmicrocai.so");
 
-static int load_module_recursive(std::string & libname,struct so_data *_so_data,const char *path_to_modules)
+static int load_module_recursive(const gchar *  libname,struct so_data *_so_data,const char *path_to_modules)
 {
 	char * depmod;
 	char * module_name;
@@ -34,10 +45,10 @@ static int load_module_recursive(std::string & libname,struct so_data *_so_data,
 	if (it != loaded.end())
 		return 0;
 
-	void * m = dlopen(libname.c_str(), RTLD_LAZY);
+	void * m = dlopen(libname, RTLD_LAZY);
 	if (m == NULL)
 	{
-		syslog(LOG_ERR,"Err loading %s for %s",libname.c_str(),dlerror());
+		syslog(LOG_ERR,"Err loading %s for %s",libname,dlerror());
 		return 1;
 	}
 	loaded.insert(std::pair<std::string, void*>(libname, m)); //更新配对
@@ -47,19 +58,18 @@ static int load_module_recursive(std::string & libname,struct so_data *_so_data,
 	{
 		char* _depmod = new char[strlen(depmod) + 1]();
 		strcpy(_depmod, depmod);
-		std::string mod;
+
 		char * tok = strtok(_depmod, ":");
 		while (tok)
 		{
-			mod = tok;
-			int ret = load_module_recursive(mod, _so_data,path_to_modules);
+			int ret = load_module_recursive(tok, _so_data,path_to_modules);
 			if (ret)
 			{
 				loaded.erase(libname);
 
 				delete[] _depmod;
-				syslog(LOG_ERR,"**ERR: Cannot load %s",libname.c_str());
-				syslog(LOG_ERR,": depend mod %s failed to load",mod.c_str());
+				syslog(LOG_ERR,"**ERR: Cannot load %s",libname);
+				syslog(LOG_ERR,": depend mod %s failed to load",tok);
 
 				dlclose(m);
 				return ret;
@@ -138,9 +148,9 @@ int unload_modules(const char * so_name)
 void load_modules(const char * so_name,const char*path_to_modules)
 {
 	so_data sodata;
-	std::string soname(so_name);
+
 	if (so_name[0] != '.' && so_name[0] != 'l' && so_name[0] != 'i' && so_name[0] != 'b')
-		load_module_recursive( soname, & sodata,path_to_modules);
+		load_module_recursive( so_name, & sodata,path_to_modules);
 
 	std::map<std::string,void*>::iterator it;
 	it = loaded.begin();
@@ -178,11 +188,11 @@ int enum_and_load_modules(const char*path_to_modules)
     DIR *dir = opendir(path_to_modules);
 	if(!dir)
 	{
-		syslog(LOG_ERR,"WARNNING: 没有找到扩展模块");
+		syslog(LOG_ERR, _("WARNNING: module not found")); //   "WARNNING: 没有找到扩展模块");
 		return 0;
 	}
 
-	std::cout << "**********************开始加载扩展模块*******************************" << std::endl;
+	g_print("**********************开始加载扩展模块*******************************\n");
 
 	while ((dt = readdir(dir)))
 	{
@@ -195,13 +205,9 @@ int enum_and_load_modules(const char*path_to_modules)
 				 * 其自己的意思的.我们有libmicrocai.so libksql.so两个文件其实不是模块的
 				 */
 
-				std::string libname(dt->d_name);
-				if (libname[libname.length() - 3] == '.'
-						&& libname[libname.length() - 2] == 's'
-						&& libname[libname.length() - 1] == 'o')
+				if (strcmp(dt->d_name + strlen(dt->d_name) - 3, ".so") == 0)
 				{
-
-					ret = load_module_recursive(libname, &_so_data,path_to_modules);
+					ret = load_module_recursive(dt->d_name, &_so_data,path_to_modules);
 					if (ret < 0)
 					{
 						closedir(dir);
@@ -212,9 +218,10 @@ int enum_and_load_modules(const char*path_to_modules)
 		}
 	}
 	closedir(dir);
-	std::cout << "**********************模块加载完毕**********************************" << std::endl;
 
-	std::cout << "*********************加载的模块清单**********************************" << std::endl;
+	g_print("**********************模块加载完毕**********************************\n");
+
+	g_print("*********************加载的模块清单**********************************\n");
 
 	std::map<std::string,void*>::iterator it;
 	it = loaded.begin();
@@ -223,9 +230,7 @@ int enum_and_load_modules(const char*path_to_modules)
 	while (it != loaded.end())
 	{
 		p = it->second;
-
-		std::cout << "模块文件名:" << it->first <<  "\t模块名称:";
-		std::cout << (char*) dlsym(p, "module_name") << std::endl;
+		g_print(_("Module file : %s \tModule name: %s\n"),it->first.c_str(),(char*)dlsym(p, "module_name"));
 		it++;
 	}
 
@@ -245,8 +250,6 @@ int enum_and_load_modules(const char*path_to_modules)
 		it++;
 	}
 
-	std::cout << "*******************************************************************" << std::endl;
-	std::cout.flush();
-
+	g_print("*******************************************************************\n");
 	return 0;
 }
