@@ -15,7 +15,6 @@ libdreamtop_so_LDADD = -ldl $(LD_MYSQL_FLAGS) @GLIB2_LIBS@
 libdreamtop_so_LDFLAGS = -shared
 
 libdreamtop_so_SOURCES = libmicrocai.cpp md5.c md5.h \
-						 CString.cpp CString.h \
 						 libdreamtop.h functions.h \
 						 libmicrocai-macros.h libmicrocai-queue.h \
 						 libmicrocai-types.h \

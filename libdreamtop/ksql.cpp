@@ -52,16 +52,14 @@ static const char	SQL_template[]=
 static FUNC_SENDDATA SendData = NOP_SENDDATA;
 int kregisterSendDataFunc(FUNC_SENDDATA f){	SendData = f;return 0;}
 
-void formattime(std::string & strtime, struct tm* pTm)
+void formattime(GString * strtime, struct tm* pTm)
 {
-	CString st;
-    st.Format("%d-%d-%d %d:%d:%d",
+	g_string_printf(strtime,"%d-%d-%d %d:%d:%d",
             pTm->tm_year+1900,pTm->tm_mon+1,pTm->tm_mday,
             pTm->tm_hour,pTm->tm_min,pTm->tm_sec);
-    strtime = st.c_str();
 }
 
-void formattime(std::string & strtime)
+void formattime(GString * strtime)
 {
 	struct tm pTm;
 	time_t t = time(0);
@@ -93,8 +91,8 @@ void RecordAccout(struct NetAcount*na)
 #endif
 
 
-	std::string strTime;
-	CString strSQL;
+	GString * strTime = g_string_new("");
+	GString * strSQL = g_string_new("");
 
 	AccountInfo ac ={{0}};
 
@@ -149,14 +147,14 @@ void RecordAccout(struct NetAcount*na)
 
 	formatMAC(mac,strmac);
 
-	strSQL.Format(
+	g_string_printf(strSQL,
 			"insert into t_netlog (MachineIP,MachineMac,nLogType,strLogInfo,nTime) values   ('%s','%s','%s','%s','%s')",
 			inet_ntoa(in_addr_ip),
 			strmac, na->strType,
-			na->data.c_str(), strTime.c_str());
+			na->data.c_str(), strTime->str);
 
 #endif
-	ksql_run_query_async(strSQL);
+	ksql_run_query_async(strSQL->str);
 //	syslog(LOG_NOTICE,"%s",strSQL.c_str());
 
 	strncpy(ac.Key1, na->data.c_str(), 60);
@@ -181,6 +179,8 @@ void RecordAccout(struct NetAcount*na)
 	std::cout << "机器IP:" << ac.ComputerIp << std::endl;
 #endif
 	SendData(COMMAND_ACCOUNT, (char *) &ac, sizeof(ac));
+	g_string_free(strTime,1);
+	g_string_free(strSQL,1);
 }
 
 
@@ -205,15 +205,16 @@ void ksql_query_and_use_result(void(*callback)(KSQL_ROW row, void*p),
 void InsertCustomerLog(const char * build,const char * floor,const char * room, const char * name ,
 		const char * idtype , const char * id, const char * type,const char * ip, const char * mac, const char * time)
 {
-	CString sqlstr;
+	GString *  sqlstr = g_string_new("");
 
-	sqlstr.Format("insert into t_customerlog ("
+	g_string_printf(sqlstr,"insert into t_customerlog ("
 			"BuildNum,RoomFloor,RoomNum,CustomerName,CustomerIDType,"
 			"CustomerIDNum,MachineIP,MachineMac,nType,HappyTime) "
 			"values ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')",
 			build,floor,room,name,idtype,id,ip,mac,type,time);
 	//log_printf(L_DEBUG_OUTPUT,"%s\n",sqlstr.c_str());
-	ksql_run_query_async(sqlstr);
+	ksql_run_query_async(sqlstr->str);
+	g_string_free(sqlstr,TRUE);
 }
 
 KSQL_ROW ksql_fetch_row(KSQL_RES*res)
@@ -250,7 +251,7 @@ static void * KSQL_daemon(void*_p)
 	KSQL_RES * res;
 	KSQL_ROW	row;
 
-	gchar * pswd, *user, *host, *database;
+	const gchar * pswd, *user, *host, *database;
 
 	extern GKeyFile * gkeyfile;
 
