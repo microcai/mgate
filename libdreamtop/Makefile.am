@@ -4,8 +4,8 @@
 #  See COPYING for more details about this software's license
 # 
 
-AM_CFLAGS = -fPIC
-AM_CXXFLAGS = -fPIC @GLIB2_CFLAGS@
+
+AM_CPPFLAGS = -fPIC  @GLIB2_CFLAGS@
 
 libexecdir=${prefix}/libexec/monitor/modules
 
@@ -14,7 +14,7 @@ libexec_PROGRAMS = libdreamtop.so
 libdreamtop_so_LDADD = -ldl $(LD_MYSQL_FLAGS) @GLIB2_LIBS@
 libdreamtop_so_LDFLAGS = -shared
 
-libdreamtop_so_SOURCES = libmicrocai.cpp md5.c md5.h \
+libdreamtop_so_SOURCES = libdreamtop.c md5.c md5.h \
 						 libdreamtop.h functions.h \
 						 libmicrocai-macros.h libmicrocai-queue.h \
 						 libmicrocai-types.h \

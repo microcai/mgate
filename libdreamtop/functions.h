@@ -10,10 +10,10 @@
 
 _EXTERN_ void
 	formatMAC(const u_char * MAC_ADDR,char * strmac);
+/*_EXTERN_ void
+	convertMAC(char mac[6],const char * strmac);*/
 _EXTERN_ void
 	convertMAC(char mac[6],const char * strmac);
-_EXTERN_ void
-	convertMAC(u_char mac[6],const char * strmac);
 
 _EXTERN_ int
 	unload_modules(const char * so_name);

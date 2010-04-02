@@ -98,7 +98,7 @@ void RecordAccout(struct NetAcount*na)
 
 	formattime(strTime);
 
-	ac.DateTime = GetDBTime(GetCurrentTime());
+	ac.DateTime = GetDBTime_tm(GetCurrentTime());
 
 	strcpy(ac.SiteID, hotel::strHotelID);
 	strcpy(ac.SiteName, hotel::strHoteName);

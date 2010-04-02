@@ -126,8 +126,8 @@ void ksql_thread_end();
 
 void formattime(std::string & strtime, struct tm* pTm);
 void formattime(std::string & strtime);
-double GetDBTime(char *pTime);
-double GetDBTime(struct tm *);
+_EXTERN_ double GetDBTime_str(char *pTime);
+_EXTERN_ double GetDBTime_tm(struct tm * ptm);
 
 typedef void (*FUNC_SENDDATA)(int cmd,void *data,int ulen);
 

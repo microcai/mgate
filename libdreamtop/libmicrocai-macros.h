@@ -9,7 +9,7 @@
 #define	_LIBMICROCAI_MACROS_H
 
 #ifdef __cplusplus
-#define _EXTERN_
+#define _EXTERN_ extern "C"
 #else
 #define _EXTERN_ extern
 #endif

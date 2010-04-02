@@ -9,8 +9,6 @@
 #include <config.h>
 #endif
 
-#include <iostream>
-#include <map>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -23,9 +21,18 @@
 #include <netinet/ip.h>
 #include <iconv.h>
 #include <errno.h>
+#include <string.h>
 #include <glib.h>
 
-#include "libdreamtop.h"
+struct so_data
+{
+    void* module;
+};
+
+typedef int (*PROTOCOL_HANDLER)(struct so_data*,u_char *packet);
+
+#include "libmicrocai-macros.h"
+#include "functions.h"
 
 u_int16_t checksum(u_int16_t *buffer, int size)
 {
@@ -77,15 +84,13 @@ static inline char hex2char(const char str[])
 
 void  convertMAC(char mac[6],const char * strmac)
 {
-	for (int i = 0; i < 6; ++i)
+	int i;
+	for (i = 0; i < 6; ++i)
 	{
 		mac[i] = hex2char(& strmac[i * 3] );
 	}
 }
-void  convertMAC(u_char mac[6],const char * strmac)
-{
-	convertMAC((char*)mac,strmac);
-}
+
 #ifdef ENABLE_HOTEL
 
 void run_cmd(const CString & strcmd )
@@ -138,40 +143,40 @@ bool GetMac(const char *ip, char MAC_ADDR[],u_char mac_addr[])
 #endif
 int utf8_gbk(char *outbuf, size_t outlen, const char *inbuf, size_t inlen)
 {
-	iconv_t cd;
+	GIConv cd;
 	char **pin = (char**)&inbuf;
 	char **pout = &outbuf;
 
-	cd = iconv_open( "GBK","UTF-8");
+	cd =g_iconv_open( "GBK","UTF-8");
 	if (cd == 0)
 		return -1;
 
 	memset(outbuf, '\0', outlen);
-	if (iconv(cd, pin, &inlen, pout, &outlen) == (size_t) -1)
+	if (g_iconv(cd, pin, &inlen, pout, &outlen) == (size_t) -1)
 	{
 		return -1;
 	}
-	iconv_close(cd);
+	g_iconv_close(cd);
 
 	return 0;
 }
 
 int gbk_utf8(char *outbuf, size_t outlen, const char *inbuf, size_t inlen)
 {
-	iconv_t cd;
+	GIConv cd;
 	char **pin = (char**)&inbuf;
 	char **pout = &outbuf;
 
-	cd = iconv_open("UTF-8", "GBK");
+	cd = g_iconv_open("UTF-8", "GBK");
 	if (cd == 0)
 		return -1;
 
 	memset(outbuf, '\0', outlen);
-	if (iconv(cd, pin, &inlen, pout, &outlen) == (size_t) -1)
+	if (g_iconv(cd, pin, &inlen, pout, &outlen) == (size_t) -1)
 	{
 		return -1;
 	}
-	iconv_close(cd);
+	g_iconv_close(cd);
 
 	return 0;
 }
@@ -183,7 +188,7 @@ struct tm * GetCurrentTime()
 	return localtime(&t);
 }
 
-double GetDBTime(struct tm * ptm)
+double GetDBTime_tm(struct tm * ptm)
 {
 	u_short wYear = ptm->tm_year + 1900;
 	u_short wMonth = ptm->tm_mon + 1;
@@ -194,7 +199,7 @@ double GetDBTime(struct tm * ptm)
 	int _afxMonthDays[13] =
 	{ 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 };
 
-	bool bLeapYear = ((wYear & 3) == 0) && ((wYear % 100) != 0 || (wYear % 400)
+	gboolean bLeapYear = ((wYear & 3) == 0) && ((wYear % 100) != 0 || (wYear % 400)
 			== 0);
 	long nDate = wYear * 365L + wYear / 4 - wYear / 100 + wYear / 400
 			+ _afxMonthDays[wMonth - 1] + wDay;
@@ -210,7 +215,7 @@ double GetDBTime(struct tm * ptm)
 	return dbTime;
 }
 
-double GetDBTime(char *pTime)
+double GetDBTime_str(char *pTime)
 {
 	int nYear = 0, nMon = 0, nDay = 0, nHour = 0, nMin = 0, nSec = 0;
 	char *p = strstr(pTime, "-");
@@ -270,7 +275,7 @@ double GetDBTime(char *pTime)
 
 	//  Check for leap year and set the number of days in the month
 
-	bool bLeapYear = ((wYear & 3) == 0) && ((wYear % 100) != 0 || (wYear % 400)
+	gboolean bLeapYear = ((wYear & 3) == 0) && ((wYear % 100) != 0 || (wYear % 400)
 			== 0);
 
 	//yuqingzh delete	int nDaysInMonth =_afxMonthDays[wMonth] - _afxMonthDays[wMonth-1] +((bLeapYear && wDay == 29 && wMonth == 2) ? 1 : 0);
