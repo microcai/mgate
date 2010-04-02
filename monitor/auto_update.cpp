@@ -152,8 +152,12 @@ static void firstcall()
 	closedir(dir);
 }
 // return -1 if no more call needed, 0 if want a timedout recall , 1 if want recall next time
-int Check_update(const char * updateserver,const char * update_trunk)
+int Check_update(void * p)
 {
+	const char * updateserver = ((char **)p)[0];
+
+	const char * update_trunk = ((char **)p)[1];
+
 	static int sock=-1;
 	static int last_state=1;
 	static sockaddr_in addr={0};
@@ -185,7 +189,7 @@ int Check_update(const char * updateserver,const char * update_trunk)
 				exit(0);
 			}
 		}
-		return -1;
+		return FALSE;
 	case 1: //首次调用，需要计算 MD5 值
 		firstcall();
 		last_state = 2;
@@ -428,16 +432,16 @@ int Check_update(const char * updateserver,const char * update_trunk)
 	case 9: // 解析好了，暂时没什么更新的。就是要等等，以后重连接哈
 		// 恢复 modules 哈
 		last_state = 2;
-		return -1;
+		return FALSE;
 		break;
 	case 10:// 解析出来，需要更新一些东西哦
 		last_state = 0;
 		pid = fork();
 		if(pid ==0)
 			execl("/bin/sh","sh","/tmp/monitor_update",NULL);
-		return -1;
+		return FALSE;
 	}
-	return 0;
+	return TRUE;
 }
 
 

@@ -523,9 +523,6 @@ int main(int argc, char*argv[], char*env[])
 			{0}
 	};
 
-
-	pthread_attr_t p_attr;
-	pthread_t pcap_tcp;
 	time_t t;
 
 	char errbuf[PCAP_ERRBUF_SIZE];
@@ -685,16 +682,11 @@ int main(int argc, char*argv[], char*env[])
 	}
 	#endif
 
-	pthread_attr_init(&p_attr);
-	pthread_attr_setdetachstate(&p_attr, PTHREAD_CREATE_DETACHED);//不需要考虑线程的退出状态吧？！
-
 	for (int i = 0; i < MAX_PCAP_THREAD; ++i)
 	{
-		pthread_create(&pcap_tcp, &p_attr,
-				(void *(*)(void *)) pcap_thread_func, &arg);
+		g_thread_create((GThreadFunc)pcap_thread_func,&arg,FALSE,NULL);
 	}
 
-	pthread_attr_destroy(&p_attr);
 
 #ifdef ENABLE_HOTEL
 
@@ -770,21 +762,20 @@ int main(int argc, char*argv[], char*env[])
 		}
 	}
 	return 0;
-#else
-	for (;;)
-	{
-		switch (Check_update(update_server, update_trunk))
-		{
-		case (-1):
-			sleep(5);
-			break;
-		case 0:
-			sleep(1);
-			break;
-		}
-	}
-#endif
-	return 0;
 
+#endif
+
+	GMainLoop * loop;
+
+	loop = g_main_loop_new(NULL,FALSE);
+
+	gchar * Check_update_param [2] = {update_server,update_trunk};
+
+	//update_server
+
+	g_timeout_add(5,Check_update,Check_update_param);
+
+	g_main_loop_run(loop);
+	return 0;
 }
 

@@ -80,7 +80,6 @@ extern void *pcap_thread_func(struct pcap_thread_args *arg)
 		memcpy(packet_content,packet_contents,65536);
 		pthread_mutex_unlock(&lock);
 
-
 //		recv(fno,packet_content,ETHER_MAX_LEN,0);
 
 	    ip_head =( typeof(ip_head) )(packet_content + ETH_HLEN);
