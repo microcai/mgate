@@ -496,6 +496,7 @@ static void pre_load(KSQL_ROW row, void*)
 		}
 		ksql_free_result(res);
 	}
+	g_string_free(sql,1);
 }
 #endif
 
