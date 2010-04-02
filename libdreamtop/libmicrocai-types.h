@@ -51,7 +51,7 @@ struct so_data
 };
 
 
-struct Clients_DATA
+typedef struct Clients_DATA
 {
 	in_addr_t ip;
 	struct tm logintime;
@@ -66,7 +66,7 @@ struct Clients_DATA
 	char mac_addr[32];// (xx:xx:xx:xx:xx:xx format)
 	char ip_addr[32];
 	int nIndex;
-};
+}Clients_DATA;
 
 typedef int (*PROTOCOL_HANDLER)(struct so_data*,u_char *packet);
 

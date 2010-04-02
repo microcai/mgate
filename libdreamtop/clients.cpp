@@ -33,20 +33,25 @@ static void inet_ntoa(std::string & ret, in_addr_t ip)
 }
 static void nat_disable_ip(const std::string & ip )
 {
-	CString cmd;
-	cmd.Format("iptables -t nat -D  POSTROUTING  --source  %s "
+	GString * cmd = g_string_new("");
+	g_string_printf(cmd,"iptables -t nat -D  POSTROUTING  --source  %s "
 			   "-j MASQUERADE -o eth+",
 			   ip.c_str());
 
-	run_cmd(cmd);
+	run_cmd(cmd->str);
+
+	g_string_free(cmd,1);
 }
 
 static void nat_enbale_ip(const std::string & ip)
 {
-	CString cmd;
-	cmd.Format("iptables -t nat -A POSTROUTING --source %s "
+	GString * cmd = g_string_new("");
+	g_string_printf(cmd,"iptables -t nat -A POSTROUTING --source %s "
 				"-j MASQUERADE -o eth+", ip.c_str());
-	run_cmd(cmd);
+
+	run_cmd(cmd->str);
+
+	g_string_free(cmd,1);
 }
 
 struct _HashFn
@@ -105,13 +110,6 @@ struct ROOM{
 	MACADDR				bind_mac;
 };
 
-//struct unknow{
-//	struct MACADDR*current_mac;
-//	tm			 t_time;
-//	void*		info;
-//};
-
-
 static pthread_rwlock_t lock = PTHREAD_RWLOCK_INITIALIZER;
 static std::map<MACADDR,in_addr_t,myless>	allowed_mac;
 static hash_map<in_addr_t, MACADDR,_HashFn> enabled_ip(256);
@@ -119,7 +117,7 @@ static hash_map<in_addr_t, MACADDR,_HashFn> enabled_ip(256);
 static std::list<ROOM>							room_list;
 static std::map<MACADDR,client*,myless>				clients;
 
-bool mac_is_alowed(u_char mac[6])
+gboolean mac_is_alowed(u_char mac[6])
 {
 	bool ret;
 	std::map<MACADDR,in_addr_t>::iterator it;
@@ -132,7 +130,7 @@ bool mac_is_alowed(u_char mac[6])
 	return ret;
 }
 
-bool mac_is_alowed(u_char mac[6],in_addr_t ip)
+gboolean mac_is_alowed_with_ip(u_char mac[6],in_addr_t ip)
 {
 	std::string  sip;
 	std::map<MACADDR,in_addr_t>::iterator it;
@@ -168,7 +166,8 @@ bool mac_is_alowed(u_char mac[6],in_addr_t ip)
 				inet_ntoa(sip, ip);
 				nat_enbale_ip(sip);
 				// 存入 库存
-				CString sql;
+				GString * sql = g_string_new("");
+
 				std::map<MACADDR,client*,myless>::iterator cit;
 
 				client *pct;
@@ -180,10 +179,15 @@ bool mac_is_alowed(u_char mac[6],in_addr_t ip)
 					pct= cit->second ;
 					pct->current_ip = ip;
 					pct->ip = sip;
-					sql.Format("update roomer_list set IP_ADDR='%s' where nIndex='%d'",
+
+					g_string_printf(sql,"update roomer_list set IP_ADDR='%s' where nIndex='%d'",
 							sip.c_str(),pct->nIndex);
-					ksql_run_query_async(sql);
-					syslog(LOG_NOTICE,"map ip %s to %s\n",sip.c_str(),sql.c_str());
+					ksql_run_query_async(sql->str);
+
+					syslog(LOG_NOTICE,"map ip %s to %s\n",sip.c_str(),sql->str);
+
+					g_string_free(sql,1);
+
 				}
 				return ret;
 			}
@@ -268,21 +272,21 @@ void mac_set_allowed(u_char mac[6],bool allow /*==false*/,in_addr_t ip)
 	pthread_rwlock_unlock(&lock);
 }
 
-bool set_client_data( u_char mac[6],  Clients_DATA * pcd )
+gboolean set_client_data( u_char mac[6],  Clients_DATA * pcd )
 {
 	uint b, f, r;
-	b = atoi(pcd->Build.c_str());
-	f = atoi(pcd->Floor.c_str());
-	r = atoi(pcd->RoomNum.c_str());
+	b = atoi(pcd->Build);
+	f = atoi(pcd->Floor);
+	r = atoi(pcd->RoomNum);
 
 	ROOM room;
 	client	ct;
 	client * pclient;
 
-	ct.idtype = pcd->CustomerIDType.c_str();
+	ct.idtype = pcd->CustomerIDType;
 	ct.current_ip = pcd->ip;
 	memcpy(ct.current_mac.madd,mac,6);
-	ct.id = pcd->CustomerID.c_str();
+	ct.id = pcd->CustomerID;
 	ct.ip = pcd->ip_addr;
 	ct.mac = pcd->mac_addr;
 	ct.name = pcd->CustomerName;
@@ -342,10 +346,10 @@ bool set_client_data( u_char mac[6],  Clients_DATA * pcd )
 		}
 	}
 	pthread_rwlock_unlock(&lock);
-	return ct.proom;
+	return ct.proom?TRUE:FALSE;
 }
 
-bool get_client_data(u_char mac[6],Clients_DATA * pcd )
+gboolean get_client_data(u_char mac[6],Clients_DATA * pcd )
 {
 	std::map<MACADDR,client*,myless>::iterator it;
 
@@ -357,16 +361,16 @@ bool get_client_data(u_char mac[6],Clients_DATA * pcd )
 	{
 		pct= it->second ;
 
-		pcd->Build = pct->Build;
-		pcd->CustomerID = pct->id.c_str();
-		pcd->CustomerIDType = pct->idtype.c_str();
-		pcd->CustomerName = pct->name;
-		pcd->Floor = pct->Floor;
+		strcpy(pcd->Build,pct->Build.c_str());
+		strcpy(pcd->CustomerID,pct->id.c_str());
+		strcpy(pcd->CustomerIDType , pct->idtype.c_str());
+		strcpy(pcd->CustomerName ,pct->name.c_str());
+		strcpy(pcd->Floor, pct->Floor.c_str());
 		memcpy(pcd->MAC_ADDR,pct->current_mac.madd,6);
-		pcd->RoomNum = pct->RoomNum;
+		strcpy(pcd->RoomNum, pct->RoomNum.c_str());
 		pcd->ip = pct->current_ip;
-		pcd->ip_addr = pct->ip;
-		pcd->mac_addr = pct->mac;
+		strcpy(pcd->ip_addr, pct->ip.c_str());
+		strcpy(pcd->mac_addr , pct->mac.c_str());
 	}
 	bool ret = (it==clients.end());
 	pthread_rwlock_unlock(&lock);

@@ -61,7 +61,7 @@ static char socket_file[256] = "/tmp/monitor.socket";
 static const gchar * config_file_name = "/var/www/application/config/config.ini";
 static const gchar * module_dir = MODULES_PATH;
 
-#ifdef ENABLE_HOTEL
+#ifndef ENABLE_HOTEL
 static void port_map(KSQL_ROW row, void * p)
 {
 	CString cmd;
@@ -670,14 +670,17 @@ int main(int argc, char*argv[], char*env[])
 	{
 		char * ptr;
 		ptr = strtok(dns, ",");
+		GString * cmd = g_string_new("");
 		while (ptr)
 		{
-			CString cmd;
-			cmd.Format("iptables -t nat -A POSTROUTING -j MASQUERADE -o eth+ "
+			g_string_printf(cmd,"iptables -t nat -A POSTROUTING -j MASQUERADE -o eth+ "
 					"--dest %s", ptr);
-			run_cmd(cmd);
+			run_cmd(cmd->str);
 			ptr = strtok(0,",");
+
 		}
+
+		g_string_free(cmd,1);
 
 	}
 	#endif
@@ -688,7 +691,7 @@ int main(int argc, char*argv[], char*env[])
 	}
 
 
-#ifdef ENABLE_HOTEL
+#ifndef ENABLE_HOTEL
 
 	syslog(LOG_CRIT, "预加载客户端\n");
 

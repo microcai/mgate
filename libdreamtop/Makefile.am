@@ -22,7 +22,7 @@ libdreamtop_so_SOURCES = libdreamtop.c md5.c md5.h \
 						 protocol_handler.c
 						 
 if ENABLE_HOTEL
-libdreamtop_so_SOURCES += clients.cpp http_redirect.cpp
+libdreamtop_so_SOURCES += clients.cpp http_redirect.c 
 #只有hotel才要http redirect ， 才会用到 libnet 
 libdreamtop_so_LDADD += -lnet	
 endif 

@@ -30,17 +30,10 @@
 #include <string.h>
 #include <pthread.h>
 
-//#include "libdreamtop.h"
+#include "libdreamtop.h"
+//#include "functions.h"
 #include "protocol_def.h"
 
-struct so_data
-{
-    void* module;
-};
-
-
-typedef int (*PROTOCOL_HANDLER)(struct so_data*,u_char *packet);
-extern "C" void get_registerd_handler(PROTOCOL_HANDLER * out_hander, int in_count ,int port, int IPPROTOCOL_TYPE);
 //
 //static void mac2mac(const u_char * d,char *strmac)
 //{
@@ -116,7 +109,7 @@ extern void *pcap_thread_func(struct pcap_thread_args *arg)
 	    port = *((u_int16_t*) (packet_content + ETH_HLEN + ip_head->ihl * 4 + 2));
 
 #ifdef ENABLE_HOTEL
-	    if( mac_is_alowed( (u_char*)packet_content + ETH_ALEN , ip_head->saddr)==false)
+	    if( mac_is_alowed_with_ip((u_char*)packet_content + ETH_ALEN , ip_head->saddr)==false)
 	    {
 
 	    	if(ip_head->protocol == IPPROTO_TCP )

@@ -56,22 +56,23 @@ static void MakeItChange(int roomid, int action )
 {
 	KSQL_RES * res;
 	KSQL_ROW row;
-	CString sqlstr;
+	GString * sqlstr = g_string_new("");
 
-
-	sqlstr.Format("select nIndex from roomer_list where"
+	g_string_printf(sqlstr,"select nIndex from roomer_list where"
 			" RoomId='%d' order by nIndex desc",roomid);
-	res = ksql_query_and_use_result(sqlstr);
-	sqlstr.Format("");
+	res = ksql_query_and_use_result(sqlstr->str);
+
 	row = ksql_fetch_row(res);
 	if(row && row[0])
 	{
-		sqlstr.Format("insert into room_change (RoomerId,ActionType) "
+		g_string_printf(sqlstr,"insert into room_change (RoomerId,ActionType) "
 				"values ('%s','%d')",row[0], action);
 	}
 	ksql_free_result(res);
 
-	ksql_run_query(sqlstr);
+	ksql_run_query(sqlstr->str);
+
+	g_string_free(sqlstr,1);
 }
 
 
@@ -79,17 +80,19 @@ static int GetRoomID(const char * build,const char * floor,const char * room)
 {
 	KSQL_RES * res;
 	KSQL_ROW row;
-	CString sql;
+	GString * sqlstr = g_string_new("");
 	int nindex ;
-	sql.Format(
-			"select nIndex from room_list where RoomBuild='%s' and RoomFloor='%s' and RoomNum='%s'",
+	g_string_printf(sqlstr,"select nIndex from room_list where RoomBuild='%s' and RoomFloor='%s' and RoomNum='%s'",
 			build, floor, room);
-	res = ksql_query_and_use_result(sql);
+	res = ksql_query_and_use_result(sqlstr->str);
 	if((row = ksql_fetch_row(res)))
 	{
 		nindex =  atoi(row[0]);
 	}else nindex = -1;
 	ksql_free_result(res);
+
+	g_string_free(sqlstr,1);
+
 	return nindex;
 }
 
@@ -164,14 +167,14 @@ static int On_ONLINE(char * command)
 
 		std::string  time;
 
-		CString loginnum;
+		GString *loginnum = g_string_new("");
 
 		formattime(time,GetCurrentTime());
 
-		loginnum.Format("%1.1s%1.1s%02.2d%0.6s", build.c_str(),
+		g_string_printf(loginnum,"%1.1s%1.1s%02.2d%0.6s", build.c_str(),
 				floor.c_str(), atoi(room.c_str()), ID.c_str() + ID.length() - 6);
 
-		CString sqlstr;
+		GString *sqlstr = g_string_new("");
 
 		// 获得 RoomId
 		nIndex = GetRoomID(build.c_str(),floor.c_str(),room.c_str());
@@ -179,17 +182,17 @@ static int On_ONLINE(char * command)
 		if(nIndex>0)
 		{
 			// 更新 rooom_list 的 count 值
-			sqlstr.Format("update room_list set RoomerCount=RoomerCount+1 where nIndex=%d",nIndex);
-			ksql_run_query(sqlstr);
+			g_string_printf(sqlstr,"update room_list set RoomerCount=RoomerCount+1 where nIndex=%d",nIndex);
+			ksql_run_query(sqlstr->str);
 
 			//插入新的用户
 
-			sqlstr.Format("insert into roomer_list "
+			g_string_printf(sqlstr,"insert into roomer_list "
 					"(CustomerName,ID,IDtype,IP_ADDR,MAC_ADDR,RoomId,Time,live_address,country,org,LoginNum) "
 					"values ('%s','%s','%s',null,null,'%d','%s','%s','%s','%s','%s')",
 					name.c_str(),ID.c_str(),Idtype.c_str(),nIndex,time.c_str(),
-					address.c_str(),country.c_str(),org.c_str(),loginnum.c_str());
-			ksql_run_query(sqlstr);
+					address.c_str(),country.c_str(),org.c_str(),loginnum->str);
+			ksql_run_query(sqlstr->str);
 
 			MakeItChange(nIndex,3);
 
@@ -199,6 +202,8 @@ static int On_ONLINE(char * command)
 
 			InsertCustomerLog(build.c_str(),floor.c_str(),room.c_str(),name.c_str(),Idtype.c_str(),ID.c_str(),"0","","",time.c_str());
 		}
+		g_string_free(sqlstr,1);
+		g_string_free(loginnum,1);
 		return 1;
 	}while(false);
 	return 0;
@@ -240,7 +245,7 @@ static int On_OFFLINE(char * command)
 			break;
 		std::string build(cmd);
 
-		CString sqlstr;
+		GString * sqlstr = g_string_new("");
 
 		std::string  time;
 
@@ -248,23 +253,23 @@ static int On_OFFLINE(char * command)
 
 		//找出这房间，退干净人。
 
-		sqlstr.Format("select l.`nIndex`  from room_list  l "
+		g_string_printf(sqlstr,"select l.`nIndex`  from room_list  l "
 				"  where l.`RoomBuild` = '%s' and l.`RoomFloor` = '%s' and l.`RoomNum` = '%s' ",
 				build.c_str(),floor.c_str(),room.c_str());
 
-		res =ksql_query_and_use_result(sqlstr);
+		res =ksql_query_and_use_result(sqlstr->str);
 		while((row=ksql_fetch_row(res)))
 		{
-			sqlstr.Format("update room_list set RoomerCount=0 where nIndex='%s'",row[0]);
-			ksql_run_query(sqlstr);
+			g_string_printf(sqlstr,"update room_list set RoomerCount=0 where nIndex='%s'",row[0]);
+			ksql_run_query(sqlstr->str);
 
-			sqlstr.Format("select nIndex,CustomerName,IDtype,ID,IP_ADDR,MAC_ADDR from roomer_list where RoomId='%s'",row[0]);
+			g_string_printf(sqlstr,"select nIndex,CustomerName,IDtype,ID,IP_ADDR,MAC_ADDR from roomer_list where RoomId='%s'",row[0]);
 
-			tres = ksql_query_and_use_result(sqlstr);
+			tres = ksql_query_and_use_result(sqlstr->str);
 			while((trow=ksql_fetch_row(tres)))
 			{
-				sqlstr.Format("insert  into room_change (RoomerId,ActionType) values ('%s',2)",trow[0]);
-				ksql_run_query(sqlstr);
+				g_string_printf(sqlstr,"insert  into room_change (RoomerId,ActionType) values ('%s',2)",trow[0]);
+				ksql_run_query(sqlstr->str);
 				//记录日志
 				syslog(LOG_NOTICE,"从金城退掉 :%s \n",trow[1]);
 
@@ -275,6 +280,7 @@ static int On_OFFLINE(char * command)
 			}ksql_free_result(tres);
 			ret = 1;
 		}
+		g_string_free(sqlstr,1);
 		ksql_free_result(res);
 		notice_mainthread();
 		ret = 1;
@@ -288,7 +294,7 @@ static int On_CHANGE(char * command)
 
 	int ret=0;
 
-	CString sql;
+	GString *sql = g_string_new("");
 	char *cmd;
 	char *TOKPTR;
 	std::string  time;
@@ -341,21 +347,21 @@ static int On_CHANGE(char * command)
 
 		// 获得这家伙的详细信息
 
-		CString loginnum;
+		GString * loginnum = g_string_new("");
 
 		formattime(time,GetCurrentTime());
 
-		loginnum.Format("%1.1s%1.1s%02.2d%0.6s", build.c_str(),
+		g_string_printf(loginnum,"%1.1s%1.1s%02.2d%0.6s", build.c_str(),
 				floor.c_str(), atoi(room.c_str()), ID.c_str() + ID.size() - 6);
 
-		sql.Format("SELECT r.`CustomerName`, r.`IP_ADDR`, r.`MAC_ADDR`, r.`live_address`, r.`country`, r.`org`"
+		g_string_printf(sql,"SELECT r.`CustomerName`, r.`IP_ADDR`, r.`MAC_ADDR`, r.`live_address`, r.`country`, r.`org`"
 				" FROM roomer_list r , room_list l"
 				" where r.`ID`='%s' and r.`IDtype`='%s' and l.nIndex=r.RoomId ",
 				ID.c_str(), Idtype.c_str());
 
-		syslog(LOG_NOTICE,"从金城换房 ， sql : %s\n",sql.c_str());
+		syslog(LOG_NOTICE,"从金城换房 ， sql : %s\n",sql->str);
 
-		res = ksql_query_and_use_result(sql);
+		res = ksql_query_and_use_result(sql->str);
 
 		if((row=ksql_fetch_row(res)))
 		{
@@ -377,18 +383,18 @@ static int On_CHANGE(char * command)
 
 		// 找出这家伙的所有旧的房间，退掉
 
-		sql.Format("select r.`RoomId`,r.`nIndex`,r.`CustomerName`,r.`IP_ADDR`,r.`MAC_ADDR`,"
+		g_string_printf(sql,"select r.`RoomId`,r.`nIndex`,r.`CustomerName`,r.`IP_ADDR`,r.`MAC_ADDR`,"
 				"l.`RoomBuild`, l.`RoomFloor`, l.`RoomNum` "
 				"from roomer_list r , room_list l where IDtype='%s' and ID='%s' and l.nIndex=r.RoomId",
 				Idtype.c_str(),ID.c_str());
-		res =ksql_query_and_use_result(sql);
+		res =ksql_query_and_use_result(sql->str);
 		while((row=ksql_fetch_row(res)))
 		{
-			sql.Format("update room_list set RoomerCount=RoomerCount-1 where nIndex='%s' and RoomerCount>0",row[0]);
-			ksql_run_query(sql);
+			g_string_printf(sql,"update room_list set RoomerCount=RoomerCount-1 where nIndex='%s' and RoomerCount>0",row[0]);
+			ksql_run_query(sql->str);
 
-			sql.Format("insert into room_change (RoomerId,ActionType) values ('%s',2)",row[1]);
-			ksql_run_query(sql);
+			g_string_printf(sql,"insert into room_change (RoomerId,ActionType) values ('%s',2)",row[1]);
+			ksql_run_query(sql->str);
 
 			//记录日志
 			InsertCustomerLog(row[5],row[6],row[7],row[2],Idtype.c_str(),ID.c_str(),"1",row[3]?row[3]:"",row[4]?row[4]:"",time.c_str());
@@ -403,17 +409,17 @@ static int On_CHANGE(char * command)
 		if(nIndex>0)
 		{
 			// 更新 rooom_list 的 count 值
-			sql.Format("update room_list set RoomerCount=RoomerCount+1 where nIndex=%d",nIndex);
-			ksql_run_query(sql);
+			g_string_printf(sql,"update room_list set RoomerCount=RoomerCount+1 where nIndex=%d",nIndex);
+			ksql_run_query(sql->str);
 
 			//插入新的用户
-			sql.Format("insert into roomer_list "
+			g_string_printf(sql,"insert into roomer_list "
 					"(CustomerName,ID,IDtype,IP_ADDR,MAC_ADDR,RoomId,Time,live_address,country,org,LoginNum) "
 					"values ('%s','%s','%s',null,null,'%d','%s','%s','%s','%s','%s')",
 					name.c_str(),ID.c_str(),Idtype.c_str(),nIndex,time.c_str(),
-					address.c_str(),country.c_str(),org.c_str(),loginnum.c_str());
+					address.c_str(),country.c_str(),org.c_str(),loginnum->str);
 
-			ksql_run_query(sql);
+			ksql_run_query(sql->str);
 
 			MakeItChange(nIndex,3);
 
@@ -422,7 +428,9 @@ static int On_CHANGE(char * command)
 			InsertCustomerLog(build.c_str(),floor.c_str(),room.c_str(),name.c_str(),Idtype.c_str(),ID.c_str(),"0","","",time.c_str());
 		}
 		ret=1;
+		g_string_free(loginnum,1);
 	} while (0);
+	g_string_free(sql,1);
 	return ret;
 }
 

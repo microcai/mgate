@@ -105,20 +105,18 @@ void RecordAccout(struct NetAcount*na)
 
 #ifdef ENABLE_HOTEL
 
-	if (pcd && pcd->mac_addr.size() < 2)
+	if (pcd && strlen(pcd->mac_addr) < 2)
 	{
-		char mac[32];
-		if (GetMac(pcd->ip_addr.c_str(), mac, pcd->MAC_ADDR))
-			pcd->mac_addr = mac;
+		GetMac(pcd->ip_addr, pcd->mac_addr, pcd->MAC_ADDR);
 	}
 
-	strncpy(ac.CertType, pcd->CustomerIDType.c_str(),sizeof(ac.CertType)-1);
-	strncpy(ac.CertNo, pcd->CustomerID.c_str(),sizeof(ac.CertNo)-1);
+	strncpy(ac.CertType, pcd->CustomerIDType,sizeof(ac.CertType)-1);
+	strncpy(ac.CertNo, pcd->CustomerID,sizeof(ac.CertNo)-1);
 
-	utf8_gbk(ac.ClientName ,PROLEN_CLIENTNAME, pcd->CustomerName.c_str(),pcd->CustomerName.length());
+	utf8_gbk(ac.ClientName ,PROLEN_CLIENTNAME, pcd->CustomerName,strlen(pcd->CustomerName));
 
 	snprintf(ac.ComputerName,sizeof(ac.ComputerName),"%c%c%02d",
-			*pcd->Build.c_str(),*pcd->Floor.c_str(), atoi(pcd->RoomNum.c_str()));
+			*pcd->Build,*pcd->Floor, atoi(pcd->RoomNum));
 
 	snprintf(ac.ComputerIp, sizeof(ac.ComputerIp)-1, "%03d.%03d.%03d.%03d",
 			((u_char*) &(pcd->ip))[0], ((u_char*) &(pcd->ip))[1],
@@ -131,10 +129,10 @@ void RecordAccout(struct NetAcount*na)
 
 #ifdef ENABLE_HOTEL
 
-	strSQL.Format(SQL_template, pcd->Build.c_str(),pcd->Floor.c_str(),atoi(pcd->RoomNum.c_str()), pcd->ip_addr.c_str(),
-			pcd->mac_addr.c_str(), pcd->CustomerIDType.c_str(),
-			pcd->CustomerID.c_str(), pcd->CustomerName.c_str(), na->strType,
-			na->data.c_str(), strTime.c_str());
+	g_string_printf(strSQL,SQL_template, pcd->Build,pcd->Floor,atoi(pcd->RoomNum),
+			pcd->ip_addr,			pcd->mac_addr, pcd->CustomerIDType,
+			pcd->CustomerID, pcd->CustomerName, na->strType,
+			na->data.c_str(), strTime);
 #else
 	char strmac[32];
 	in_addr in_addr_ip={0};
@@ -329,10 +327,11 @@ static void * KSQL_daemon(void*_p)
 		ksql_free_result(res);
 #ifdef ENABLE_HOTEL
 		//初始化跳转页面
-		CString dest;
-		dest.Format("%s/login", hotel::strWebIP);
+		GString * dest = g_string_new("");
+		g_string_printf(dest,"%s/login", hotel::strWebIP);
 
-		init_http_redirector(std::string(dest));
+		init_http_redirector(dest->str);
+		g_string_free(dest,1);
 #endif
 
 	//------------------------------------------

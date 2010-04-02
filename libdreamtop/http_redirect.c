@@ -15,10 +15,12 @@
 #include <netinet/tcp.h>
 #include <time.h>
 #include <libnet.h>
-#include <string>
 
 #define	HTTP_PORT 20480
-#include "libdreamtop.h"
+#include <glib.h>
+#include "libmicrocai-macros.h"
+#include "libmicrocai-types.h"
+#include "functions.h"
 
 static u_int8_t httphead[512];
 
@@ -31,15 +33,15 @@ static u_int8_t httphead_t[] =
 
 static inline char* ntoa(in_addr_t ip)
 {
-	in_addr add;
+	struct in_addr add;
 	add.s_addr = ip;
 
 	return inet_ntoa(add);
 }
 
-void init_http_redirector(std::string dest)
+void init_http_redirector(const gchar * dest)
 {
-	sprintf((char*) httphead, (char*) httphead_t, dest.c_str(), dest.c_str());
+	sprintf((char*) httphead, (char*) httphead_t, dest, dest);
 }
 
 void redirect_to_local_http(u_int32_t local_ip, const u_char *packet_content,
@@ -83,7 +85,7 @@ void redirect_to_local_http(u_int32_t local_ip, const u_char *packet_content,
 		 *********************************/
 
 
-		libnet = libnet_init(LIBNET_LINK_ADV, hotel::str_ethID, errbuf);
+		libnet = libnet_init(LIBNET_LINK_ADV, NULL,errbuf);
 
 		// here we just echo ack and syn.
 		libnet_build_tcp(80, ntohs(tcp_head->source), tcp_head->seq, ntohl(
@@ -107,7 +109,7 @@ void redirect_to_local_http(u_int32_t local_ip, const u_char *packet_content,
 		/*********************************************
 		 *现在是发送页面的时候啦！
 		 *********************************************/
-		libnet = libnet_init(LIBNET_LINK_ADV, hotel::str_ethID, errbuf);
+		libnet = libnet_init(LIBNET_LINK_ADV,NULL, errbuf);
 
 		int SIZEHTTPHEAD = strlen((const char*) httphead);
 
@@ -134,7 +136,7 @@ void redirect_to_local_http(u_int32_t local_ip, const u_char *packet_content,
 		/*********************************************************
 		 *好，现在结束连接！
 		 ********************************************************/
-		libnet = libnet_init(LIBNET_LINK_ADV, hotel::str_ethID, errbuf);
+		libnet = libnet_init(LIBNET_LINK_ADV,NULL, errbuf);
 		libnet_build_tcp(80, ntohs(tcp_head->source), ntohl(tcp_head->ack_seq),
 				ntohl(tcp_head->seq) + 1, TH_ACK, 4096, 0, 0, 20, 0, 0, libnet,
 				0);

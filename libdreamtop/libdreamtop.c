@@ -24,15 +24,10 @@
 #include <string.h>
 #include <glib.h>
 
-struct so_data
-{
-    void* module;
-};
-
-typedef int (*PROTOCOL_HANDLER)(struct so_data*,u_char *packet);
-
 #include "libmicrocai-macros.h"
+#include "libmicrocai-types.h"
 #include "functions.h"
+
 
 u_int16_t checksum(u_int16_t *buffer, int size)
 {
@@ -93,14 +88,14 @@ void  convertMAC(char mac[6],const char * strmac)
 
 #ifdef ENABLE_HOTEL
 
-void run_cmd(const CString & strcmd )
+void run_cmd(const gchar *  strcmd )
 {
 	//在这里我不得不考虑system失败会导致的资源泄漏。
-	syslog(LOG_NOTICE,"run: %s\n",strcmd.c_str());
-	system(strcmd);
+	syslog(LOG_NOTICE,"run: %s\n",strcmd);
+	int ret = system(strcmd);
 }
 
-bool GetMac(const char *ip, char MAC_ADDR[],u_char mac_addr[])
+gboolean GetMac(const char *ip, char MAC_ADDR[],u_char mac_addr[])
 {
 	//向内核发送发起ARP查询
 	int s = socket(PF_INET, SOCK_DGRAM, 0);
@@ -129,15 +124,15 @@ bool GetMac(const char *ip, char MAC_ADDR[],u_char mac_addr[])
 				memcpy(mac_addr,d,6);
 			if(MAC_ADDR)
 				formatMAC(d,MAC_ADDR);
-			return true;
+			return TRUE;
 		}
 		if (errno == ENXIO)
 			continue;
 		close (s);
-		return false;
+		return FALSE;
 	} while(errno != ENODEV);
 	close(s);
-	return false;
+	return FALSE;
 }
 
 #endif

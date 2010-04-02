@@ -39,28 +39,28 @@ _EXTERN_ u_int16_t
     checksum(u_int16_t *buffer, int size);
 #ifdef ENABLE_HOTEL
 
-_EXTERN_ bool
+_EXTERN_ gboolean
 	GetMac(const char *ip, char MAC_ADDR[],u_char mac_addr[]);
 
 _EXTERN_ void
-	run_cmd(const CString & strcmd );
+	run_cmd(const gchar *  strcmd );
 
-_EXTERN_ bool
+_EXTERN_ gboolean
 	mac_is_alowed(u_char mac[6]);
-_EXTERN_ bool
-	mac_is_alowed(u_char mac[6],const u_int32_t ip);
-_EXTERN_ bool
+_EXTERN_ gboolean
+	mac_is_alowed_with_ip(u_char mac[6],const u_int32_t ip);
+_EXTERN_ gboolean
 	ip_is_allowed(void*,in_addr_t)__attribute_noinline__;
 _EXTERN_ void
-	mac_set_allowed(u_char mac[6],bool allow =false,in_addr_t ip=INADDR_NONE);
-_EXTERN_ bool
+	mac_set_allowed(u_char mac[6],gboolean allow,in_addr_t ip);
+_EXTERN_ gboolean
 	set_client_data( u_char mac[6],  Clients_DATA * pcd );
-_EXTERN_ bool
+_EXTERN_ gboolean
 	get_client_data(u_char mac[6],Clients_DATA * pcd );
 _EXTERN_ void
 	redirect_to_local_http( u_int32_t ,const u_char *,struct iphdr* );
 _EXTERN_ void
-	init_http_redirector(std::string dest);
+	init_http_redirector(const gchar* dest);
 #endif
 
 _EXTERN_ struct tm *
