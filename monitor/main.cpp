@@ -48,7 +48,11 @@
 #include <locale.h>
 #include <libintl.h>
 #define _(x) gettext(x)
+#define N_(x) (x)
 #endif
+
+#include <glib.h>
+
 #include "libdreamtop.h"
 #include "protocol_def.h"
 
@@ -509,11 +513,36 @@ static void on_term(int )
 
 int main(int argc, char*argv[], char*env[])
 {
+	g_thread_init(NULL);
+	g_set_application_name(PACKAGE_NAME);
 	setlocale(LC_ALL,"");
 	textdomain(GETTEXT_PACKAGE);
 #ifdef DEBUG
 	bindtextdomain(GETTEXT_PACKAGE,"/tmp/share/locale");
 #endif
+
+	static struct parameter_tags parameter[] =
+	{
+			parameter_tags("--config", parameter_type::STRING, config_file_name,
+					sizeof(config_file_name),
+					"-f,--config\t模块参数配置文件，默认是 ./lib/module.conf"), parameter_tags(
+					"--module_dir", parameter_type::STRING, module_dir,
+					sizeof(module_dir), "--module_dir\t\t模块位置"), parameter_tags(
+					"--flushdb", parameter_type::BOOL_short, (char*) &flush_db,
+					sizeof(flush_db), "--flush_db\t\t清空客房数据"), parameter_tags()
+	};
+
+	gboolean createdb = FALSE;
+	gchar *  domain_dir = NULL;
+
+	GOptionEntry args[] =
+	{
+			{"flushdb",'f',0,G_OPTION_ARG_NONE,&flush_db,_("flash the db")},
+			{"createdb",'c',0,G_OPTION_ARG_NONE,&createdb,_("Create database")},
+			{"locale",'\0',0,G_OPTION_ARG_STRING,&domain_dir,_("set domain dir root"),N_("dir")},
+			{0}
+	};
+
 
 	pthread_attr_t p_attr;
 	pthread_t pcap_tcp;

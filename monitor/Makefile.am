@@ -9,9 +9,10 @@ sbin_SCRIPTS = monitord
 
 EXTRA_DIST = runmonitor monitord
 
+monitor_CXXFLAGS = @GLIB2_CFLAGS@ -I$(top_srcdir)/libdreamtop
+
 monitor_SOURCES = ip_filter.cpp main.cpp auto_update.cpp protocol_def.h 
 						 
-monitor_CXXFLAGS = -I$(top_srcdir)/libdreamtop
 if ENABLE_HOTEL
 monitor_CXXFLAGS += -DENABLE_HOTEL
 endif
