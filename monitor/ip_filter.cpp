@@ -27,10 +27,20 @@
 #include <netinet/ip.h>
 #include <pcap.h>
 #include <stdio.h>
+#include <string.h>
+#include <pthread.h>
 
-#include "libdreamtop.h"
+//#include "libdreamtop.h"
 #include "protocol_def.h"
 
+struct so_data
+{
+    void* module;
+};
+
+
+typedef int (*PROTOCOL_HANDLER)(struct so_data*,u_char *packet);
+extern "C" void get_registerd_handler(PROTOCOL_HANDLER * out_hander, int in_count ,int port, int IPPROTOCOL_TYPE);
 //
 //static void mac2mac(const u_char * d,char *strmac)
 //{

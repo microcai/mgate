@@ -8,14 +8,15 @@
  */
 #include <stdlib.h>
 #include <pthread.h>
-#include "libdreamtop.h"
+#include <glib.h>
+#include "libmicrocai-types.h"
 
 static struct handler * head = 0, *tail = 0;
 static pthread_rwlock_t	rwlock=PTHREAD_RWLOCK_INITIALIZER;
 
 void* register_protocol_handler(PROTOCOL_HANDLER handler, int port, int IPPROTOCOL_TYPE)
 {
-    struct handler *p = new struct handler();
+    struct handler *p = g_new0(struct handler,1);// new struct handler();
     p->magic = 'M';
     p->port = port;
     p->protocol_type = IPPROTOCOL_TYPE;
@@ -71,7 +72,7 @@ int un_register_protocol_handler(void*p)
         else
             tail = ((struct handler *) p)->pre;
         pthread_rwlock_unlock(&rwlock);
-        delete (struct handler*)p;
+        g_free(p);
         return 0;
     } else
         return -1;

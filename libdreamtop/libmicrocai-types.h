@@ -9,7 +9,6 @@
 #ifndef _LIBMICROCAI_TYPES_H
 #define	_LIBMICROCAI_TYPES_H
 
-#include <string>
 #include <string.h>
 #include <time.h>
 #include <arpa/inet.h>
@@ -45,40 +44,6 @@ typedef union AccountData{
     char*     post;
 }AccountData;
 
-namespace parameter_type{
-
-enum parameter_types
-{
-	STUB,		// just a stub.
-	BOOL_short,	// just supply or not to set flag
-	BOOL_long,	// must use =yes or =no
-	BOOL_both,	// please always use these one
-	INTEGER,	// parameter is a integer
-	STRING,		// parameter is a string.
-	FUNCTION	// parameter is a call back function
-};
-
-
-
-} // namespace parameter_types
-
-struct parameter_tags{
-	const char * const prefix;
-	const char * const parameter;
-	const char * const discribe;
-	const long	 parameter_len;
-	const int	 prefix_len;
-	const enum	 parameter_type::parameter_types	type;
-
-	parameter_tags(const char*pfix,enum parameter_type::parameter_types tp,const char*p,const long len,const char*dis=NULL):
-	prefix(pfix),parameter(p),discribe(dis),parameter_len(len),prefix_len(0),type(tp)
-	{
-		*(int*)(&prefix_len)  = strlen(this->prefix);
-	}
-	parameter_tags():
-	prefix(0),parameter(0),discribe(0),parameter_len(0),prefix_len(0),type(parameter_type::STUB)
-	{}
-};
 
 struct so_data
 {
@@ -86,25 +51,21 @@ struct so_data
 };
 
 
-class Clients_DATA{
-public:
-    in_addr_t ip;
-    struct tm  logintime;
-    struct tm  onlinetime;
-    u_char    MAC_ADDR[6];
-    std::string CustomerIDType;
-    std::string CustomerName;
-    std::string CustomerID;
-    std::string RoomNum;
-    std::string Floor;
-    std::string Build;
-    std::string mac_addr;// (xx:xx:xx:xx:xx:xx format)
-    std::string ip_addr;
-    int nIndex;
-
-    Clients_DATA();
-    ~Clients_DATA();
-
+struct Clients_DATA
+{
+	in_addr_t ip;
+	struct tm logintime;
+	struct tm onlinetime;
+	u_char MAC_ADDR[6];
+	gchar CustomerIDType[32];
+	char CustomerName[32];
+	char CustomerID[32];
+	char RoomNum[32];
+	char Floor[32];
+	char Build[32];
+	char mac_addr[32];// (xx:xx:xx:xx:xx:xx format)
+	char ip_addr[32];
+	int nIndex;
 };
 
 typedef int (*PROTOCOL_HANDLER)(struct so_data*,u_char *packet);
@@ -118,43 +79,6 @@ struct handler
 	int port;//big ending
 	int protocol_type;//IPPROTOCOL_TCP or IPPROTOCOL_UDP
 	PROTOCOL_HANDLER handler;
-};
-template< typename ptr_type >
-class auto_ptr{
-private:
-	ptr_type* m_autoptr;
-public:
-	auto_ptr(ptr_type* obj)
-	{
-		m_autoptr = obj;
-	}
-	~auto_ptr(){
-		delete m_autoptr;
-	}
-	operator ptr_type * ()
-	{
-		return m_autoptr;
-	}
-};
-
-class auto_str{
-private:
-	char * m_autoptr;
-public:
-	auto_str(char* obj)
-	{
-		m_autoptr = obj;
-	}
-	auto_str(size_t sz){
-		m_autoptr = new char[sz];
-	}
-	~auto_str(){
-		delete[] m_autoptr;
-	}
-	operator char * ()
-	{
-		return m_autoptr;
-	}
 };
 
 typedef void ** KSQL_RES;

@@ -190,7 +190,7 @@ void InitSqlite()
 {
 	sqlite3_initialize();
 
-	gchar * sqlite_db;
+	const gchar * sqlite_db;
 
 	extern GKeyFile *  gkeyfile;
 

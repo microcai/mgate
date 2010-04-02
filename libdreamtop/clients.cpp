@@ -372,17 +372,3 @@ bool get_client_data(u_char mac[6],Clients_DATA * pcd )
 	pthread_rwlock_unlock(&lock);
 	return ret;
 }
-
-Clients_DATA::Clients_DATA():
-	CustomerIDType(""), CustomerName(""), CustomerID(""), RoomNum(""), Floor(""),
-			Build(""), mac_addr(""), ip_addr("")
-{
-	memset(MAC_ADDR,0,6);
-	ip= 0;
-	onlinetime.tm_year = 0;
-}
-
-Clients_DATA::~Clients_DATA()
-{
-
-}
