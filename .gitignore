@@ -18,4 +18,6 @@ ABOUT-NLS
 monitor-*.spec
 *.so
 stamp-h1
+monitor/monitor
+monitor
 
