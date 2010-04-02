@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
 "POT-Creation-Date: 2010-04-02 17:45+0800\n"
-"PO-Revision-Date: 2010-01-30 19:08+0800\n"
+"PO-Revision-Date: 2010-04-02 18:15+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
 "MIME-Version: 1.0\n"
@@ -17,19 +17,19 @@ msgstr ""
 
 #: monitor/main.cpp:540
 msgid "flash the db"
-msgstr ""
+msgstr "清空数据"
 
 #: monitor/main.cpp:541
 msgid "Create database"
-msgstr ""
+msgstr "建立数据库"
 
 #: monitor/main.cpp:542
 msgid "set domain dir root"
-msgstr ""
+msgstr "设置翻译目录"
 
 #: monitor/main.cpp:542
 msgid "dir"
-msgstr ""
+msgstr "目录"
 
 #: monitor/main.cpp:578
 #, c-format
@@ -44,7 +44,7 @@ msgstr "所有的表都已经清空！ :)\n"
 #: monitor/main.cpp:650
 #, c-format
 msgid "nic %s not enabled!"
-msgstr ""
+msgstr "网卡%s未启用"
 
 #: monitor/main.cpp:667
 #, c-format
@@ -54,4 +54,4 @@ msgstr "错误：无法打开 %s 进行抓包\n"
 #: monitor/main.cpp:675
 #, c-format
 msgid "ERROR:%s is not an ethernet adapter\n"
-msgstr ""
+msgstr "错误：%s不是一个有效的网卡"
