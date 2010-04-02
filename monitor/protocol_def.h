@@ -31,7 +31,7 @@ struct pcap_thread_args{
 	pcap_t	* pcap_handle;
 	u_char	  mac_addr[6];
 };
-void *pcap_thread_func( struct pcap_thread_args * );
+_EXTERN_ void *pcap_thread_func( struct pcap_thread_args * );
 int Check_update(void *);
 
 #endif

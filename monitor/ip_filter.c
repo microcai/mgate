@@ -29,9 +29,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
+#include <glib.h>
 
-#include "libdreamtop.h"
-//#include "functions.h"
+#include "libmicrocai-macros.h"
+#include "libmicrocai-types.h"
+#include "functions.h"
 #include "protocol_def.h"
 
 //
@@ -53,7 +55,7 @@ extern void *pcap_thread_func(struct pcap_thread_args *arg)
 	pcap_t *	pcap_handle;
 	u_char		mac_addr[6];
 
-	pcap_pkthdr *pcaphdr;
+	struct pcap_pkthdr *pcaphdr;
 	const u_char*packet_contents;
 
 	struct iphdr *ip_head;

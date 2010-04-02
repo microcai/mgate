@@ -506,7 +506,15 @@ static void on_term(int )
 	exit(0);
 }
 
-static gboolean on_inotify(GIOChannel *source, GIOCondition condition, gpointer data);
+static gboolean on_inotify(GIOChannel *source, GIOCondition condition, gpointer data)
+{
+	struct inotify_event ie;
+	gsize read;
+	if(G_IO_ERROR_NONE == g_io_channel_read(source,(gchar*)&ie,sizeof(ie),&read))
+	{
+		On_SQL_change();
+	}
+}
 
 int main(int argc, char*argv[], char*env[])
 {
@@ -735,14 +743,4 @@ int main(int argc, char*argv[], char*env[])
 	g_timeout_add(5,Check_update,Check_update_param);
 	g_main_loop_run(loop);
 	return 0;
-}
-
-static gboolean on_inotify(GIOChannel *source, GIOCondition condition, gpointer data)
-{
-	struct inotify_event ie;
-	gsize read;
-	if(G_IO_ERROR_NONE == g_io_channel_read(source,(gchar*)&ie,sizeof(ie),&read))
-	{
-		On_SQL_change();
-	}
 }
