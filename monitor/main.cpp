@@ -61,12 +61,12 @@ static char socket_file[256] = "/tmp/monitor.socket";
 static const gchar * config_file_name = "/var/www/application/config/config.ini";
 static const gchar * module_dir = MODULES_PATH;
 
-#ifndef ENABLE_HOTEL
+#ifdef ENABLE_HOTEL
 static void port_map(KSQL_ROW row, void * p)
 {
-	CString cmd;
+	GString * cmd = g_string_new("");
 
-	cmd.Format(
+	g_string_printf(cmd,
 			"iptables -A PREROUTING -t nat -i %s -p %s --dport %s -j DNAT --to %s:%s",
 			hotel::str_ethID, // eth1
 			row[1], // protocol
@@ -75,7 +75,8 @@ static void port_map(KSQL_ROW row, void * p)
 			row[3] // LAN port
 	);
 
-	run_cmd(cmd);
+	run_cmd(cmd->str);
+	g_string_free(cmd,1);
 }
 
 static void portmap_change(KSQL_ROW row, void*p)
@@ -85,11 +86,11 @@ static void portmap_change(KSQL_ROW row, void*p)
 
 	Is_ADD = atoi(row[6]);
 
-	CString cmd;
+	GString * cmd = g_string_new("");
 
 	if(row[1] && row[2] && row[3] && row[4] && row[5])
 	{
-		cmd.Format(
+		g_string_printf(cmd,
 			"iptables -%c PREROUTING -t nat -i %s -p %s --dport %s -j DNAT --to %s:%s",
 			Is_ADD?'A':'D',
 			hotel::str_ethID, // eth1
@@ -98,9 +99,10 @@ static void portmap_change(KSQL_ROW row, void*p)
 			row[4], //ip
 			row[3] // LAN port
 			);
-		run_cmd(cmd);
+		run_cmd(cmd->str);
 	}
 	sprintf((char*) p, "delete from portmap_change where nIndex <= %d",atoi(row[0]?row[0]:"0"));
+	g_string_free(cmd,1);
 }
 
 
@@ -125,7 +127,7 @@ static void room_change(KSQL_ROW row, void*p)
 
 	CustomerData Cd;
 	Clients_DATA cd;
-	CString sql;
+	GString  * sql = g_string_new("");
 	KSQL_RES* res;
 	KSQL_ROW roomer_row;
 	u_char mac[6];
@@ -136,14 +138,14 @@ static void room_change(KSQL_ROW row, void*p)
 	ActionType = atoi(row[2]);
 	in_addr_t ip;
 
-	sql.Format("select r.`CustomerName`,r.`IDtype`,r.`ID`,r.`IP_ADDR`,"
+	g_string_printf(sql,"select r.`CustomerName`,r.`IDtype`,r.`ID`,r.`IP_ADDR`,"
 		"r.`MAC_ADDR`,l.`RoomBuild`,l.`RoomFloor`,l.`RoomNum`,r.`live_address`,"
 		"r.`country`,r.`org`,l.`IsBind`,l.`MAC_ADDR`,r.`nIndex` FROM roomer_list r,room_list l "
 		"where r.nIndex='%s' and l.nIndex=r.RoomId", row[1]);
 	switch (ActionType)
 	{
 	case 0: //登录可以上网咯!!!
-		res = ksql_query_and_use_result(sql);
+		res = ksql_query_and_use_result(sql->str);
 		while ((roomer_row = ksql_fetch_row(res)))
 		{
 			char macadd[18];
@@ -153,48 +155,49 @@ static void room_change(KSQL_ROW row, void*p)
 			{
 				if(assert_mac(roomer_row[4]))
 				{
-					convertMAC(mac,roomer_row[4]);
-					mac_set_allowed(mac);
+					convertMAC((char*)mac,roomer_row[4]);
+					mac_set_allowed(mac,FALSE,0);
 				}
 				cd.ip = inet_addr(roomer_row[3]);
-				cd.ip_addr = roomer_row[3];
+				strcpy(cd.ip_addr , roomer_row[3]);
 				if (cd.ip != INADDR_ANY && cd.ip != INADDR_NONE)
 				{
 					if (GetMac(roomer_row[3], macadd, mac))
 					{
-						sql.Format("update roomer_list set MAC_ADDR='%s',LoginTime=Time,OnlineTime=Time where nIndex='%s'",
+						g_string_printf(sql,"update roomer_list set MAC_ADDR='%s',LoginTime=Time,OnlineTime=Time where nIndex='%s'",
 								macadd,row[1]);
-						ksql_run_query(sql);
-						cd.mac_addr = macadd;
+						ksql_run_query(sql->str);
+						strcpy(cd.mac_addr ,macadd);
 					}
 					else continue;
 				}else if (assert_mac(roomer_row[4]))
 				{
-					convertMAC(mac, roomer_row[4]);
+					convertMAC((char*)mac, roomer_row[4]);
 //					mac_set_allowed(mac,true);
-					cd.mac_addr = roomer_row[4];
+					strcpy(cd.mac_addr , roomer_row[4]);
 					memcpy(cd.MAC_ADDR, mac, 6);
 				}else continue;
 			}
 			else if (assert_mac(roomer_row[4]))
 			{
-				convertMAC(mac, roomer_row[4]);
+				convertMAC((char*)mac, roomer_row[4]);
 //				mac_set_allowed(mac,true);
-				cd.mac_addr = roomer_row[4];
+				strcpy(cd.mac_addr , roomer_row[4]);
 				memcpy(cd.MAC_ADDR,mac,6);
 			}
 			//好了，现在是有 mac 了，哈哈哈哈哈
-			cd.CustomerID = roomer_row[2];
-			cd.CustomerIDType = roomer_row[1];
-			cd.CustomerName = roomer_row[0];
-			cd.Build = roomer_row[5];
-			cd.Floor = roomer_row[6];
-			cd.RoomNum = roomer_row[7];
+
+			strcpy(cd.CustomerID , roomer_row[2]);
+			strcpy(cd.CustomerIDType , roomer_row[1]);
+			strcpy(cd.CustomerName , roomer_row[0]);
+			strcpy(cd.Build , roomer_row[5]);
+			strcpy(cd.Floor , roomer_row[6]);
+			strcpy(cd.RoomNum , roomer_row[7]);
 			memcpy(cd.MAC_ADDR, mac, 6);
 			cd.nIndex = atoi(roomer_row[13]);
 			set_client_data(mac, &cd);
 			if (!mac_is_alowed(mac))
-				mac_set_allowed(mac, true);
+				mac_set_allowed(mac, true,0);
 			syslog(LOG_NOTICE,"登录 客户:%s\n", roomer_row[0]);
 		}
 		ksql_free_result(res);
@@ -203,14 +206,14 @@ static void room_change(KSQL_ROW row, void*p)
 
 		break;
 	case 2://退房
-		res = ksql_query_and_use_result(sql);
+		res = ksql_query_and_use_result(sql->str);
 		while((roomer_row=ksql_fetch_row(res)))
 		{
 			//寻找 mac 地址是否存在
 			if( assert_mac(roomer_row[4]))
 			{
-				convertMAC(mac,roomer_row[4]);
-				mac_set_allowed(mac);
+				convertMAC((char*)mac,roomer_row[4]);
+				mac_set_allowed(mac,0,0);
 				for (int i = 0; i < 6; ++i)
 				{
 					Cd.ComputerMac[i * 2] = roomer_row[4][i * 3];
@@ -228,7 +231,7 @@ static void room_change(KSQL_ROW row, void*p)
 				snprintf(Cd.ComputerName, sizeof(Cd.ComputerName), "%c%c%02d",
 						roomer_row[5][0], roomer_row[6][0], atoi(roomer_row[7]));
 
-			Cd.ClientID = Cd.DateTime = GetDBTime(GetCurrentTime());
+			Cd.ClientID = Cd.DateTime = GetDBTime_tm(GetCurrentTime());
 
 			if(roomer_row[8])
 				utf8_gbk(Cd.Unit,sizeof(Cd.Unit),roomer_row[8],strlen(roomer_row[8]));
@@ -250,7 +253,7 @@ static void room_change(KSQL_ROW row, void*p)
 				snprintf(Cd.ComputerName, sizeof(Cd.ComputerName), "%c%c%02d",
 						roomer_row[5][0], roomer_row[6][0], atoi(roomer_row[7]));
 
-			Cd.ClientID = Cd.DateTime = GetDBTime(GetCurrentTime());
+			Cd.ClientID = Cd.DateTime = GetDBTime_tm(GetCurrentTime());
 
 			Cd.Type = 1;
 
@@ -259,13 +262,13 @@ static void room_change(KSQL_ROW row, void*p)
 			if(roomer_row[0])
 				syslog(LOG_NOTICE, "退房 客户：%s\n", roomer_row[0]);
 
-			sql.Format("delete from roomer_list where nIndex='%s'",row[1]);
-			ksql_run_query(sql);
+			g_string_printf(sql,"delete from roomer_list where nIndex='%s'",row[1]);
+			ksql_run_query(sql->str);
 		}
 		ksql_free_result(res);
 		break;
 	case 3: //  登记上网
-		res = ksql_query_and_use_result(sql);
+		res = ksql_query_and_use_result(sql->str);
 		while ((roomer_row = ksql_fetch_row(res)))
 		{
 			if(roomer_row[1])
@@ -278,7 +281,7 @@ static void room_change(KSQL_ROW row, void*p)
 				snprintf(Cd.ComputerName, sizeof(Cd.ComputerName), "%c%c%02d",
 						roomer_row[5][0], roomer_row[6][0], atoi(roomer_row[7]));
 
-			Cd.ClientID = Cd.DateTime = GetDBTime(GetCurrentTime());
+			Cd.ClientID = Cd.DateTime = GetDBTime_tm(GetCurrentTime());
 
 			if(roomer_row[8])
 				utf8_gbk(Cd.Unit,sizeof(Cd.Unit),roomer_row[8],strlen(roomer_row[8]));
@@ -289,13 +292,13 @@ static void room_change(KSQL_ROW row, void*p)
 
 			if(assert_mac(roomer_row[4])) // 呵呵啊？ 居然是白名单啊
 			{
-				convertMAC(mac,roomer_row[4]);
+				convertMAC((char*)mac,roomer_row[4]);
 				// 开启却不
-				mac_set_allowed(mac,true);
+				mac_set_allowed(mac,true,0);
 			}else 	// 客房是否绑定了 mac  地址？
 			if (atoi(roomer_row[11]) && roomer_row[12] && strlen(roomer_row[12])==17 )
 			{
-				convertMAC(mac,roomer_row[12]);
+				convertMAC((char*)mac,roomer_row[12]);
 
 				//绑定的 mac 地址是否已经被人使用？
 				if(get_client_data(mac,&cd))
@@ -307,14 +310,14 @@ static void room_change(KSQL_ROW row, void*p)
 						Cd.ComputerMac[i * 2 + 1] = roomer_row[12][i * 3 + 1];
 					}
 
-					sql.Format(
+					g_string_printf(sql,
 							"update roomer_list set MAC_ADDR='%s',IP_ADDR=default where nIndex='%s'",
 							roomer_row[12], row[1]);
-					ksql_run_query(sql);
-					sql.Format(
+					ksql_run_query(sql->str);
+					g_string_printf(sql,
 							"insert into room_change (RoomerId,ActionType) values ('%s',0)",row[1]);
 					//现在，开启吧
-					ksql_run_query(sql);
+					ksql_run_query(sql->str);
 					need_rerun = true;
 				}
 			}
@@ -325,17 +328,17 @@ static void room_change(KSQL_ROW row, void*p)
 		ksql_free_result(res);
 		break;
 	case 4: ///白名单添加
-		sql.Format("select r.`CustomerName`,r.`IDtype`,r.`ID`,r.`MAC_ADDR`"
+		g_string_printf(sql,"select r.`CustomerName`,r.`IDtype`,r.`ID`,r.`MAC_ADDR`"
 			 " FROM roomer_list r where  r.nIndex='%s'", row[1]);
-		res = ksql_query_and_use_result(sql);
+		res = ksql_query_and_use_result(sql->str);
 		while ((roomer_row = ksql_fetch_row(res)))
 		{
 			if(assert_mac(roomer_row[3]))
 			{
-				convertMAC(mac,roomer_row[3]);
-				mac_set_allowed(mac,true);
-				sql.Format("delete from roomer_list where nIndex='%s'",row[1]);
-				ksql_run_query(sql);
+				convertMAC((char*)mac,roomer_row[3]);
+				mac_set_allowed(mac,true,0);
+				g_string_printf(sql,"delete from roomer_list where nIndex='%s'",row[1]);
+				ksql_run_query(sql->str);
 
 				syslog(LOG_NOTICE,"添加白名单, mac = %s\n",roomer_row[3]);
 			}
@@ -343,18 +346,18 @@ static void room_change(KSQL_ROW row, void*p)
 		ksql_free_result(res);
 		break;
 	case 5: //白名单删除
-		sql.Format("select r.`CustomerName`,r.`IDtype`,r.`ID`,r.`MAC_ADDR`"
+		g_string_printf(sql,"select r.`CustomerName`,r.`IDtype`,r.`ID`,r.`MAC_ADDR`"
 			 " FROM roomer_list r where  r.nIndex='%s'", row[1]);
 
-		res = ksql_query_and_use_result(sql);
+		res = ksql_query_and_use_result(sql->str);
 		while ((roomer_row = ksql_fetch_row(res)))
 		{
 			if(assert_mac(roomer_row[3]))
 			{
-				convertMAC(mac,roomer_row[3]);
-				mac_set_allowed(mac);
-				sql.Format("delete from roomer_list where nIndex='%s'",row[1]);
-				ksql_run_query(sql);
+				convertMAC((char*)mac,roomer_row[3]);
+				mac_set_allowed(mac,0,0);
+				g_string_printf(sql,"delete from roomer_list where nIndex='%s'",row[1]);
+				ksql_run_query(sql->str);
 
 				syslog(LOG_NOTICE,"删除白名单, mac = %s\n",roomer_row[3]);
 			}
@@ -367,6 +370,7 @@ static void room_change(KSQL_ROW row, void*p)
 	{
 		((char*) p)[0] = -1;
 	}
+	g_string_free(sql,1);
 }
 
 static void On_SQL_change()
@@ -436,8 +440,8 @@ static void load_white(KSQL_ROW row, void*)
 	u_char mac[6];
 	if(assert_mac(row[0]))
 	{
-		convertMAC(mac,row[0]);
-		mac_set_allowed(mac,true);
+		convertMAC((char*)mac,row[0]);
+		mac_set_allowed(mac,true,0);
 	}
 }
 
@@ -450,40 +454,41 @@ static void pre_load(KSQL_ROW row, void*)
 	int			roomer_count;
 	Clients_DATA cd;
 
-	CString sql;
-	sql.Format("select count(RoomId) from roomer_list where RoomId='%s'",row[0]);
-	res = ksql_query_and_use_result(sql);
+	GString * sql = g_string_new("");
+	g_string_printf(sql,"select count(RoomId) from roomer_list where RoomId='%s'",row[0]);
+	res = ksql_query_and_use_result(sql->str);
 	mrow = ksql_fetch_row(res);
 	roomer_count = atoi(mrow ? mrow[0] : "0");
 	ksql_free_result(res);
 
 	if(roomer_count) // 非空的房间哦，哈哈
 	{
-		sql.Format("select CustomerName,IDtype,ID,MAC_ADDR,nIndex,IP_ADDR from roomer_list where RoomId='%s'",row[0]);
+		g_string_printf(sql,"select CustomerName,IDtype,ID,MAC_ADDR,nIndex,IP_ADDR from roomer_list where RoomId='%s'",row[0]);
 
-		res = ksql_query_and_use_result(sql);
+		res = ksql_query_and_use_result(sql->str);
 		while ((mrow = ksql_fetch_row(res)))
 		{
 			if(mrow[0] && mrow[2] && mrow[3] && assert_mac(mrow[3])) // 只添加有 mac  地址的，说明是有登录过的，嘿嘿
 			{
-				cd.mac_addr = mrow[3];
-				convertMAC(cd.MAC_ADDR,mrow[3]);
+				strcpy(cd.mac_addr , mrow[3]);
+				convertMAC((char*)cd.MAC_ADDR,mrow[3]);
 
-				cd.Build = row[1];
-				cd.CustomerID = mrow[2];
-				cd.CustomerIDType = mrow[1];
-				cd.CustomerName = mrow[0];
-				cd.Floor = row[2];
-				cd.RoomNum = row[3];
+				strcpy(cd.Build , row[1]);
+				strcpy(cd.CustomerID , mrow[2]);
+				strcpy(cd.CustomerIDType , mrow[1]);
+				strcpy(cd.CustomerName , mrow[0]);
+				strcpy(cd.Floor , row[2]);
+				strcpy(cd.RoomNum , row[3]);
 				cd.nIndex = atoi(mrow[4]);
-				if(mrow[5])
+				if (mrow[5])
 				{
 					cd.ip = inet_addr(mrow[5]);
-					cd.ip_addr = mrow[5];
+					strcpy(cd.ip_addr, mrow[5]);
 				}
-				else cd.ip=0;
+				else
+					cd.ip = 0;
 
-				mac_set_allowed(cd.MAC_ADDR,true,cd.ip);
+				mac_set_allowed(cd.MAC_ADDR,1,cd.ip);
 				set_client_data(cd.MAC_ADDR,&cd);
 				if( mrow[0] && mrow[3])
 					syslog(LOG_NOTICE,"预加载客户:%s ，mac='%s' \n",mrow[0],mrow[3]);
@@ -499,6 +504,8 @@ static void on_term(int )
 //	ksql_close();
 	exit(0);
 }
+
+static gboolean on_inotify(GIOChannel *source, GIOCondition condition, gpointer data);
 
 int main(int argc, char*argv[], char*env[])
 {
@@ -664,7 +671,7 @@ int main(int argc, char*argv[], char*env[])
 
 	pcap_freecode(&bpf_filter);
 
-	#ifdef ENABLE_HOTEL
+#ifdef ENABLE_HOTEL
 
 	run_cmd("iptables -F -t nat");
 	{
@@ -683,7 +690,7 @@ int main(int argc, char*argv[], char*env[])
 		g_string_free(cmd,1);
 
 	}
-	#endif
+#endif
 
 	for (int i = 0; i < MAX_PCAP_THREAD; ++i)
 	{
@@ -691,7 +698,7 @@ int main(int argc, char*argv[], char*env[])
 	}
 
 
-#ifndef ENABLE_HOTEL
+#ifdef ENABLE_HOTEL
 
 	syslog(LOG_CRIT, "预加载客户端\n");
 
@@ -704,81 +711,37 @@ int main(int argc, char*argv[], char*env[])
 
 	ksql_query_and_use_result(port_map, "select * from portmap", 0);
 
-	RE_INOTIFY:
+#endif
 
 	int inotifyfd = inotify_init1(O_CLOEXEC);
 	int socket_file_watch = inotify_add_watch(inotifyfd, socket_file,
 			IN_CLOSE_WRITE | IN_DELETE_SELF);
-//	int module_dir_watch = inotify_add_watch(inotifyfd, module_dir,
-//			IN_CLOSE_WRITE | IN_DELETE);
 
 #ifndef DEBUG
 	//daemon(0,1);
 #endif
 
-	//signal(SIGSEGV, on_sigsegv);
-
-	for (;;)
-	{
-		pollfd pfd[1];
-		pfd[0].fd = inotifyfd;
-		pfd[0].events = POLLIN|POLLERR;
-
-		inotify_event *inotifyevent = (inotify_event*) errbuf;
-
-		int timedout = 1;
-		switch (poll(pfd, 1, timedout *1000))
-		{
-		case 0:
-			On_SQL_change();
-			//调用 检查自动升级。
-			switch(Check_update(update_server.c_str(),update_trunk.c_str()))
-			{
-				case -1:
-				timedout=5;
-				break;
-				case 0:
-				timedout=1;
-			}
-
-			break;
-		case 1:
-			if (read(inotifyfd, inotifyevent, sizeof(errbuf)) > 0)
-			{
-				if (inotifyevent->wd == socket_file_watch)
-					On_SQL_change();
-			}
-			else
-			{
-				if (errno != EINTR || errno != EAGAIN)
-				{
-					close(inotifyfd);
-					goto RE_INOTIFY;
-				}
-			}
-			break;
-		case -1:
-			if (errno == EINTR)
-				continue;
-			close(inotifyfd);
-			goto RE_INOTIFY;
-		}
-	}
-	return 0;
-
-#endif
-
 	GMainLoop * loop;
+
+	GIOChannel * gio = g_io_channel_unix_new(inotifyfd);
+
+	g_io_add_watch(gio,G_IO_IN,on_inotify,GINT_TO_POINTER(socket_file));
 
 	loop = g_main_loop_new(NULL,FALSE);
 
-	gchar * Check_update_param [2] = {update_server,update_trunk};
-
 	//update_server
-
+	gchar * Check_update_param [2] = {update_server,update_trunk};
 	g_timeout_add(5,Check_update,Check_update_param);
-
 	g_main_loop_run(loop);
 	return 0;
 }
 
+static gboolean on_inotify(GIOChannel *source, GIOCondition condition, gpointer data)
+{
+	struct inotify_event ie;
+	gsize read;
+	if(G_IO_ERROR_NONE == g_io_channel_read(source,(gchar*)&ie,sizeof(ie),&read))
+	{
+		On_SQL_change();
+	}
+}

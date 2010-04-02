@@ -225,7 +225,7 @@ gboolean mac_is_alowed_with_ip(u_char mac[6],in_addr_t ip)
 	return ret;
 }
 
-void mac_set_allowed(u_char mac[6],bool allow /*==false*/,in_addr_t ip)
+void mac_set_allowed(u_char mac[6],gboolean allow ,in_addr_t ip)
 {
 	std::map<MACADDR,in_addr_t>::iterator it;
 
