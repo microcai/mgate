@@ -37,7 +37,7 @@ AC_ARG_ENABLE(hotel,
 AC_ARG_WITH(sqlite3,[AC_HELP_STRING([--with-sqlite3],[ support for sqlite3. monitor will use sqlite when mysql is out of service])])
 
 AC_ARG_WITH(mysql,[AC_HELP_STRING([--without-mysql],[disable support for mysql])],
-		[ with_mysql=$withval ],[with_mysql=yes])
+		[ with_mysql=$withval ],[with_mysql=no])
 		
 AC_ARG_WITH(jincheng,[AC_HELP_STRING([--without-jincheng],[disable jincheng module])],[],[with_jincheng="yes"])
 AC_ARG_WITH(kpolice ,[AC_HELP_STRING([--without-kpolice],[disable kpolice module])],[],[with_kpolice="yes"])

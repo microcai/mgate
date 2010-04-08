@@ -19,7 +19,7 @@ monitor_SOURCES = ip_filter.c main.cpp auto_update.cpp protocol_def.h \
 						 load_module.cpp ksql.h ksql.cpp \
 						 protocol_handler.c
 						 
-monitor_LDADD = @GLIB2_LIBS@ -L$(top_builddir)/libdreamtop -ldreamtop -lpcap -ldl 
+monitor_LDADD = @GLIB2_LIBS@ -lpcap -ldl 
 monitor_LDFLAGS = -Wl,-rpath,${prefix}/libexec/monitor/modules
 
 					

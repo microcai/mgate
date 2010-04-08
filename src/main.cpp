@@ -512,7 +512,9 @@ static gboolean on_inotify(GIOChannel *source, GIOCondition condition, gpointer 
 	gsize read;
 	if(G_IO_ERROR_NONE == g_io_channel_read(source,(gchar*)&ie,sizeof(ie),&read))
 	{
+#if ENABLE_HOTEL
 		On_SQL_change();
+#endif
 	}
 }
 
