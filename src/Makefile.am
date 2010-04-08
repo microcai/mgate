@@ -11,7 +11,7 @@ sbin_SCRIPTS = monitord
 EXTRA_DIST = runmonitor monitord
 
 
-monitor_SOURCES = ip_filter.c main.cpp auto_update.cpp protocol_def.h \
+monitor_SOURCES = ip_filter.c main.c auto_update.cpp protocol_def.h \
                       libdreamtop.c md5.c md5.h \
 						 libdreamtop.h functions.h \
 						 libmicrocai-macros.h libmicrocai-queue.h \

@@ -50,16 +50,22 @@
 #endif
 
 #include <glib.h>
+#include "global.h"
+#include "pcap_thread.h"
 
 
-static void on_term(int )
+static void on_term(int p )
 {
 //	ksql_close();
 	exit(0);
 }
 
+gchar * config_file_name = "/etc/monitor.cfg";
+
 int main(int argc, char*argv[], char*env[])
 {
+	GError* err = NULL;
+
 	g_thread_init(NULL);
 	g_set_application_name(PACKAGE_NAME);
 	setlocale(LC_ALL,"");
@@ -77,6 +83,7 @@ int main(int argc, char*argv[], char*env[])
 			{"flushdb",'f',0,G_OPTION_ARG_NONE,&flush_db,_("flash the db")},
 			{"createdb",'c',0,G_OPTION_ARG_NONE,&createdb,_("Create database")},
 			{"locale",'\0',0,G_OPTION_ARG_STRING,&domain_dir,_("set domain dir root"),N_("dir")},
+			{"config",'f',0,G_OPTION_ARG_STRING,&config_file_name,_("set alternative config file"),N_("filename")},
 			{0}
 	};
 
@@ -87,11 +94,6 @@ int main(int argc, char*argv[], char*env[])
 	}
 
 	time_t t;
-
-
-	struct ifreq rif ;
-
-	bzero(&rif,sizeof(ifreq));
 
 	time(&t);
 
@@ -111,7 +113,7 @@ int main(int argc, char*argv[], char*env[])
 
 	umask(0);
 
-	GKeyFile * gkeyfile = g_key_file_new();
+	gkeyfile = g_key_file_new();
 
 	if (g_key_file_load_from_file(gkeyfile, config_file_name,
 			G_KEY_FILE_KEEP_TRANSLATIONS, NULL))
@@ -143,10 +145,6 @@ int main(int argc, char*argv[], char*env[])
 #endif
 
 	loop = g_main_loop_new(NULL,FALSE);
-
-	//update_server
-	gchar * Check_update_param [2] = {update_server,update_trunk};
-	g_timeout_add(5,Check_update,Check_update_param);
 	g_main_loop_run(loop);
 	return 0;
 }
