@@ -96,7 +96,8 @@ static void pcap_process_thread_func(gpointer _thread_data, gpointer user_data)
 			break;
 		i++;
 	}
-
+	g_free((void*)(thread_data->packet_contents));
+	g_free(thread_data);
 }
 
 void *pcap_thread_func(void * thread_param)
