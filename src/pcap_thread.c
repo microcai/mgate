@@ -46,9 +46,11 @@
 #include "libmicrocai-macros.h"
 #include "libmicrocai-types.h"
 #include "functions.h"
+#include "clientmgr.h"
 
 typedef struct _pcap_process_thread_param
 {
+	in_addr_t	ip;
 	struct pcap_pkthdr pcaphdr;
 	const u_char*packet_contents;
 } pcap_process_thread_param;
@@ -74,19 +76,17 @@ static void pcap_process_thread_func(gpointer _thread_data, gpointer user_data)
 	port = *((u_int16_t*) (packet_content + ETH_HLEN + ip_head->ihl * 4 + 2));
 
 #ifdef ENABLE_HOTEL
-	if( mac_is_alowed_with_ip((u_char*)packet_content + ETH_ALEN , ip_head->saddr)==false)
+	if( ip_head->protocol == IPPROTO_TCP &&  (clientmgr_get_client_by_mac((guchar*)packet_content) ==NULL))
 	{
+		redirect_to_local_http( thread_data->ip , packet_content, ip_head );
 
-		if(ip_head->protocol == IPPROTO_TCP )
-		redirect_to_local_http( net_ip, packet_content, ip_head );
-		continue;
+		g_free((void*)(thread_data->packet_contents));
+		g_free(thread_data);
+
+		return ;
 	}
 #endif
-
 	//here we get a list of handler;
-
-
-
 	bzero(handlerlist, sizeof(handlerlist));
 	get_registerd_handler(handlerlist, 1024, port, ip_head->protocol);
 	//then we call these handler one by one
@@ -105,7 +105,6 @@ static void pcap_process_thread_func(gpointer _thread_data, gpointer user_data)
 
 void *pcap_thread_func(void * thread_param)
 {
-
 	bpf_u_int32 ip, mask;
 
 	char errbuf[PCAP_ERRBUF_SIZE];
