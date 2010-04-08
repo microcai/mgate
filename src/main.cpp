@@ -546,9 +546,7 @@ int main(int argc, char*argv[], char*env[])
 	struct bpf_program bpf_filter =
 	{ 0 };
 
-	int conf_fd;
 	int MAX_PCAP_THREAD;
-	struct stat st;
 
 	struct pcap_thread_args arg;
 
@@ -580,8 +578,6 @@ int main(int argc, char*argv[], char*env[])
 	umask(0);
 
 	close(open(socket_file, O_CREAT | O_CLOEXEC, 0666));
-
-	conf_fd = open(config_file_name, O_RDONLY | O_CLOEXEC); //  不要被 fork继承啊
 
 	GKeyFile * gkeyfile = g_key_file_new();
 

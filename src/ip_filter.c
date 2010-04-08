@@ -18,7 +18,9 @@
  *      Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  *      MA 02110-1301, USA.
  */
-
+#ifdef  HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include <sys/syslog.h>
 #include <sys/socket.h>
@@ -29,111 +31,150 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
+#include <pcap/pcap.h>
+#include <syslog.h>
+#include <string.h>
 #include <glib.h>
+
+#ifdef HAVE_GETTEXT
+#include <locale.h>
+#include <libintl.h>
+#define _(x) gettext(x)
+#define N_(x) (x)
+#endif
 
 #include "libmicrocai-macros.h"
 #include "libmicrocai-types.h"
 #include "functions.h"
-#include "protocol_def.h"
 
-//
-//static void mac2mac(const u_char * d,char *strmac)
-//{
-//	snprintf(strmac,18,"%02x:%02x:%02x:%02x:%02x:%02x", d[0], d[1], d[2], d[3], d[4], d[5]);
-//}
-//
-//static void ntoa(char * ip, in_addr_t pp)
-//{
-//	u_char* p= (u_char*)&pp;
-//	snprintf(ip,16,"%d.%d.%d.%d", p[0],p[1],p[2],p[3]);
-//}
-
-extern void *pcap_thread_func(struct pcap_thread_args *arg)
+typedef struct _pcap_process_thread_param
 {
-	u_int32_t	net_ip;
-	u_int32_t	net_mask;
-	pcap_t *	pcap_handle;
-	u_char		mac_addr[6];
+	struct pcap_pkthdr pcaphdr;
+	const u_char*packet_contents;
+} pcap_process_thread_param;
+
+static void pcap_process_thread_func(gpointer _thread_data, gpointer user_data)
+{
+	u_int16_t port;
+	int i;
+	PROTOCOL_HANDLER handlerlist[1024];
+
+	pcap_process_thread_param * thread_data = _thread_data;
+	//		recv(fno,packet_content,ETHER_MAX_LEN,0);
+
+	const guchar * packet_content = thread_data->packet_contents;
+
+	struct iphdr * ip_head = (typeof(ip_head))(packet_content + ETH_HLEN);
+
+	/*********************************************************************
+	 * for both UDP and TCP protocols ,source and destination port is
+	 * just behind the IP header, and destination port is just behind
+	 * the source port
+	 *********************************************************************/
+	port = *((u_int16_t*) (packet_content + ETH_HLEN + ip_head->ihl * 4 + 2));
+
+#ifdef ENABLE_HOTEL
+	if( mac_is_alowed_with_ip((u_char*)packet_content + ETH_ALEN , ip_head->saddr)==false)
+	{
+
+		if(ip_head->protocol == IPPROTO_TCP )
+		redirect_to_local_http( net_ip, packet_content, ip_head );
+		continue;
+	}
+#endif
+
+	//here we get a list of handler;
+	bzero(handlerlist, sizeof(handlerlist));
+	get_registerd_handler(handlerlist, 1024, port, ip_head->protocol);
+	//then we call these handler one by one
+	i = 0;
+	while (handlerlist[i])
+	{
+		/*if a handler can process the packet, then we just finished
+		 * otherwise, we need to call another one.*/
+		if ((handlerlist[i])(0, (u_char*) packet_content))
+			break;
+		i++;
+	}
+
+}
+
+void *pcap_thread_func(void * thread_param)
+{
+
+	bpf_u_int32 ip, mask;
+
+	GThreadPool * threadpool = g_thread_pool_new(NULL, NULL, 80, TRUE, NULL);
+
+	char errbuf[PCAP_ERRBUF_SIZE];
+	struct bpf_program bpf_filter =
+	{ 0 };
+
+	pcap_t * pcap_handle = pcap_open_live("eth0", 65536, 0, 0, errbuf);
+	if (pcap_handle)
+	{
+		syslog(LOG_CRIT, _("ERROR:can not open %s for capturing!\n"), "eth0");
+		closelog();
+		return 0;
+	}
+
+	if (pcap_datalink(pcap_handle) != DLT_EN10MB)
+	{
+		syslog(LOG_CRIT, _("ERROR:%s is not an ethernet adapter\n"), "eth0");
+		return 0;
+	}
+
+	char * net_interface = pcap_lookupdev(errbuf);
+
+	pcap_lookupnet(net_interface, &ip, &mask, errbuf);
+
+	pcap_compile(pcap_handle, &bpf_filter, "tcp or udp", 1, 0);
+
+	pcap_setfilter(pcap_handle, &bpf_filter);
+
+	pcap_freecode(&bpf_filter);
 
 	struct pcap_pkthdr *pcaphdr;
 	const u_char*packet_contents;
 
-	struct iphdr *ip_head;
-    u_int16_t   port;
-    int			i;
-    PROTOCOL_HANDLER handlerlist[1024];
+	pcap_process_thread_param * thread_data;
 
-    pcap_handle = arg->pcap_handle;
-	net_mask = arg->mask;
-	net_ip = arg->ip;
-	memcpy(mac_addr,arg->mac_addr,6);
-
-	u_char packet_content[65536];
-//	int fno = pcap_fileno(pcap_handle);
-
-	for(;;)
+	for (;;)
 	{
-		bzero(packet_content,65536);
-		static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-		pthread_mutex_lock(&lock);
-		while(pcap_next_ex(pcap_handle, &pcaphdr, &packet_contents) != 1);
-		if(pcaphdr->caplen >= 65536)
+
+		pcap_next_ex(pcap_handle, &pcaphdr, &packet_contents);
+
+		struct iphdr * ip_head = (typeof(ip_head))(packet_contents + ETH_HLEN);
+
+		//	    //non TCP or UDP is ignored
+		if (ip_head->protocol != IPPROTO_TCP && ip_head->protocol != IPPROTO_UDP)
+			continue;
+
+		//out -> in is ignored
+		if ((ip_head->saddr & mask) != (ip & mask))
 		{
-			syslog(LOG_WARNING,"pcaphdr->caplen = %d",pcaphdr->caplen);
 			continue;
 		}
-		memcpy(packet_content,packet_contents,65536);
-		pthread_mutex_unlock(&lock);
 
-//		recv(fno,packet_content,ETHER_MAX_LEN,0);
+		//local communication is ignored
+		if ((ip_head->daddr & mask) == (ip & mask))
+			continue;
+		if (ip_head->saddr == ip)
+			continue;
 
-	    ip_head =( typeof(ip_head) )(packet_content + ETH_HLEN);
+		thread_data = g_new(pcap_process_thread_param,1);
 
-//	    //non TCP or UDP is ignored
-	    if( ip_head->protocol!=IPPROTO_TCP&&ip_head->protocol!=IPPROTO_UDP)
-	        continue;
+		thread_data->pcaphdr = *pcaphdr;
 
-	    //out -> in is ignored
-	    if( (ip_head->saddr & net_mask )!= (net_ip & net_mask))
-	    {
-	    	continue;
-	    }
+		thread_data->packet_contents = g_malloc(pcaphdr->len);
 
-	    //local communication is ignored
-	    if((ip_head->daddr & net_mask) == (net_ip & net_mask)) continue;
-	    if(ip_head->saddr == net_ip ) continue;
+		memcpy((void*)(thread_data->packet_contents), packet_contents, pcaphdr->len);
 
-	    /*********************************************************************
-	     * for both UDP and TCP protocols ,source and destination port is
-		 * just behind the IP header, and destination port is just behind
-		 * the source port
-		 *********************************************************************/
-	    port = *((u_int16_t*) (packet_content + ETH_HLEN + ip_head->ihl * 4 + 2));
+		g_thread_pool_push(threadpool, thread_data, NULL);
 
-#ifdef ENABLE_HOTEL
-	    if( mac_is_alowed_with_ip((u_char*)packet_content + ETH_ALEN , ip_head->saddr)==false)
-	    {
-
-	    	if(ip_head->protocol == IPPROTO_TCP )
-	    		redirect_to_local_http( net_ip, packet_content, ip_head );
-	    	continue;
-	    }
-#endif
-
-		//here we get a list of handler;
-	    bzero(handlerlist,sizeof(handlerlist));
-		get_registerd_handler(handlerlist, 1024, port, ip_head->protocol);
-		//then we call these handler one by one
-		i = 0;
-		while (handlerlist[i])
-		{
-			/*if a handler can process the packet, then we just finished
-			 * otherwise, we need to call another one.*/
-			if ((handlerlist[i])(0, (u_char*) packet_content))
-				break;
-			i++;
-		}
 	}
-	pcap_close(arg->pcap_handle);
+	//	int fno = pcap_fileno(pcap_handle);
+
+	pcap_close(pcap_handle);
 	return 0;
 }
