@@ -112,7 +112,7 @@ void *pcap_thread_func(void * thread_param)
 	{ 0 };
 
 	pcap_t * pcap_handle = pcap_open_live("eth0", 65536, 0, 0, errbuf);
-	if (pcap_handle)
+	if (!pcap_handle)
 	{
 		syslog(LOG_CRIT, _("ERROR:can not open %s for capturing!\n"), "eth0");
 		closelog();
