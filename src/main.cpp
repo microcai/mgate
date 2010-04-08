@@ -505,18 +505,17 @@ static void on_term(int )
 //	ksql_close();
 	exit(0);
 }
-
+#if ENABLE_HOTEL
 static gboolean on_inotify(GIOChannel *source, GIOCondition condition, gpointer data)
 {
 	struct inotify_event ie;
 	gsize read;
 	if(G_IO_ERROR_NONE == g_io_channel_read(source,(gchar*)&ie,sizeof(ie),&read))
 	{
-#if ENABLE_HOTEL
 		On_SQL_change();
-#endif
 	}
 }
+#endif
 
 int main(int argc, char*argv[], char*env[])
 {
@@ -734,9 +733,12 @@ int main(int argc, char*argv[], char*env[])
 
 	GMainLoop * loop;
 
+#ifdef ENABLE_HOTEL
+
 	GIOChannel * gio = g_io_channel_unix_new(inotifyfd);
 
 	g_io_add_watch(gio,G_IO_IN,on_inotify,GINT_TO_POINTER(socket_file));
+#endif
 
 	loop = g_main_loop_new(NULL,FALSE);
 
