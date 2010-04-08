@@ -15,6 +15,7 @@ md5_SOURCE = md5.c md5.h
 monitor_SOURCES =main.c global.h
 
 monitor_SOURCES += pcap_thread.c  pcap_thread.h 
+monitor_SOURCES += pcap_hander.c 
 monitor_SOURCES += clientmgr.c clientmgr.h
 monitor_SOURCES += utils.c utils.h
 
