@@ -62,7 +62,6 @@ static void client_init(Client * obj)
 {
 	obj->name = g_string_new("");
 	obj->id = g_string_new("");
-	obj->ip = INADDR_NONE;
 }
 
 static void client_set_property(GObject *object, guint property_id,const GValue *value, GParamSpec *pspec)
@@ -103,6 +102,11 @@ static void client_get_property(GObject *object, guint property_id,GValue *value
 	default:
 		break;
 	}
+}
+
+Client * client_new(const gchar * name, const gchar * id)
+{
+	return g_object_new(G_TYPE_CLIENT,"name",name,"id",id,NULL);
 }
 
 G_DEFINE_TYPE(Client,client,G_TYPE_OBJECT);
