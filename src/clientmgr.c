@@ -147,3 +147,8 @@ Client * clientmgr_get_client_by_ip(in_addr_t ip)
 		return NULL;
 	return ret;
 }
+
+void clientmgr_insert_client_by_mac(guchar * mac,Client * client)
+{
+	g_tree_insert(client_tree,mac,client);
+}

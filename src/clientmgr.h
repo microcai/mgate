@@ -32,6 +32,7 @@ GType client_get_type();
 void clientmgr_init();
 Client * clientmgr_get_client_by_ip(in_addr_t ip);
 Client * clientmgr_get_client_by_mac(guchar * mac);
+void clientmgr_insert_client_by_mac(guchar * mac,Client * client);
 
 
 G_END_DECLS
