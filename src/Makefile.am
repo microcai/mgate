@@ -14,6 +14,7 @@ md5_SOURCE = md5.c md5.h
 
 monitor_SOURCES = ip_filter.c main.c global.h
 monitor_SOURCES += clientmgr.c clientmgr.h
+monitor_SOURCES += utils.c utils.h
 
 monitor_SOURCES += $(md5_SOURCE)
 

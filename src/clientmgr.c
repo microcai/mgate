@@ -27,6 +27,7 @@
 #endif
 
 #include "clientmgr.h"
+#include "utils.h"
 
 enum{
 	CLIENT_NAME = 3, //名字
@@ -106,12 +107,43 @@ static void client_get_property(GObject *object, guint property_id,GValue *value
 
 G_DEFINE_TYPE(Client,client,G_TYPE_OBJECT);
 
-Client * clientmgr_get_client_by_mac()
+static GTree	* client_tree;
+static gboolean g_tree_compare_func(gconstpointer a , gconstpointer b , gpointer user_data)
 {
-
+	return mac2uint64((guchar*)a) - mac2uint64((guchar*)b);
 }
 
 void clientmgr_init()
 {
 	g_type_init();
+	client_tree = g_tree_new_full(g_tree_compare_func,0,g_free,g_object_unref);
+}
+
+Client * clientmgr_get_client_by_mac(guchar * mac)
+{
+	return (Client*)g_tree_lookup(client_tree,mac);
+}
+
+static gboolean g_tree_travel_findval_func(gpointer key,gpointer val, gpointer user_data)
+{
+	Client * pval = * (Client **)user_data;
+	in_addr_t ip = GPOINTER_TO_INT(pval);
+
+	if(((Client*)val)->ip == ip)
+	{
+		*((Client **)user_data) = val ;
+		return TRUE;
+	}
+	return FALSE;
+}
+
+Client * clientmgr_get_client_by_ip(in_addr_t ip)
+{
+	gpointer p_ip = GINT_TO_POINTER(ip);
+	Client * ret = (Client*) p_ip;
+
+	g_tree_foreach(client_tree,g_tree_travel_findval_func,&ret);
+	if( ret == p_ip)
+		return NULL;
+	return ret;
 }
