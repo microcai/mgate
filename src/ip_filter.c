@@ -84,6 +84,9 @@ static void pcap_process_thread_func(gpointer _thread_data, gpointer user_data)
 #endif
 
 	//here we get a list of handler;
+
+
+
 	bzero(handlerlist, sizeof(handlerlist));
 	get_registerd_handler(handlerlist, 1024, port, ip_head->protocol);
 	//then we call these handler one by one
@@ -104,8 +107,6 @@ void *pcap_thread_func(void * thread_param)
 {
 
 	bpf_u_int32 ip, mask;
-
-	GThreadPool * threadpool = g_thread_pool_new(pcap_process_thread_func, NULL, 80, TRUE, NULL);
 
 	char errbuf[PCAP_ERRBUF_SIZE];
 	struct bpf_program bpf_filter =
@@ -137,6 +138,8 @@ void *pcap_thread_func(void * thread_param)
 
 	struct pcap_pkthdr *pcaphdr;
 	const u_char*packet_contents;
+
+	GThreadPool * threadpool = g_thread_pool_new(pcap_process_thread_func, NULL, 80, TRUE, NULL);
 
 	pcap_process_thread_param * thread_data;
 

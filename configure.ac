@@ -57,7 +57,7 @@ AC_TYPE_UINT32_T
 
 # Checks for library functions.
 
-PKG_CHECK_MODULES(GLIB2, [glib-2.0 gthread-2.0 ])
+PKG_CHECK_MODULES(GLIB2, [glib-2.0 gthread-2.0 gobject-2.0 ])
 
 AC_CHECK_LIB([pthread], [main])
 

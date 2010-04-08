@@ -10,10 +10,15 @@ sbin_SCRIPTS = monitord
 
 EXTRA_DIST = runmonitor monitord
 
+md5_SOURCE = md5.c md5.h
 
-monitor_SOURCES = ip_filter.c main.c auto_update.cpp protocol_def.h \
-                      libdreamtop.c md5.c md5.h \
-						 libdreamtop.h functions.h \
+monitor_SOURCES = ip_filter.c main.c global.h
+monitor_SOURCES += clientmgr.c clientmgr.h
+
+monitor_SOURCES += $(md5_SOURCE)
+
+monitor_SOURCES += auto_update.cpp protocol_def.h \
+                      libdreamtop.c libdreamtop.h functions.h \
 						 libmicrocai-macros.h libmicrocai-queue.h \
 						 libmicrocai-types.h \
 						 load_module.cpp ksql.h ksql.cpp \

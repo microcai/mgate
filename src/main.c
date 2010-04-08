@@ -52,7 +52,7 @@
 #include <glib.h>
 #include "global.h"
 #include "pcap_thread.h"
-
+#include "clientmgr.h"
 
 static void on_term(int p )
 {
@@ -60,7 +60,7 @@ static void on_term(int p )
 	exit(0);
 }
 
-gchar * config_file_name = "/etc/monitor.cfg";
+const gchar * config_file_name = "/etc/monitor.cfg";
 
 int main(int argc, char*argv[], char*env[])
 {
@@ -118,6 +118,9 @@ int main(int argc, char*argv[], char*env[])
 			G_KEY_FILE_KEEP_TRANSLATIONS, NULL))
 		syslog(LOG_WARNING, "Err opening config file");
 
+	//初始化人员管理
+	clientmgr_init();
+
 	//解析出参数来
 
 	gint num_threads = g_key_file_get_integer(gkeyfile,"monitor","threads",&err);
@@ -145,3 +148,5 @@ int main(int argc, char*argv[], char*env[])
 	g_main_loop_run(loop);
 	return 0;
 }
+
+GKeyFile * gkeyfile;
