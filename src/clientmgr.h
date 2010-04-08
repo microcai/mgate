@@ -33,6 +33,7 @@ typedef struct _ClientClass{
 
 
 GType client_get_type() G_GNUC_CONST;
+Client * client_new(const gchar * name, const gchar * id);
 
 //Client Manager
 
