@@ -64,7 +64,12 @@ gchar * config_file_name = "/etc/monitor.cfg";
 
 int main(int argc, char*argv[], char*env[])
 {
+	time_t t;
+	GMainLoop * loop;
 	GError* err = NULL;
+	gboolean createdb = FALSE;
+	gchar *  domain_dir = NULL;
+	gboolean flush_db = FALSE;
 
 	g_thread_init(NULL);
 	g_set_application_name(PACKAGE_NAME);
@@ -73,10 +78,6 @@ int main(int argc, char*argv[], char*env[])
 #ifdef DEBUG
 	bindtextdomain(GETTEXT_PACKAGE,"/tmp/share/locale");
 #endif
-
-	gboolean createdb = FALSE;
-	gchar *  domain_dir = NULL;
-	gboolean flush_db = FALSE;
 
 	GOptionEntry args[] =
 	{
@@ -92,8 +93,6 @@ int main(int argc, char*argv[], char*env[])
 		bindtextdomain(GETTEXT_PACKAGE,domain_dir);
 		g_free(domain_dir);
 	}
-
-	time_t t;
 
 	time(&t);
 
@@ -134,8 +133,6 @@ int main(int argc, char*argv[], char*env[])
 	signal(2,on_term);
 
 	g_thread_create((GThreadFunc)pcap_thread_func,NULL,FALSE,NULL);
-
-	GMainLoop * loop;
 
 #ifdef ENABLE_HOTEL
 

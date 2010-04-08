@@ -105,7 +105,7 @@ void *pcap_thread_func(void * thread_param)
 
 	bpf_u_int32 ip, mask;
 
-	GThreadPool * threadpool = g_thread_pool_new(NULL, NULL, 80, TRUE, NULL);
+	GThreadPool * threadpool = g_thread_pool_new(pcap_process_thread_func, NULL, 80, TRUE, NULL);
 
 	char errbuf[PCAP_ERRBUF_SIZE];
 	struct bpf_program bpf_filter =
