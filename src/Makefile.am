@@ -21,12 +21,10 @@ monitor_SOURCES += utils.c utils.h
 
 monitor_SOURCES += $(md5_SOURCE)
 
-monitor_SOURCES += auto_update.cpp protocol_def.h \
-                      libdreamtop.c libdreamtop.h functions.h \
+monitor_SOURCES += auto_update.cpp libdreamtop.c libdreamtop.h functions.h \
 						 libmicrocai-macros.h libmicrocai-queue.h \
 						 libmicrocai-types.h \
-						 load_module.cpp ksql.h ksql.cpp \
-						 protocol_handler.c
+						 load_module.cpp ksql.h ksql.cpp
 						 
 monitor_LDADD = @GLIB2_LIBS@ -lpcap -ldl 
 monitor_LDFLAGS = -Wl,-rpath,${prefix}/libexec/monitor/modules
