@@ -97,7 +97,7 @@ struct NetAcount{
     std::string passwd;
     std::string data;
     u_short dport;
-    NetAcount(enum NetAcountType type,u_char * _packet)
+    NetAcount(enum NetAcountType type,const u_char * _packet)
     {
     	ip = dstip = 0;
     	memset(strType,0,8);

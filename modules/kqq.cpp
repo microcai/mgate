@@ -164,7 +164,7 @@ G_MODULE_EXPORT void g_module_unload()
 {
 	// here, we need to
 	for ( int i=0; i< 3;++i )
-		pcap_hander_ungister( protohander[i] );
+		pcap_hander_unregister( protohander[i] );
 	sleep(4);
 }
 

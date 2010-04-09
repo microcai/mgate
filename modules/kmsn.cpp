@@ -17,7 +17,9 @@
 #include <stdio.h>
 #include <iostream>
 #include <string.h>
+#include <gmodule.h>
 
+#include "pcap_hander.h"
 #include "libdreamtop.h"
 
 #define MSN_PORT  0x4707  //1863
@@ -46,7 +48,7 @@ static char * MemStr(char *p1, const char *p2, int nCount)
     return NULL;
 }
 
-static int RecordMSNAccount(std::string msn,in_addr_t ip,in_addr_t dst_ip,u_char*packet)
+static int RecordMSNAccount(std::string msn,in_addr_t ip,in_addr_t dst_ip,const u_char*packet)
 {
     std::cout << msn << std::endl;
     struct NetAcount na(NetAcountType_MSN,packet);
@@ -61,7 +63,7 @@ static int RecordMSNAccount(std::string msn,in_addr_t ip,in_addr_t dst_ip,u_char
     return 1;
 }
 static int	FunctionInUse=0;
-static int msn_packet_callback(struct so_data* sodata, u_char * packet)
+static int msn_packet_callback(struct pcap_pkthdr *,const  u_char * packet , gpointer user_data)
 {
 	__sync_add_and_fetch(&FunctionInUse,1);
     /**************************************************
@@ -114,20 +116,17 @@ static int msn_packet_callback(struct so_data* sodata, u_char * packet)
     return __sync_sub_and_fetch(&FunctionInUse,1);
 }
 static void * protocol_handler;
-extern "C" int __module_init(struct so_data*so)
+
+G_MODULE_EXPORT gchar * g_module_check_init(GModule *module)
 {
-    protocol_handler = register_protocol_handler(msn_packet_callback,MSN_PORT, IPPROTO_TCP);
+    protocol_handler = pcap_hander_register(msn_packet_callback,MSN_PORT, IPPROTO_TCP,0);
     return 0;
 }
-extern "C" int so_can_unload()
-{
-	return 1;
-}
 
-static void __attribute__((destructor)) so__unload(void)
+
+G_MODULE_EXPORT void g_module_unload()
 {
-	un_register_protocol_handler(protocol_handler);
-	sleep(4);
+	pcap_hander_unregister(protocol_handler);
 }
 
 char module_name[]="MSN号码分析";

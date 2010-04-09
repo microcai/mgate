@@ -102,7 +102,7 @@ gpointer pcap_hander_register(pcap_hander_callback FUNC, guint16 port,guint16 pr
 	return newhander;
 }
 
-void pcap_hander_ungister(gpointer hander)
+void pcap_hander_unregister(gpointer hander)
 {
 	pcap_hander * hr = hander;
 

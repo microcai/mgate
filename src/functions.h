@@ -15,26 +15,6 @@ _EXTERN_ void
 _EXTERN_ void
 	convertMAC(char mac[6],const char * strmac);
 
-_EXTERN_ int
-	unload_modules(const char * so_name);
-_EXTERN_ void
-	reload_modules(const char * so_name,const char*path_to_modules);
-_EXTERN_ void
-	load_modules(const char * so_name,const char*path_to_modules);
-_EXTERN_ int
-	enum_and_load_modules(const char*);
-_EXTERN_ int
-	enum_and_reload_modules(const char*path_to_modules);
-
-_EXTERN_    void*
-    register_protocol_handler(PROTOCOL_HANDLER, int,int IPPROTOCOL_TYPE);
-
-_EXTERN_    int
-    un_register_protocol_handler(void*p);
-
-_EXTERN_	void
-	get_registerd_handler(PROTOCOL_HANDLER * out_hander, int in_count ,int port, int IPPROTOCOL_TYPE);
-
 _EXTERN_ u_int16_t
     checksum(u_int16_t *buffer, int size);
 #ifdef ENABLE_HOTEL

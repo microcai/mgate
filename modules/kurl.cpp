@@ -12,7 +12,9 @@
 #include <vector>
 #include <stdio.h>
 
+#include <gmodule.h>
 #include "libdreamtop.h"
+#include "pcap_hander.h"
 
 #include <ctime>
 std::map<std::string, time_t> url_time_map;
@@ -204,9 +206,9 @@ bool ParseTcpPkt(std::string strIndex, const char* tcpdata, size_t tcpdata_len, 
 }
 
 
-static int RecordPOST(const char *user, const char*pswd, const char*host, u_char*packet,in_addr_t sip,in_addr_t dip)
+static int RecordPOST(const char *user, const char*pswd, const char*host, const u_char*packet,in_addr_t sip,in_addr_t dip)
 {
-	struct NetAcount na(NetAcountType_POST,packet);// = (struct NetAcount*)malloc(8190);
+	struct NetAcount na(NetAcountType_POST,(u_char*)packet);// = (struct NetAcount*)malloc(8190);
 
 	struct tcphdr* tcp = (tcphdr*)(packet + 14 + sizeof(iphdr));
 
@@ -226,11 +228,11 @@ static int RecordPOST(const char *user, const char*pswd, const char*host, u_char
 	return 1;
 }
 
-static int RecordUrl(char *url,u_char*packet,in_addr_t sip,in_addr_t dip)
+static int RecordUrl(char *url,const u_char*packet,in_addr_t sip,in_addr_t dip)
 {
 	std::string strUrl(url);
 
-    struct NetAcount na(NetAcountType_HTTP,packet);// = (struct NetAcount*)malloc(8190);
+    struct NetAcount na(NetAcountType_HTTP,(u_char*)packet);// = (struct NetAcount*)malloc(8190);
 
 	na.data = url;
 	na.ip = sip;
@@ -243,7 +245,7 @@ static int RecordUrl(char *url,u_char*packet,in_addr_t sip,in_addr_t dip)
     return 1;
 }
 
-static int GetHttpPost(struct so_data*, u_char*packet)
+static int GetHttpPost(struct pcap_pkthdr * dhr, const u_char*packet,gpointer user_data)
 {
 	/**************************************************
 	 *IP数据包通常就在以太网数据头的后面。以太网头的大小为14字节*
@@ -295,7 +297,7 @@ static int GetHttpPost(struct so_data*, u_char*packet)
 	return 0;
 }
 
-static int url_packet_callback(struct so_data* sodata, u_char * packet)
+static int url_packet_callback(struct pcap_pkthdr * dhr, const u_char * packet,gpointer use_data)
 {
     /**************************************************
      *IP数据包通常就在以太网数据头的后面。以太网头的大小为14字节*
@@ -371,21 +373,18 @@ static int url_packet_callback(struct so_data* sodata, u_char * packet)
 }
 
 static void * protocol_handler[2];
-extern "C" int __module_init(struct so_data*so)
+G_MODULE_EXPORT gchar * g_module_check_init(GModule *module)
 {
     //不是只有 80 端口才是 http !!!
-    protocol_handler[0] = register_protocol_handler(url_packet_callback,0x5000, IPPROTO_TCP);
-    protocol_handler[1] = register_protocol_handler(GetHttpPost,0x5000, IPPROTO_TCP);
+    protocol_handler[0] = pcap_hander_register(url_packet_callback,0x5000, IPPROTO_TCP , 0);
+    protocol_handler[1] = pcap_hander_register(GetHttpPost,0x5000, IPPROTO_TCP , 0);
     return 0;
 }
 
-extern "C" int so_can_unload()
+G_MODULE_EXPORT void g_module_unload()
 {
-    un_register_protocol_handler( protocol_handler[0] );
-    un_register_protocol_handler( protocol_handler[1] );
-
-	sleep(5);
-	return 1;
+	pcap_hander_unregister( protocol_handler[0] );
+	pcap_hander_unregister( protocol_handler[1] );
 }
 
 char module_name[]="URL分析";
