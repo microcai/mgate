@@ -67,7 +67,7 @@ static gboolean module_real_load(gpointer user_data)
 	int fd = inotify_init1(IN_CLOEXEC);
 	GIOChannel * chl = g_io_channel_unix_new(fd);
 
-	inotify_add_watch(fd,module_dir,0);
+	inotify_add_watch(fd,dir,0);
 
 	g_io_add_watch(chl,G_IO_IN,module_change,0);
 
