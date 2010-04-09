@@ -20,7 +20,7 @@ monitor_SOURCES += pcap_thread.c  pcap_thread.h
 monitor_SOURCES += pcap_hander.c pcap_hander.h
 monitor_SOURCES += clientmgr.c clientmgr.h
 monitor_SOURCES += utils.c utils.h
-monitor_SOURCES += module.c 
+monitor_SOURCES += module.c module.h
 monitor_SOURCES += $(md5_SOURCE)
 
 monitor_SOURCES += auto_update.cpp libdreamtop.c libdreamtop.h functions.h \
