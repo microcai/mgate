@@ -43,9 +43,8 @@
 #define N_(x) (x)
 #endif
 
-#include "libmicrocai-macros.h"
-#include "libmicrocai-types.h"
-#include "functions.h"
+#include "pcap_thread.h"
+#include "pcap_hander.h"
 #include "clientmgr.h"
 
 typedef struct _pcap_process_thread_param
@@ -58,9 +57,7 @@ typedef struct _pcap_process_thread_param
 static void pcap_process_thread_func(gpointer _thread_data, gpointer user_data)
 {
 	u_int16_t port;
-	int i;
-	PROTOCOL_HANDLER handlerlist[1024];
-
+	int i,j;
 	pcap_process_thread_param * thread_data = _thread_data;
 	//		recv(fno,packet_content,ETHER_MAX_LEN,0);
 
@@ -86,18 +83,19 @@ static void pcap_process_thread_func(gpointer _thread_data, gpointer user_data)
 		return ;
 	}
 #endif
+
+	pcap_hander_callback_trunk	handers[1024];
+
 	//here we get a list of handler;
-	bzero(handlerlist, sizeof(handlerlist));
-	get_registerd_handler(handlerlist, 1024, port, ip_head->protocol);
+	bzero(handers, sizeof(handers));
+
+	i = pcap_hander_get(port,ip_head->protocol,handers);
+
 	//then we call these handler one by one
-	i = 0;
-	while (handlerlist[i])
+	for(j=0;j<i;j++)
 	{
-		/*if a handler can process the packet, then we just finished
-		 * otherwise, we need to call another one.*/
-		if ((handlerlist[i])(0, (u_char*) packet_content))
+		if(handers[j].func(&(thread_data->pcaphdr),packet_content,handers[j].user_data))
 			break;
-		i++;
 	}
 	g_free((void*)(thread_data->packet_contents));
 	g_free(thread_data);
