@@ -57,8 +57,7 @@ AC_TYPE_UINT32_T
 
 # Checks for library functions.
 
-PKG_CHECK_MODULES(GLIB2, [glib-2.0 gthread-2.0 gobject-2.0 ])
-
+PKG_CHECK_MODULES(GLIB2, [glib-2.0 gthread-2.0 gobject-2.0 gmodule-2.0 ])
 AC_CHECK_LIB([pthread], [main])
 
 AC_CHECK_LIB([pcap], [main],[AC_CHECK_HEADER(pcap.h)],[AC_MSG_ERROR(need libpcap)])
@@ -113,15 +112,8 @@ AC_SUBST(LD_MYSQL_FLAGS)
 AS_IF(	[test "x$with_sqlite3" != xno ],
 		[
 			# check for sqlite3-devel packages
-			AC_CHECK_LIB([sqlite3],[main],
-					[AC_CHECK_HEADER([sqlite3.h],
-							[
-								AM_CONDITIONAL(WITH_SQLITE3,true)
-								AC_DEFINE([WITH_SQLITE3],[1],[will compile sqlite support])
-							],
-							[AM_CONDITIONAL(WITH_SQLITE3,false)])],
-					[AC_MSG_ERROR(need sqlite3-devel)])
-			
+			PKG_CHECK_MODULES(SQLITE3,[sqlite3])
+			AM_CONDITIONAL(WITH_SQLITE3,true)
 		],
 		[
 			AM_CONDITIONAL(WITH_SQLITE3,false)

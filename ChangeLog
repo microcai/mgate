@@ -1,4 +1,7 @@
-version 2.0.0
+version	2.0.0
+	NEW: rewite with C and glib
+
+version 1.2.0
 	NEW: support sqlite database back-end
 	
 version 1.1.6

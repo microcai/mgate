@@ -46,6 +46,7 @@
 #include "pcap_thread.h"
 #include "pcap_hander.h"
 #include "clientmgr.h"
+#include "global.h"
 
 typedef struct _pcap_process_thread_param
 {
@@ -103,6 +104,7 @@ static void pcap_process_thread_func(gpointer _thread_data, gpointer user_data)
 
 void *pcap_thread_func(void * thread_param)
 {
+	GError * err = NULL;
 	bpf_u_int32 ip, mask;
 
 	char errbuf[PCAP_ERRBUF_SIZE];
@@ -136,7 +138,18 @@ void *pcap_thread_func(void * thread_param)
 	struct pcap_pkthdr *pcaphdr;
 	const u_char*packet_contents;
 
-	GThreadPool * threadpool = g_thread_pool_new(pcap_process_thread_func, NULL, 80, TRUE, NULL);
+	//解析出参数来
+	gint num_threads = g_key_file_get_integer(gkeyfile,"monitor","threads",&err);
+
+	if(err)
+	{
+		num_threads = 40;
+		g_error_free(err);
+		err = NULL;
+	}
+
+
+	GThreadPool * threadpool = g_thread_pool_new(pcap_process_thread_func, NULL, num_threads, TRUE, NULL);
 
 	pcap_process_thread_param * thread_data;
 

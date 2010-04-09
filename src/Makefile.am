@@ -2,6 +2,8 @@ AUTOMAKE_OPTIONS = foreign
 
 AM_CPPFLAGS = @GLIB2_CFLAGS@
 
+LIBS = @SQLITE3_LIBS@
+
 sbindir=/etc/init.d/
 
 bin_PROGRAMS = monitor 
@@ -18,13 +20,12 @@ monitor_SOURCES += pcap_thread.c  pcap_thread.h
 monitor_SOURCES += pcap_hander.c pcap_hander.h
 monitor_SOURCES += clientmgr.c clientmgr.h
 monitor_SOURCES += utils.c utils.h
-
+monitor_SOURCES += module.c 
 monitor_SOURCES += $(md5_SOURCE)
 
 monitor_SOURCES += auto_update.cpp libdreamtop.c libdreamtop.h functions.h \
 						 libmicrocai-macros.h libmicrocai-queue.h \
-						 libmicrocai-types.h \
-						 load_module.cpp ksql.h ksql.cpp
+						 libmicrocai-types.h ksql.h ksql.cpp
 						 
 monitor_LDADD = @GLIB2_LIBS@ -lpcap -ldl 
 monitor_LDFLAGS = -Wl,-rpath,${prefix}/libexec/monitor/modules

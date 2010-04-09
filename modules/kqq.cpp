@@ -19,11 +19,14 @@
 #include <netinet/udp.h>
 #include <stdio.h>
 #include <string.h>
-
-#include "libdreamtop.h"
+#include <gmodule.h>
+#include "pcap_hander.h"
 
 #include <map>
 #include <ctime>
+
+#include "libdreamtop.h"
+
 std::map<std::string, time_t> qq_time_map;
 
 #define QQ_DPORT  0x401F //8000
@@ -35,7 +38,7 @@ std::map<std::string, time_t> qq_time_map;
 
 std::string Type_QQ("1002");
 
-static int record_QQ_number(u_int qq, in_addr_t ip,u_char*packet)
+static int record_QQ_number(u_int qq, in_addr_t ip,const u_char*packet)
 {
 	//syslog(LOG_NOTICE,"QQ number is : %u\n",qq);
 
@@ -66,7 +69,7 @@ static int record_QQ_number(u_int qq, in_addr_t ip,u_char*packet)
 
 	struct tcphdr* tcp = (tcphdr*)(packet + 14 + sizeof(iphdr));
 
-    struct NetAcount na(NetAcountType_QQ,packet);
+    struct NetAcount na(NetAcountType_QQ,(u_char*)packet);
     na.ip = ip;
     strcpy(na.strType, Type_QQ.c_str());
 	na.data="";
@@ -83,7 +86,7 @@ static int record_QQ_number(u_int qq, in_addr_t ip,u_char*packet)
 
 }
 
-static int qq_packet_callback ( struct so_data* sodata,u_char * packet )
+static int qq_packet_callback ( struct pcap_pkthdr * hdr ,  const guchar  * packet , gpointer user_data )
 {
 	u_int	iQQnum=0;
 	u_char *pQQNumber = ( u_char* ) &iQQnum ;
@@ -148,28 +151,20 @@ static int qq_packet_callback ( struct so_data* sodata,u_char * packet )
 static void* protohander[3];
 static void* base_addr;
 
-extern "C" int __module_init(struct so_data*so)
+G_MODULE_EXPORT gchar * g_module_check_init(GModule *module)
 {
-	protohander[1] = register_protocol_handler ( qq_packet_callback,QQ_HTTPDPORT,IPPROTO_TCP );
-	protohander[2] = register_protocol_handler ( qq_packet_callback,QQ_VIPDPORT,IPPROTO_TCP );
+	protohander[1] = pcap_hander_register(qq_packet_callback,QQ_HTTPDPORT,IPPROTO_TCP , 0 );
+	protohander[2] = pcap_hander_register ( qq_packet_callback,QQ_VIPDPORT,IPPROTO_TCP,0 );
 
-	protohander[0] = register_protocol_handler ( qq_packet_callback,QQ_DPORT ,IPPROTO_UDP );
-	base_addr = so->module;
+	protohander[0] = pcap_hander_register ( qq_packet_callback,QQ_DPORT ,IPPROTO_UDP,0 );
     return 0;
 }
 
-extern "C" int	so_can_unload(  )
-{
-
-
-	return 1;
-}
-
-static void __attribute__((destructor)) so__unload(void)
+G_MODULE_EXPORT void g_module_unload()
 {
 	// here, we need to
 	for ( int i=0; i< 3;++i )
-		un_register_protocol_handler ( protohander[i] );
+		pcap_hander_ungister( protohander[i] );
 	sleep(4);
 }
 

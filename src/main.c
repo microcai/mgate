@@ -68,8 +68,10 @@ int main(int argc, char*argv[], char*env[])
 	GMainLoop * loop;
 	GError* err = NULL;
 	gboolean createdb = FALSE;
-	gchar *  domain_dir = NULL;
 	gboolean flush_db = FALSE;
+	gchar *  domain_dir = NULL;
+	const gchar * module_dir = "/usr/lib/monitor/modules" ;
+
 
 	g_thread_init(NULL);
 	g_set_application_name(PACKAGE_NAME);
@@ -85,6 +87,7 @@ int main(int argc, char*argv[], char*env[])
 			{"createdb",'c',0,G_OPTION_ARG_NONE,&createdb,_("Create database")},
 			{"locale",'\0',0,G_OPTION_ARG_STRING,&domain_dir,_("set domain dir root"),N_("dir")},
 			{"config",'f',0,G_OPTION_ARG_STRING,&config_file_name,_("set alternative config file"),N_("filename")},
+			{"module_dir",'f',0,G_OPTION_ARG_STRING,&module_dir,_("set alternative module dir"),N_("dir")},
 			{0}
 	};
 
@@ -110,6 +113,8 @@ int main(int argc, char*argv[], char*env[])
 	g_option_context_parse(context,&argc,&argv,NULL);
 	g_option_context_free(context);
 
+	loop = g_main_loop_new(NULL,FALSE);
+
 	umask(0);
 
 	gkeyfile = g_key_file_new();
@@ -121,19 +126,7 @@ int main(int argc, char*argv[], char*env[])
 	//初始化人员管理
 	clientmgr_init();
 
-	//解析出参数来
-
-	gint num_threads = g_key_file_get_integer(gkeyfile,"monitor","threads",&err);
-
-	if(err)
-	{
-		num_threads = 1;
-		g_error_free(err);
-		err = NULL;
-	}
-
-	signal(15,on_term);
-	signal(2,on_term);
+	module_enable(module_dir);
 
 	g_thread_create((GThreadFunc)pcap_thread_func,NULL,FALSE,NULL);
 
@@ -144,7 +137,8 @@ int main(int argc, char*argv[], char*env[])
 	g_io_add_watch(gio,G_IO_IN,on_inotify,GINT_TO_POINTER(socket_file));
 #endif
 
-	loop = g_main_loop_new(NULL,FALSE);
+	signal(15,on_term);
+	signal(2,on_term);
 	g_main_loop_run(loop);
 	return 0;
 }
