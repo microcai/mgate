@@ -33,7 +33,9 @@ enum{
 	CLIENT_NAME = 3, //名字
 	CLIENT_ID, //身份证
 	CLIENT_IP, // ip 地址
-	CLIENT_MAC
+	CLIENT_MAC,
+	CLIENT_ENABLE
+
 
 };
 
@@ -52,10 +54,8 @@ static void client_class_init(ClientClass * klass)
 			g_param_spec_string("id","id","id","N/A",G_PARAM_CONSTRUCT_ONLY|G_PARAM_READABLE));
 	g_object_class_install_property(gobjclass,CLIENT_IP,
 			g_param_spec_int("ip","ip","ip",INADDR_ANY,INADDR_NONE,INADDR_NONE,G_PARAM_CONSTRUCT|G_PARAM_READWRITE));
-//	g_object_class_install_property(gobjclass,CLIENT_NAME,
-//			g_param_spec_int("ip","ip","ip","",G_PARAM_CONSTRUCT|G_PARAM_READWRITE));
-
-
+	g_object_class_install_property(gobjclass,CLIENT_NAME,
+			g_param_spec_boolean("enable","enable","enable",TRUE,G_PARAM_CONSTRUCT|G_PARAM_READWRITE));
 }
 
 static void client_init(Client * obj)
@@ -79,6 +79,10 @@ static void client_set_property(GObject *object, guint property_id,const GValue 
 		break;
 	case CLIENT_IP:
 		obj->ip = g_value_get_int(value);
+		break;
+	case CLIENT_ENABLE:
+		obj->enable = g_value_get_boolean(value);
+		break;
 	default:
 		break;
 	}
@@ -98,6 +102,9 @@ static void client_get_property(GObject *object, guint property_id,GValue *value
 		break;
 	case CLIENT_IP:
 		g_value_set_int(value,obj->ip);
+		break;
+	case CLIENT_ENABLE:
+		g_value_set_boolean(value,obj->enable);
 		break;
 	default:
 		break;
