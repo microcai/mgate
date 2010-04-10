@@ -126,6 +126,8 @@ int main(int argc, char*argv[], char*env[])
 	//初始化人员管理
 	clientmgr_init();
 
+	kpolice_init();
+
 	module_enable(module_dir);
 
 	g_thread_create((GThreadFunc)pcap_thread_func,NULL,FALSE,NULL);
