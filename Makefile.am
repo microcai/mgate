@@ -2,7 +2,7 @@
 ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = src modules po
-dist_doc_DATA = README
+dist_doc_DATA = README 
 EXTRA_DIST = @PACKAGE_NAME@-hotel.spec.in @PACKAGE_NAME@-cafe.spec.in
 
 DISTCLEANFILES = @PACKAGE_NAME@-hotel.spec @PACKAGE_NAME@-cafe.spec
@@ -30,3 +30,8 @@ srpm: dist @PACKAGE_NAME@.spec
 		    --define "_rpmdir `pwd`" \
 			--define "_specdir `pwd`" \
 			$(spec)
+
+sysconfigdir = /etc
+
+sysconfig_DATA = monitor.cfg
+			
