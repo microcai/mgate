@@ -47,7 +47,7 @@ static pcap_hander pcap_hander_list =
 GStaticMutex lock =
 G_STATIC_MUTEX_INIT;
 volatile int read_count;
-volatile gpointer * queue = NULL;
+volatile gpointer queue = NULL;
 volatile int need_clean_up;
 //延迟修改在这里发生
 static void pcap_hander_acu_clean_up()
