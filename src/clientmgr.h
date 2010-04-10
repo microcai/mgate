@@ -8,6 +8,8 @@
 #ifndef CLIENTMGR_H_
 #define CLIENTMGR_H_
 
+#include <netinet/in.h>
+
 #include <glib-object.h>
 
 G_BEGIN_DECLS

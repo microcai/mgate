@@ -24,7 +24,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
-#include "libdreamtop.h"
 #include "md5.h"
 
 static char dec2hex(int dec)

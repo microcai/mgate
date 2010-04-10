@@ -16,13 +16,10 @@
  * Created on 2009年4月22日, 下午4:32
  */
 
-#ifndef __cplusplus
-#error ("需要C++编译器支持")
-#endif
+
 #pragma once
 
 #include <netinet/in.h>
-#include <string>
 
 #define PROLEN_NATIONALITY	4
 #define PROLEN_CERTTYPE		4
@@ -69,14 +66,14 @@
 #define STATUS_QUIT 2
 
 
-namespace hotel{
-    extern char strHotelID[32];
-    extern char strHoteName[32];
-    extern char strServerIP[32];
-    extern char strWebIP[32];
-    extern char str_ethID[32];
-    extern bool	Is_Old_DB;
-}
+
+extern char strHotelID[32];
+extern char strHoteName[32];
+extern char strServerIP[32];
+extern char strWebIP[32];
+extern char str_ethID[32];
+extern bool	Is_Old_DB;
+
 
 enum NetAcountType{
     NetAcountType_MAC_ADDR=1000,
@@ -156,8 +153,8 @@ struct CustomerData {
 	{
 		memset(this,0,sizeof(CustomerData));
 		memcpy(AuditArea,SiteID,6);
-		strncpy(SiteID,hotel::strHotelID,PROLEN_NETBARID);
-		strncpy(SiteName,hotel::strHoteName,PROLEN_NETBARNAME);
+		strncpy(SiteID,strHotelID,PROLEN_NETBARID);
+		strncpy(SiteName,strHoteName,PROLEN_NETBARNAME);
 	}
 };//__attribute__((packed));
 

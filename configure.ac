@@ -13,7 +13,7 @@ AC_ARG_ENABLE(debug,
                 [ CXXFLAGS="-g2 -DDEBUG -Wall -O0"]
               )
 # Checks for programs.
-AC_PROG_CXX
+AC_PROG_CC_C99
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([-Wall -Werror])
 
@@ -34,10 +34,8 @@ AC_ARG_ENABLE(hotel,
 				],
 				[AM_CONDITIONAL(ENABLE_HOTEL,false)])
 
-AC_ARG_WITH(sqlite3,[AC_HELP_STRING([--with-sqlite3],[ support for sqlite3. monitor will use sqlite when mysql is out of service])])
-
 AC_ARG_WITH(mysql,[AC_HELP_STRING([--without-mysql],[disable support for mysql])],
-		[ with_mysql=$withval ],[with_mysql=no])
+		[ with_mysql=$withval ],[with_mysql=check])
 		
 AC_ARG_WITH(jincheng,[AC_HELP_STRING([--without-jincheng],[disable jincheng module])],[],[with_jincheng="yes"])
 AC_ARG_WITH(kpolice ,[AC_HELP_STRING([--without-kpolice],[disable kpolice module])],[],[with_kpolice="yes"])
@@ -66,59 +64,20 @@ AS_IF( [ test "x$enable_hotel" != xno ],[AC_CHECK_LIB([net], [main],[ AC_CHECK_H
 
 AS_IF([test "x$with_mysql" != "xno" ],
 	[
-		AC_CHECK_LIB([mysqlclient -L/usr/lib/mysql], [mysql_query] ,
-						#found
-						[
-							AC_DEFINE_UNQUOTED(HAVE_MYSQL,[1],[if have mysql])
-							LD_MYSQL_FLAGS="-lmysqlclient -L/usr/lib/mysql";
-						],
-						#not found 
-						[
-							AC_CHECK_LIB([mysqlclient -L/usr/lib64/mysql], [mysql_query] ,
-											#found
-											[
-												AC_DEFINE_UNQUOTED(HAVE_MYSQL,[1],[if have mysql])
-												LD_MYSQL_FLAGS="-lmysqlclient -L/usr/lib64/mysql";												
-											],
-											#not found
-											[
-												AC_CHECK_LIB([mysqlclient -L/usr/local/lib/mysql], [mysql_query],
-																#found
-																[
-																	AC_DEFINE_UNQUOTED(HAVE_MYSQL,[1],[if have mysql])
-																	LD_MYSQL_FLAGS="-lmysqlclient -L/usr/local/lib/mysql";
-																],
-																#not found
-																[
-																	AC_CHECK_LIB([mysqlclient -L/usr/local/lib64/mysql], [mysql_query],
-																					#found
-																					[
-																						AC_DEFINE_UNQUOTED(HAVE_MYSQL,[1],[if have mysql])
-																						LD_MYSQL_FLAGS="-lmysqlclient -L/usr/local/lib64/mysql";
-																					],
-																					#not found
-																					[
-																						AC_MSG_ERROR([no mysql-devel found, use --without-mysql to disable them ],[1])
-																					])														
-																])
-											])
-						])	
-	])
-
-AM_CONDITIONAL(WITH_MYSQL,[test with_mysql="yes" ])
-
-AC_SUBST(LD_MYSQL_FLAGS)
-
-AS_IF(	[test "x$with_sqlite3" != xno ],
-		[
-			# check for sqlite3-devel packages
-			PKG_CHECK_MODULES(SQLITE3,[sqlite3])
-			AM_CONDITIONAL(WITH_SQLITE3,true)
-		],
-		[
-			AM_CONDITIONAL(WITH_SQLITE3,false)
+		AC_CHECK_PROG(MYSQL_CONFIG,mysql_config,mysql_config)
+		AS_IF([test "x${MYSQL_CONFIG}" = "xmysql_config"],[
+			MYSQL_LIBS=`mysql_config --libs` ;
+			MYSQL_CFLAGS=`mysql_config --cflags` ;
+			AM_CONDITIONAL([WITH_MYSQL],[true])
+		],[
+			AM_CONDITIONAL([WITH_MYSQL],[false])
 		])
+	])	
 
+AC_CHECK_HEADERS([mysql/mysql.h])
+
+AC_SUBST(MYSQL_CFLAGS)
+AC_SUBST(MYSQL_LIBS)
 
 # Checks for library functions.
 AC_FUNC_MMAP

@@ -1,8 +1,8 @@
 AUTOMAKE_OPTIONS = foreign
 
-AM_CPPFLAGS = @GLIB2_CFLAGS@
+AM_CPPFLAGS = @GLIB2_CFLAGS@ @MYSQL_CFLAGS@
 
-LIBS = @SQLITE3_LIBS@
+LIBS = @MYSQL_LIBS@ @GLIB2_LIBS@ -lpcap -ldl
 
 sbindir=/etc/init.d/
 
@@ -24,31 +24,9 @@ monitor_SOURCES += module.c module.h
 monitor_SOURCES += $(md5_SOURCE)
 monitor_SOURCES += kpolice.c kpolice.h
 
-monitor_SOURCES += auto_update.cpp libdreamtop.c libdreamtop.h functions.h \
-						 libmicrocai-macros.h libmicrocai-queue.h \
-						 libmicrocai-types.h ksql.h ksql.cpp
-						 
-monitor_LDADD = @GLIB2_LIBS@ -lpcap -ldl
-monitor_LDFLAGS = -Wl,-rpath,${prefix}/libexec/monitor/modules
+monitor_SOURCES += ksql.h
 
-					
-if ENABLE_HOTEL
-monitor_SOURCES += clients.cpp
-#只有hotel才要http redirect ， 才会用到 libnet 
-monitor_LDADD += -lnet	
-
-monitor_CXXFLAGS  = -DENABLE_HOTEL
-endif
-
-
+		 
 if WITH_MYSQL
- # monitor_SOURCES += KSQL/kmysql.cpp KSQL/kmysql.h
- # monitor_LDADD +=$(LD_MYSQL_FLAGS)
+  monitor_SOURCES += ksql.c ksql_static_template.h
 endif
-
-if WITH_SQLITE3
-monitor_LDADD += -lsqlite3
-monitor_SOURCES += KSQL/ksqlite.h KSQL/ksqlite.cpp
-endif
-
- 

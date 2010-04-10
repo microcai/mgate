@@ -34,4 +34,10 @@ srpm: dist @PACKAGE_NAME@.spec
 sysconfigdir = /etc
 
 sysconfig_DATA = monitor.cfg
+
+test : $(top_builddir)/src/monitor
+	$(top_builddir)/src/monitor --module_dir=$(top_builddir)/modules  --config=$(top_srcdir)/monitor.cfg
+	
+$(top_builddir)/src/monitor :
+	cd src && $(MAKE)
 			

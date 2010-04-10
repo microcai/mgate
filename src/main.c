@@ -27,19 +27,11 @@
 #include <string.h>
 
 #include <unistd.h>
+#include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/fcntl.h>
 #include <sys/signal.h>
-#include <sys/inotify.h>
-#include <sys/poll.h>
 #include <sys/syslog.h>
-#include <dirent.h>
-#include <net/if.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
-#include <pthread.h>
-
-#include <sys/mman.h>
 #include <pcap.h>
 #include <errno.h>
 #ifdef HAVE_GETTEXT
@@ -53,6 +45,8 @@
 #include "global.h"
 #include "pcap_thread.h"
 #include "clientmgr.h"
+#include "module.h"
+#include "kpolice.h"
 
 static void on_term(int p )
 {
@@ -125,6 +119,9 @@ int main(int argc, char*argv[], char*env[])
 
 	//初始化人员管理
 	clientmgr_init();
+
+	//连接到 mysql
+	ksql_init();
 
 	kpolice_init();
 
