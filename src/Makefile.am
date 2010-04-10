@@ -22,6 +22,7 @@ monitor_SOURCES += clientmgr.c clientmgr.h
 monitor_SOURCES += utils.c utils.h
 monitor_SOURCES += module.c module.h
 monitor_SOURCES += $(md5_SOURCE)
+monitor_SOURCES += kpolice.c kpolice.h
 
 monitor_SOURCES += auto_update.cpp libdreamtop.c libdreamtop.h functions.h \
 						 libmicrocai-macros.h libmicrocai-queue.h \

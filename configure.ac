@@ -57,7 +57,7 @@ AC_TYPE_UINT32_T
 
 # Checks for library functions.
 
-PKG_CHECK_MODULES(GLIB2, [glib-2.0 gthread-2.0 gobject-2.0 gmodule-2.0 ])
+PKG_CHECK_MODULES(GLIB2, [glib-2.0 gthread-2.0 gobject-2.0 gmodule-2.0 gio-2.0 ])
 AC_CHECK_LIB([pthread], [main])
 
 AC_CHECK_LIB([pcap], [main],[AC_CHECK_HEADER(pcap.h)],[AC_MSG_ERROR(need libpcap)])

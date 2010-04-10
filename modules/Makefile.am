@@ -6,7 +6,7 @@ AM_CPPFLAGS = @GLIB2_CFLAGS@ -I$(top_srcdir)/src -fpic
 
 LIBS = -lpthread -shared $(LDFLAGS)
 
-libexec_PROGRAMS =  libredirect.so kpolice.so  kurl.so kqq.so kmsn.so
+libexec_PROGRAMS =  libredirect.so kurl.so kqq.so kmsn.so
 
 libredirect_so_SOURCES = http_redirect.c
 
@@ -31,8 +31,6 @@ endif
 kmsn_so_SOURCES = kmsn.cpp
 
 kqq_so_SOURCES = kqq.cpp
-
-kpolice_so_SOURCES = kpolice.cpp kpolice.h
 
 kurl_so_SOURCES = kurl.cpp
 
