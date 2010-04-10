@@ -38,7 +38,7 @@ static void modlue_load_so(const gchar * module)
 	g_message("load module %s",module);
 	GModule * m = g_module_open(module,G_MODULE_BIND_LOCAL);
 	if(!m)
-		g_print("module err is :%s\n",g_module_error());
+		g_warning("%s",g_module_error());
 }
 
 

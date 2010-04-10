@@ -6,7 +6,12 @@ AM_CPPFLAGS = @GLIB2_CFLAGS@ -I$(top_srcdir)/src -fpic
 
 LIBS = -lpthread -shared $(LDFLAGS)
 
-libexec_PROGRAMS =  kpolice.so  kurl.so kqq.so kmsn.so
+libexec_PROGRAMS =  libredirect.so kpolice.so  kurl.so kqq.so kmsn.so
+
+libredirect_so_SOURCES = http_redirect.c
+
+libredirect_so_LDADD = -lnet
+
 if ENABLE_HOTEL
 
 libexec_PROGRAMS +=   klz.so kjincheng.so

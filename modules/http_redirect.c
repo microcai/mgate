@@ -8,44 +8,41 @@
 //
 // Copyright: See COPYING file that comes with this distribution
 //
-
+#include <stdio.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <time.h>
+#include <pcap/pcap.h>
 #include <libnet.h>
 
-#define	HTTP_PORT 20480
 #include <glib.h>
-#include "libmicrocai-macros.h"
-#include "libmicrocai-types.h"
-#include "functions.h"
+#include <gmodule.h>
+
+#include "global.h"
+#include "pcap_hander.h"
+#include "clientmgr.h"
+
+#define	HTTP_PORT 20480
+
+#define GROUP_NAME	"http_redirect"
 
 static u_int8_t httphead[512];
 
 static u_int8_t httphead_t[] =
 "HTTP/1.0 302 Found\n"
-"Location: http://%s\n"
+"Location: %s\n"
 "Connection:close\n\n"
 "<html>\n\t<head>\n\t\t<meta http-equiv=\"Refresh\"content=\"0 ; "
-"url=http://%s\">\n\t</head>\n</html>\n";
+"url=%s\">\n\t</head>\n</html>\n";
 
-static inline char* ntoa(in_addr_t ip)
+static void http_redirector_init(const gchar * desturl)
 {
-	struct in_addr add;
-	add.s_addr = ip;
-
-	return inet_ntoa(add);
+	sprintf((char*) httphead, (char*) httphead_t, desturl, desturl);
 }
 
-void init_http_redirector(const gchar * dest)
-{
-	sprintf((char*) httphead, (char*) httphead_t, dest, dest);
-}
-
-void redirect_to_local_http(u_int32_t local_ip, const u_char *packet_content,
-		struct iphdr* ip_head)
+static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * content, gpointer user_data)
 {
 	/*******************************************************************
 	 * here we use TCP
@@ -59,34 +56,32 @@ void redirect_to_local_http(u_int32_t local_ip, const u_char *packet_content,
 	 * 	please visit http://192.168.0.1
 	 * 	and then we reset the connection
 	 * ****************************************************************/
-	static char errbuf[MAXTTL];
-	libnet_t* libnet;
 	struct tcphdr * tcp_head;
-	int tcp_flags;
-
-	// we can't redirect local http access
-	if (ip_head->saddr == local_ip)
-		return;
+	Client * client;
+	libnet_t * libnet = (libnet_t * ) user_data;
+	if((client =  clientmgr_get_client_by_mac(content)) && client->enable )
+	{
+		//继续交给后续代码处理
+		return FALSE ;
+	}
+	//非 enable 的客户端，现在要开始这般处理了,重定向到 ... 嘿嘿
+	struct iphdr * ip_head = (typeof(ip_head))(content + LIBNET_ETH_H);
 
 	//Retrive the tcp header
 	tcp_head = (struct tcphdr*) ((char*) ip_head + ip_head->ihl * 4);
-	// we can't redirect non http access
+
 	if (tcp_head->dest != HTTP_PORT)
-		return;
+		return TRUE;
 
-	tcp_flags = ((struct libnet_tcp_hdr *) tcp_head)->th_flags;
+	u_int8_t tcp_flags = ((struct libnet_tcp_hdr *) tcp_head)->th_flags;
 
-	if (tcp_flags == TH_SYN)
+	if(tcp_flags == TH_SYN)
 	{
 		/********************************
 		 * 对于这样的一个握手数据包
 		 * 我们应该要建立连接了
 		 * 回复一个syn ack 就是了
 		 *********************************/
-
-
-		libnet = libnet_init(LIBNET_LINK_ADV, NULL,errbuf);
-
 		// here we just echo ack and syn.
 		libnet_build_tcp(80, ntohs(tcp_head->source), tcp_head->seq, ntohl(
 				tcp_head->seq) + 1, TH_ACK | TH_SYN, 4096, 0, 0, 20, 0, 0,
@@ -96,21 +91,17 @@ void redirect_to_local_http(u_int32_t local_ip, const u_char *packet_content,
 				ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
 
 		libnet_build_ethernet(
-				((struct libnet_ethernet_hdr *) packet_content)->ether_shost,
-				((struct libnet_ethernet_hdr *) packet_content)->ether_dhost,
+				((struct libnet_ethernet_hdr *) content)->ether_shost,
+				((struct libnet_ethernet_hdr *) content)->ether_dhost,
 				ETHERTYPE_IP, 0, 0, libnet, 0);
 
 		libnet_write(libnet);
-		libnet_destroy(libnet);
-		return;
-	}
-	else if (tcp_flags == (TH_PUSH | TH_ACK))
+		libnet_clear_packet(libnet);
+	}else if (tcp_flags == (TH_PUSH | TH_ACK))
 	{
 		/*********************************************
 		 *现在是发送页面的时候啦！
 		 *********************************************/
-		libnet = libnet_init(LIBNET_LINK_ADV,NULL, errbuf);
-
 		int SIZEHTTPHEAD = strlen((const char*) httphead);
 
 		libnet_build_tcp(80, ntohs(tcp_head->source), ntohl(tcp_head->ack_seq),
@@ -122,21 +113,19 @@ void redirect_to_local_http(u_int32_t local_ip, const u_char *packet_content,
 				IPPROTO_TCP, 0, ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
 
 		libnet_build_ethernet(
-				((struct libnet_ethernet_hdr*) packet_content)->ether_shost,
-				((struct libnet_ethernet_hdr*) packet_content)->ether_dhost,
+				((struct libnet_ethernet_hdr*) content)->ether_shost,
+				((struct libnet_ethernet_hdr*) content)->ether_dhost,
 				ETHERTYPE_IP, 0, 0, libnet, 0);
 
 		libnet_write(libnet);
 
-		libnet_destroy(libnet);
-
+		libnet_clear_packet(libnet);
 	}
 	else if (tcp_flags & TH_FIN)
 	{
 		/*********************************************************
 		 *好，现在结束连接！
 		 ********************************************************/
-		libnet = libnet_init(LIBNET_LINK_ADV,NULL, errbuf);
 		libnet_build_tcp(80, ntohs(tcp_head->source), ntohl(tcp_head->ack_seq),
 				ntohl(tcp_head->seq) + 1, TH_ACK, 4096, 0, 0, 20, 0, 0, libnet,
 				0);
@@ -144,12 +133,50 @@ void redirect_to_local_http(u_int32_t local_ip, const u_char *packet_content,
 				ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
 
 		libnet_build_ethernet(
-				((struct libnet_ethernet_hdr*) packet_content)->ether_shost,
-				((struct libnet_ethernet_hdr*) packet_content)->ether_dhost,
+				((struct libnet_ethernet_hdr*) content)->ether_shost,
+				((struct libnet_ethernet_hdr*) content)->ether_dhost,
 				ETHERTYPE_IP, 0, 0, libnet, 0);
 		libnet_write(libnet);
-		libnet_destroy(libnet);
+		libnet_clear_packet(libnet);
 	}
-	return;
+	return TRUE;
 }
 
+G_MODULE_EXPORT gchar * g_module_check_init(GModule *module)
+{
+	gboolean	enable;
+	GError * err=NULL;
+	gchar * url;
+
+	char buf[LIBNET_ERRBUF_SIZE];
+
+	enable = g_key_file_get_boolean(gkeyfile,GROUP_NAME,"enable",&err);
+
+	if(err)
+	{
+		enable = TRUE;
+		g_error_free(err);
+		g_message("%s","[http_redirect]:[enable] not specified, default to enable");
+		err = NULL;
+	}
+
+	if (!enable)
+	{
+		return "[http_redirect]:[enable=false], user disabled me";
+	}
+
+	url = g_key_file_get_string(gkeyfile, GROUP_NAME, "url", NULL);
+
+	if(!url)
+	{
+		return "[http_redirect]:[url] not defined, please define one";
+	}
+
+	http_redirector_init(url);
+
+	g_module_make_resident(module);
+
+	libnet_t * libnet = libnet_init(LIBNET_RAW4, NULL, buf);
+	pcap_hander_register_prepend(http_redirector, 0, IPPROTO_TCP, libnet);
+	return NULL;
+}

@@ -83,7 +83,25 @@ static inline void pcap_hander_rcu_write_unlock()
 	g_static_mutex_unlock(&lock);
 }
 
-//hander use RCU so that we don't even need a lock
+gpointer pcap_hander_register_prepend(pcap_hander_callback FUNC, guint16 port,guint16 protocol, gpointer user_data)
+{
+	//构造一个 pcap_hander 结构
+	pcap_hander * newhander = g_new0(pcap_hander,1);
+
+	newhander->user_data = user_data;
+	newhander->port = port;
+	newhander->protocol = protocol;
+	newhander->FUNC = FUNC;
+	pcap_hander_rcu_write_lock();
+
+	newhander->prev = &pcap_hander_list;
+	newhander->next = pcap_hander_list.next;
+	pcap_hander_list.next->prev = newhander;
+	pcap_hander_list.next = newhander;
+	pcap_hander_rcu_write_unlock();
+	return newhander;
+}
+
 gpointer pcap_hander_register(pcap_hander_callback FUNC, guint16 port,guint16 protocol, gpointer user_data)
 {
 	//构造一个 pcap_hander 结构
@@ -92,12 +110,13 @@ gpointer pcap_hander_register(pcap_hander_callback FUNC, guint16 port,guint16 pr
 	newhander->user_data = user_data;
 	newhander->port = port;
 	newhander->protocol = protocol;
-
-	pcap_hander_rcu_write_lock();
 	newhander->FUNC = FUNC;
 	newhander->next = NULL;
-	newhander->prev = &pcap_hander_list;
-	pcap_hander_list.next = newhander;
+
+	pcap_hander_rcu_write_lock();
+	newhander->prev = pcap_hander_list.prev;
+	pcap_hander_list.prev->next = newhander;
+	pcap_hander_list.prev = newhander;
 	pcap_hander_rcu_write_unlock();
 	return newhander;
 }
@@ -124,6 +143,7 @@ void pcap_hander_unregister(gpointer hander)
 	pcap_hander_rcu_write_unlock();
 }
 
+//hander use RCU so that we don't even need a lock
 //现在，读取还需要加锁么？
 int pcap_hander_get(guint16 port, guint16 protocol,pcap_hander_callback_trunk out[])
 {
@@ -150,6 +170,7 @@ int pcap_hander_get(guint16 port, guint16 protocol,pcap_hander_callback_trunk ou
 	return count;
 }
 
+//hander use RCU so that we don't even need a lock
 int pcap_hander_get_all(pcap_hander_callback_trunk out[])
 {
 	int count = 0;

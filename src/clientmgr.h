@@ -17,6 +17,7 @@ typedef struct _Client{
 	GString	* name, * id;
 	in_addr_t	ip;
 	guchar		mac[6];
+	gboolean	enable;
 }Client;
 
 typedef struct _ClientClass{
@@ -39,7 +40,7 @@ Client * client_new(const gchar * name, const gchar * id);
 
 void clientmgr_init();
 Client * clientmgr_get_client_by_ip(in_addr_t ip);
-Client * clientmgr_get_client_by_mac(guchar * mac);
+Client * clientmgr_get_client_by_mac(const guchar * mac);
 void clientmgr_insert_client_by_mac(guchar * mac,Client * client);
 
 

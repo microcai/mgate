@@ -20,6 +20,7 @@ typedef struct _pcap_hander_callback_trunk{
 	gpointer				user_data;
 }pcap_hander_callback_trunk;
 
+gpointer pcap_hander_register_prepend(pcap_hander_callback FUNC, guint16 port,guint16 protocol, gpointer user_data);
 gpointer pcap_hander_register(pcap_hander_callback FUNC,guint16 port,guint16 protocol,gpointer user_data);
 void pcap_hander_unregister(gpointer hander);
 int pcap_hander_get_all(pcap_hander_callback_trunk out[]);

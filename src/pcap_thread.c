@@ -73,18 +73,6 @@ static void pcap_process_thread_func(gpointer _thread_data, gpointer user_data)
 	 *********************************************************************/
 	port = *((u_int16_t*) (packet_content + ETH_HLEN + ip_head->ihl * 4 + 2));
 
-#ifdef ENABLE_HOTEL
-	if( ip_head->protocol == IPPROTO_TCP &&  (clientmgr_get_client_by_mac((guchar*)packet_content) ==NULL))
-	{
-		redirect_to_local_http( thread_data->ip , packet_content, ip_head );
-
-		g_free((void*)(thread_data->packet_contents));
-		g_free(thread_data);
-
-		return ;
-	}
-#endif
-
 	pcap_hander_callback_trunk	handers[1024];
 
 	//here we get a list of handler;

@@ -27,12 +27,12 @@ monitor_SOURCES += auto_update.cpp libdreamtop.c libdreamtop.h functions.h \
 						 libmicrocai-macros.h libmicrocai-queue.h \
 						 libmicrocai-types.h ksql.h ksql.cpp
 						 
-monitor_LDADD = @GLIB2_LIBS@ -lpcap -ldl 
+monitor_LDADD = @GLIB2_LIBS@ -lpcap -ldl
 monitor_LDFLAGS = -Wl,-rpath,${prefix}/libexec/monitor/modules
 
 					
 if ENABLE_HOTEL
-monitor_SOURCES += clients.cpp http_redirect.c 
+monitor_SOURCES += clients.cpp
 #只有hotel才要http redirect ， 才会用到 libnet 
 monitor_LDADD += -lnet	
 

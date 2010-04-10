@@ -123,7 +123,7 @@ void clientmgr_init()
 	client_tree = g_tree_new_full(g_tree_compare_func,0,g_free,g_object_unref);
 }
 
-Client * clientmgr_get_client_by_mac(guchar * mac)
+Client * clientmgr_get_client_by_mac(const guchar * mac)
 {
 	return (Client*)g_tree_lookup(client_tree,mac);
 }
