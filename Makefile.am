@@ -29,8 +29,11 @@ sysconfigdir = /etc
 
 sysconfig_DATA = monitor.cfg
 
-test : $(top_builddir)/src/monitor
-	$(top_builddir)/src/monitor --module_dir=$(top_builddir)/modules  --config=$(top_srcdir)/monitor.cfg
+test : $(top_builddir)/src/monitor /tmp/usr/share/locale/
+	$(top_builddir)/src/monitor --module_dir=$(top_builddir)/modules  --config=$(top_srcdir)/monitor.cfg --locale=/tmp/usr/share/locale/
+
+/tmp/usr/share/locale/:
+	cd po && $(MAKE) DESTDIR=/tmp
 	
 $(top_builddir)/src/monitor :
 	cd src && $(MAKE)

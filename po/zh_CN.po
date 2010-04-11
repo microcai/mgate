@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
-"POT-Creation-Date: 2010-04-11 16:54+0800\n"
+"POT-Creation-Date: 2010-04-11 18:05+0800\n"
 "PO-Revision-Date: 2010-04-11 16:57+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
@@ -55,21 +55,21 @@ msgstr "连接被重置, 重试！"
 msgid "A connection to the police server has been successfully established"
 msgstr "成功建立到公安机关中心服务器的连接"
 
-#: src/kpolice.c:228
+#: src/kpolice.c:237
 msgid ""
 "[kpolice]:[HotelID] not set, monitor will not be able to send infomation"
 msgstr "[kpolice]:[HotelID] 客户端 ID 未指定，数据将无法上传"
 
-#: src/kpolice.c:238
+#: src/kpolice.c:247
 msgid "police ip ot set, monitor will not upload any infomation!"
 msgstr "公安IP没有设置，数据将不会上传!"
 
-#: src/kpolice.c:253
+#: src/kpolice.c:262
 #, c-format
 msgid "[kpolice]:[port1] not set, default to %d"
 msgstr "[kpolice]:[port1] 未设置，使用默认值 %d"
 
-#: src/kpolice.c:262
+#: src/kpolice.c:271
 #, c-format
 msgid "[kpolice]:[port2] not set, default to 'port1+1'(%d)"
 msgstr "[kpolice]:[port1] 未设置，使用默认值 %d ( port1+1)"

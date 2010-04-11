@@ -67,14 +67,14 @@ int main(int argc, char*argv[], char*env[])
 	gchar *  domain_dir = NULL;
 	const gchar * module_dir = "/usr/lib/monitor/modules" ;
 
-
-	g_thread_init(NULL);
-	g_set_application_name(PACKAGE_NAME);
 	setlocale(LC_ALL,"");
 	textdomain(GETTEXT_PACKAGE);
 #ifdef DEBUG
 	bindtextdomain(GETTEXT_PACKAGE,"/tmp/share/locale");
 #endif
+
+	g_thread_init(NULL);
+	g_set_application_name(PACKAGE_NAME);
 
 	GOptionEntry args[] =
 	{
@@ -85,12 +85,6 @@ int main(int argc, char*argv[], char*env[])
 			{"module_dir",'f',0,G_OPTION_ARG_STRING,&module_dir,_("set alternative module dir"),N_("dir")},
 			{0}
 	};
-
-	if(domain_dir)
-	{
-		bindtextdomain(GETTEXT_PACKAGE,domain_dir);
-		g_free(domain_dir);
-	}
 
 	time(&t);
 
@@ -107,6 +101,12 @@ int main(int argc, char*argv[], char*env[])
 	g_option_context_add_main_entries(context,args,PACKAGE_NAME);
 	g_option_context_parse(context,&argc,&argv,NULL);
 	g_option_context_free(context);
+
+	if(domain_dir)
+	{
+		bindtextdomain(GETTEXT_PACKAGE,domain_dir);
+		g_free(domain_dir);
+	}
 
 	loop = g_main_loop_new(NULL,FALSE);
 
