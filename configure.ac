@@ -25,15 +25,6 @@ AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Define to the read-only 
 AM_GNU_GETTEXT([external])
 AM_GNU_GETTEXT_VERSION(0.16.1)
 
-
-AC_ARG_ENABLE(hotel,
-				[AC_HELP_STRING([--enable-hotel],[enable hotel related features and disable cafe related features])],
-				[
-				AM_CONDITIONAL(ENABLE_HOTEL,true)
-				AC_DEFINE(ENABLE_HOTEL,[1],[enable hotel support ])				
-				],
-				[AM_CONDITIONAL(ENABLE_HOTEL,false)])
-
 AC_ARG_WITH(mysql,[AC_HELP_STRING([--without-mysql],[disable support for mysql])],
 		[ with_mysql=$withval ],[with_mysql=check])
 		
@@ -72,9 +63,12 @@ AS_IF([test "x$with_mysql" != "xno" ],
 		],[
 			AM_CONDITIONAL([WITH_MYSQL],[false])
 		])
+	],[
+		AM_CONDITIONAL([WITH_MYSQL],[false])
 	])	
 
 AC_CHECK_HEADERS([mysql/mysql.h])
+AC_CHECK_HEADERS([mysql/mysql.h],[],[AM_CONDITIONAL([WITH_MYSQL],[false])])
 
 AC_SUBST(MYSQL_CFLAGS)
 AC_SUBST(MYSQL_LIBS)

@@ -23,7 +23,6 @@ monitor_SOURCES += utils.c utils.h
 monitor_SOURCES += module.c module.h
 monitor_SOURCES += $(md5_SOURCE)
 monitor_SOURCES += kpolice.c kpolice.h
-
 monitor_SOURCES += ksql.h
 
 		 

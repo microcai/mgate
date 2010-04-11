@@ -8,10 +8,18 @@
 #ifndef KSQL_H_
 #define KSQL_H_
 
+#ifndef HAVE_MYSQL_MYSQL_H
 
-void	ksql_init();
-gboolean	ksql_connect_sql();
-void ksql_create_db();
+#define  FUNCTION_DEFINE	{};
+
+#else
+
+#define  FUNCTION_DEFINE 	;
+#endif
+
+void	ksql_init() FUNCTION_DEFINE
+gboolean	ksql_connect_sql() FUNCTION_DEFINE
+void ksql_create_db() FUNCTION_DEFINE
 
 
 #endif /* KSQL_H_ */

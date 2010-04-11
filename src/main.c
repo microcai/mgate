@@ -47,6 +47,7 @@
 #include "clientmgr.h"
 #include "module.h"
 #include "kpolice.h"
+#include "ksql.h"
 
 static void on_term(int p )
 {
@@ -135,13 +136,6 @@ int main(int argc, char*argv[], char*env[])
 	module_enable(module_dir);
 
 	g_thread_create((GThreadFunc)pcap_thread_func,NULL,FALSE,NULL);
-
-#ifdef ENABLE_HOTEL
-
-	GIOChannel * gio = g_io_channel_unix_new(inotifyfd);
-
-	g_io_add_watch(gio,G_IO_IN,on_inotify,GINT_TO_POINTER(socket_file));
-#endif
 
 	signal(15,on_term);
 	signal(2,on_term);
