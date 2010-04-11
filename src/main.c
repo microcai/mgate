@@ -117,11 +117,18 @@ int main(int argc, char*argv[], char*env[])
 			G_KEY_FILE_KEEP_TRANSLATIONS, NULL))
 		syslog(LOG_WARNING, "Err opening config file");
 
-	//初始化人员管理
-	clientmgr_init();
 
 	//连接到 mysql
 	ksql_init();
+
+	if(createdb)
+	{
+		ksql_connect_sql();
+		ksql_create_db();
+	}
+
+	//初始化人员管理
+	clientmgr_init();
 
 	kpolice_init();
 

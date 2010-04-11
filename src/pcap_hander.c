@@ -44,7 +44,7 @@ typedef struct _pcap_hander
 
 static pcap_hander pcap_hander_list =
 { .next = &pcap_hander_list, .prev = &pcap_hander_list };
-GStaticMutex lock =
+static GStaticMutex lock =
 G_STATIC_MUTEX_INIT;
 volatile int read_count;
 volatile gpointer queue = NULL;
