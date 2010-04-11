@@ -22,6 +22,7 @@
 #include <config.h>
 #endif
 
+#include <unistd.h>
 #include <sys/syslog.h>
 #include <sys/socket.h>
 #include <net/ethernet.h>
@@ -131,7 +132,8 @@ void *pcap_thread_func(void * thread_param)
 
 	if(err)
 	{
-		num_threads = 40;
+		num_threads = sysconf(_SC_NPROCESSORS_ONLN) * 2;
+		g_message(_("[monitor]:[threads] not set, using 2x cpu (%d) threads"),num_threads);
 		g_error_free(err);
 		err = NULL;
 	}
