@@ -29,7 +29,6 @@ AC_ARG_WITH(mysql,[AC_HELP_STRING([--without-mysql],[disable support for mysql])
 		[ with_mysql=$withval ],[with_mysql=check])
 		
 AC_ARG_WITH(jincheng,[AC_HELP_STRING([--without-jincheng],[disable jincheng module])],[],[with_jincheng="yes"])
-AC_ARG_WITH(kpolice ,[AC_HELP_STRING([--without-kpolice],[disable kpolice module])],[],[with_kpolice="yes"])
 
 AC_ARG_WITH(kqq, [AC_HELP_STRING([--with-kqq], [enable kqq module (default)])],[],[with_kqq="yes"])
 AC_ARG_WITH(kurl,[AC_HELP_STRING([--with-kurl],[enable kkurl module (default)])],[],[with_kurl="yes"])
@@ -79,6 +78,7 @@ AC_CHECK_FUNCS([inet_ntoa memset munmap setenv socket strerror strstr])
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h memory.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h unistd.h])
 
+AC_CHECK_DECL(_SC_NPROCESSORS_ONLN,[],[AC_MSG_FAILURE(_SC_NPROCESSORS_ONLN not found,1)])
 
 #AC_CONFIG_FILES([modules/Makefile])
 AC_CONFIG_FILES( [
