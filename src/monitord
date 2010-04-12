@@ -15,7 +15,12 @@
 
 PATH=$PATH:/usr/local/bin
 
-apend()
+append()
+{
+	need mysqld
+}
+
+depend()
 {
 	need mysqld
 }
@@ -23,11 +28,8 @@ apend()
 start () {
 	echo -n $"Starting $prog: "
 
-	# start daemon
-	killall runmonitor > /dev/NULL 2>/dev/null
-	killall monitor > /dev/NULL 2>/dev/null
-	killall monitor > /dev/NULL 2>/dev/null
-	runmonitor &
+	monitor
+	
 	echo "OK"
 	return 0
 }
@@ -35,17 +37,14 @@ start () {
 stop () {
 	# stop daemon
 	echo -n $"Stopping $prog: "
-	killall -9 runmonitor > /dev/NULL 2>/dev/null
 	killall -2 monitor > /dev/NULL 2>/dev/null
 	echo "OK"
 	return 0
 }
 
 restart() {
-	echo -n $"Restarting $prog: "
-	killall -2 monitor > /dev/NULL 2>/dev/null
-	echo "OK"
-	
+	stop
+	start	
 	return 0
 }
 

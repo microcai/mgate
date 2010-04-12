@@ -7,7 +7,6 @@ LIBS = @MYSQL_LIBS@ @GLIB2_LIBS@ -lpcap -ldl
 sbindir=/etc/init.d/
 
 bin_PROGRAMS = monitor 
-bin_SCRIPTS = runmonitor
 sbin_SCRIPTS = monitord
 
 EXTRA_DIST = runmonitor monitord
