@@ -50,7 +50,7 @@ volatile int read_count;
 volatile gpointer queue = NULL;
 volatile int need_clean_up;
 //延迟修改在这里发生
-static void pcap_hander_rcu_clean_up()
+static inline void pcap_hander_rcu_clean_up()
 {
 	if (g_atomic_int_compare_and_exchange(&need_clean_up, TRUE, FALSE))
 	{
