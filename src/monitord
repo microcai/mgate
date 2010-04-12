@@ -28,7 +28,7 @@ depend()
 start () {
 	echo -n $"Starting $prog: "
 
-	monitor
+	monitor --daemon
 	
 	echo "OK"
 	return 0
