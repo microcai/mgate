@@ -75,6 +75,7 @@ int main(int argc, char*argv[], char*env[])
 
 	g_thread_init(NULL);
 	g_set_application_name(PACKAGE_NAME);
+	g_type_init();
 
 	GOptionEntry args[] =
 	{
