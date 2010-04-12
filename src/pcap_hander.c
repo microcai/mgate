@@ -50,7 +50,7 @@ volatile int read_count;
 volatile gpointer queue = NULL;
 volatile int need_clean_up;
 //延迟修改在这里发生
-static void pcap_hander_acu_clean_up()
+static inline void pcap_hander_rcu_clean_up()
 {
 	if (g_atomic_int_compare_and_exchange(&need_clean_up, TRUE, FALSE))
 	{
@@ -70,7 +70,7 @@ static inline void pcap_hander_rcu_read_lock()
 static inline void pcap_hander_rcu_read_unlock()
 {
 	if (g_atomic_int_dec_and_test(&read_count) == 0)
-		pcap_hander_acu_clean_up();
+		pcap_hander_rcu_clean_up();
 }
 
 static inline void pcap_hander_rcu_write_lock()

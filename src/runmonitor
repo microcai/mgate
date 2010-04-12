@@ -1,8 +1,0 @@
-#! /bin/sh
-
-while true ;  do monitor ; done 
-
-exit -1
-
-
-

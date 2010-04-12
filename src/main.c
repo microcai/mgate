@@ -64,7 +64,9 @@ int main(int argc, char*argv[], char*env[])
 	GError* err = NULL;
 	gboolean createdb = FALSE;
 	gboolean flush_db = FALSE;
+	gboolean run_daemon = FALSE;
 	gchar *  domain_dir = NULL;
+
 	const gchar * module_dir = "/usr/lib/monitor/modules" ;
 
 	setlocale(LC_ALL,"");
@@ -79,11 +81,13 @@ int main(int argc, char*argv[], char*env[])
 
 	GOptionEntry args[] =
 	{
+			{"daemon",'D',0,G_OPTION_ARG_NONE,&run_daemon,_("run as daemon")},
 			{"flushdb",'f',0,G_OPTION_ARG_NONE,&flush_db,_("flash the db")},
 			{"createdb",'c',0,G_OPTION_ARG_NONE,&createdb,_("Create database")},
 			{"locale",'\0',0,G_OPTION_ARG_STRING,&domain_dir,_("set domain dir root"),N_("dir")},
 			{"config",'f',0,G_OPTION_ARG_STRING,&config_file_name,_("set alternative config file"),N_("filename")},
 			{"module_dir",'f',0,G_OPTION_ARG_STRING,&module_dir,_("set alternative module dir"),N_("dir")},
+
 			{0}
 	};
 
@@ -119,6 +123,8 @@ int main(int argc, char*argv[], char*env[])
 			G_KEY_FILE_KEEP_TRANSLATIONS, NULL))
 		syslog(LOG_WARNING, "Err opening config file");
 
+	if(run_daemon)
+		daemon(FALSE,FALSE);
 
 	//连接到 mysql
 	ksql_init();
