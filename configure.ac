@@ -27,6 +27,12 @@ AM_GNU_GETTEXT_VERSION(0.16.1)
 
 AC_ARG_WITH(mysql,[AC_HELP_STRING([--without-mysql],[disable support for mysql])],
 		[ with_mysql=$withval ],[with_mysql=check])
+
+AC_ARG_WITH(mysql-libs,[AC_HELP_STRING([--with-mysql-libs],[supply non-default LD flags for mysql])],
+		[ MYSQL_LIBS=$withval ])
+
+AC_ARG_WITH(mysql-cflags,[AC_HELP_STRING([--with-mysql-cflags],[supply non-default CPP flags for mysql])],
+		[ MYSQL_CFLAGS=$withval ])
 		
 AC_ARG_WITH(jincheng,[AC_HELP_STRING([--without-jincheng],[disable jincheng module])],[],[with_jincheng="yes"])
 
@@ -52,6 +58,11 @@ AC_CHECK_LIB([pcap], [main],[AC_CHECK_HEADER(pcap.h)],[AC_MSG_ERROR(need libpcap
 
 AS_IF( [ test "x$enable_hotel" != xno ],[AC_CHECK_LIB([net], [main],[ AC_CHECK_HEADER( libnet.h) ],[AC_MSG_ERROR(need libnet)])])
 
+AS_IF(	[ test -n "${MYSQL_LIBS}" || test -n "${MYSQL_CFLAGS}"] ,[
+		AM_CONDITIONAL([WITH_MYSQL],[true])
+		AC_DEFINE(HAVE_MYSQL_MYSQL_H,[1],[Define to 1 if you have the <mysql/mysql.h> header file.])	
+	] , [
+
 AS_IF([test "x$with_mysql" != "xno" ],
 	[
 		AC_CHECK_PROG(MYSQL_CONFIG,mysql_config,mysql_config)
@@ -68,6 +79,8 @@ AS_IF([test "x$with_mysql" != "xno" ],
 
 AC_CHECK_HEADERS([mysql/mysql.h])
 AC_CHECK_HEADERS([mysql/mysql.h],[],[AM_CONDITIONAL([WITH_MYSQL],[false])])
+
+])
 
 AC_SUBST(MYSQL_CFLAGS)
 AC_SUBST(MYSQL_LIBS)
