@@ -17,6 +17,9 @@ missing
 ABOUT-NLS
 monitor-*.spec
 *.so
+*.a
+*.la
+*~
 stamp-h1
 monitor/monitor
 monitor
