@@ -39,6 +39,4 @@ static void g_sql_connect_init(GSQLConnect * klass)
 }
 
 
-
 G_DEFINE_TYPE(GSQLConnect,g_sql_connect,G_TYPE_OBJECT);
-

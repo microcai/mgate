@@ -26,14 +26,14 @@
 #include <stdio.h>
 #include <glib.h>
 
-#if defined HAVE_MYSQL_MYSQL_H || defined HAVE_MYSQL_H
-#include <mysql/mysql.h>
-#endif
+
 
 #include "i18n.h"
 #include "global.h"
 #include "ksql_static_template.h"
 #include "ksql.h"
+#include "gsqlconnect.h"
+#include "gsqlconnect_mysql.h"
 
 static MYSQL	mysql[1];
 static const gchar *	user = "root";
@@ -45,19 +45,14 @@ GAsyncQueue	*			asqueue;
 static gpointer ksql_thread(gpointer user_data)
 {
 //	mysql_commit()
+	GSQLConnect * connector;
 
-	mysql_real_connect(mysql,NULL,user,passwd,db,0,0,0);
-
-	if(mysql_errno(mysql) == 4049)
-	{
-
-	}
 
 	gchar * sql;
 	for (;;)
 	{
 		sql = (gchar*) g_async_queue_pop(asqueue);
-		mysql_query(mysql,sql);
+	//	mysql_query(mysql,sql);
 		g_free(sql);
 	}
 	return NULL;
@@ -69,29 +64,53 @@ void	ksql_init()
 	mysql_init(mysql);
 	g_assert(gkeyfile);
 
-	gchar * g_db = g_key_file_get_string(gkeyfile,"mysql","db",NULL);
-	gchar * g_user = g_key_file_get_string(gkeyfile,"mysql","user",NULL);
-	gchar * g_passwd = g_key_file_get_string(gkeyfile,"mysql","passwd",NULL);
+	//make sure it present
+	G_TYPE_SQL_CONNNECT;
+#ifdef  HAVE_MYSQL
+	G_TYPE_SQL_CONNNECT_MYSQL ;
+#endif
 
-	if (g_db)
-	{
-		g_strchomp(g_strchug(g_user));
-		if (strlen(g_db))
-			db = g_db;
-	}
+	const gchar * backend = NULL;
 
-	if(g_user)
+	gchar * bk = g_key_file_get_string(gkeyfile,"database","backend",NULL);
+
+	if (bk)
 	{
-		g_strchomp(g_strchug(g_user));
-		user = g_user ;
+#if HAVE_MYSQL
+		if (g_strcmp0(g_strchomp(g_strchug(bk)), "mysql") == 0)
+		{
+			g_free(bk);
+			backend = "GSQLConnectMysql";
+			 ;
+		}
+		else
+#endif
+		if(g_strcmp0(g_strchomp(g_strchug(bk)), "sqlite") == 0)
+		{
+			g_free(bk);
+			backend = "GSQLConnectSqlite";
+		}else
+		{
+			g_free(bk);
+			bk = NULL;
+		}
 	}
-	if(g_passwd)
+	if(!bk)
 	{
-		g_strchomp(g_strchug(g_passwd));
-		user = g_passwd ;
+#ifdef HAVE_MYSQL
+		g_message(_("[database]:[backend] not set or invalid, default to mysql"));
+		backend = "GSQLConnectMysql";
+#else
+		g_message(_("[database]:[backend] not set or invalid, default to sqite"));
+		backend = "GSQLConnectSqlite";
+#endif
 	}
 
 	asqueue = g_async_queue_new_full(g_free);
+
+	GType sqlconnector =  g_type_from_name(backend);
+//	g_object_new(G_TYP);
+
 
 	g_thread_create(ksql_thread,0,0,0);
 }
