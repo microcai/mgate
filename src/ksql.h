@@ -8,13 +8,13 @@
 #ifndef KSQL_H_
 #define KSQL_H_
 
-#ifndef HAVE_MYSQL_MYSQL_H
+#if defined HAVE_MYSQL_MYSQL_H || defined HAVE_MYSQL_H
 
-#define  FUNCTION_DEFINE	{};
+#define  FUNCTION_DEFINE	;
 
 #else
 
-#define  FUNCTION_DEFINE 	;
+#define  FUNCTION_DEFINE 	{} ;
 #endif
 
 void	ksql_init() FUNCTION_DEFINE

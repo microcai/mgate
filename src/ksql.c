@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include <glib.h>
 
-#ifdef HAVE_MYSQL_MYSQL_H
+#if defined HAVE_MYSQL_MYSQL_H || defined HAVE_MYSQL_H
 #include <mysql/mysql.h>
 #endif
 
@@ -40,15 +40,16 @@ static const gchar *	user = "root";
 static const gchar * 	passwd = "";
 GAsyncQueue	*			asqueue;
 
-static gpointer ksql_thread(gpointer)
+static gpointer ksql_thread(gpointer user_data)
 {
+//	mysql_commit()
+
 	gchar * sql;
 	for (;;)
 	{
 		sql = (gchar*) g_async_queue_pop(asqueue);
-
-		mysql_real_query(&mysql,sql);
-
+		mysql_query(&mysql,sql);
+		g_free(sql);
 	}
 	return NULL;
 }

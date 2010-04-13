@@ -60,7 +60,8 @@ AS_IF( [ test "x$enable_hotel" != xno ],[AC_CHECK_LIB([net], [main],[ AC_CHECK_H
 
 AS_IF(	[ test -n "${MYSQL_LIBS}" || test -n "${MYSQL_CFLAGS}"] ,[
 		AM_CONDITIONAL([WITH_MYSQL],[true])
-		AC_DEFINE(HAVE_MYSQL_MYSQL_H,[1],[Define to 1 if you have the <mysql/mysql.h> header file.])	
+		AC_DEFINE(HAVE_MYSQL_H,[1],[Define to 1 if you have the <mysql/mysql.h> header file.])
+		AC_CHECK_LIB(m,[main])
 	] , [
 
 AS_IF([test "x$with_mysql" != "xno" ],

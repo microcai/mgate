@@ -118,7 +118,7 @@ int main(int argc, char*argv[], char*env[])
 		syslog(LOG_WARNING, "Err opening config file");
 
 	if(run_daemon)
-		daemon(FALSE,FALSE);
+		run_daemon = daemon(FALSE,FALSE);
 
 	//连接到 mysql
 	ksql_init();
