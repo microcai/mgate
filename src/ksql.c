@@ -36,9 +36,22 @@
 #include "ksql.h"
 
 static MYSQL	mysql;
-static const gchar *	user = "";
+static const gchar *	user = "root";
 static const gchar * 	passwd = "";
+GAsyncQueue	*			asqueue;
 
+static gpointer ksql_thread(gpointer)
+{
+	gchar * sql;
+	for (;;)
+	{
+		sql = (gchar*) g_async_queue_pop(asqueue);
+
+		mysql_real_query(&mysql,sql);
+
+	}
+	return NULL;
+}
 
 void	ksql_init()
 {
@@ -59,6 +72,10 @@ void	ksql_init()
 		g_strchomp(g_strchug(g_passwd));
 		user = g_passwd ;
 	}
+
+	asqueue = g_async_queue_new_full(g_free);
+
+	g_thread_create(ksql_thread,0,0,0);
 }
 
 //打开并连接到数据库, sqlite or mysql?
