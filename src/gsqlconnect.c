@@ -40,3 +40,14 @@ static void g_sql_connect_init(GSQLConnect * klass)
 
 
 G_DEFINE_TYPE(GSQLConnect,g_sql_connect,G_TYPE_OBJECT);
+
+gboolean g_sql_connect_check_config(GSQLConnect* obj)
+{
+	GSQLConnectClass * klass = G_SQL_CONNECT_GET_CLASS(obj) ;
+
+	if(klass->check_config)
+	{
+		return klass->check_config(obj);
+	}
+}
+

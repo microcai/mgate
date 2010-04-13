@@ -108,9 +108,13 @@ void	ksql_init()
 
 	asqueue = g_async_queue_new_full(g_free);
 
-	GType sqlconnector =  g_type_from_name(backend);
-//	g_object_new(G_TYP);
+	GSQLConnect * con;
 
+	GType sqlconnector_type =  g_type_from_name(backend);
+
+	con = (GSQLConnect*)g_object_new(sqlconnector_type,NULL);
+
+	g_sql_connect_check_config(con);
 
 	g_thread_create(ksql_thread,0,0,0);
 }
