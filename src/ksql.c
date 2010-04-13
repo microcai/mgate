@@ -65,12 +65,8 @@ void	ksql_init()
 	g_assert(gkeyfile);
 
 	//make sure it present
-	G_TYPE_SQL_CONNNECT;
-#ifdef  HAVE_MYSQL
-	G_TYPE_SQL_CONNNECT_MYSQL ;
-#endif
 
-	const gchar * backend = NULL;
+	GType	backend = 0;
 
 	gchar * bk = g_key_file_get_string(gkeyfile,"database","backend",NULL);
 
@@ -80,7 +76,7 @@ void	ksql_init()
 		if (g_strcmp0(g_strchomp(g_strchug(bk)), "mysql") == 0)
 		{
 			g_free(bk);
-			backend = "GSQLConnectMysql";
+			backend = G_TYPE_SQL_CONNNECT_MYSQL;
 			 ;
 		}
 		else
@@ -88,7 +84,7 @@ void	ksql_init()
 		if(g_strcmp0(g_strchomp(g_strchug(bk)), "sqlite") == 0)
 		{
 			g_free(bk);
-			backend = "GSQLConnectSqlite";
+			//backend = "GSQLConnectSqlite";
 		}else
 		{
 			g_free(bk);
@@ -99,7 +95,7 @@ void	ksql_init()
 	{
 #ifdef HAVE_MYSQL
 		g_message(_("[database]:[backend] not set or invalid, default to mysql"));
-		backend = "GSQLConnectMysql";
+		backend = G_TYPE_SQL_CONNNECT_MYSQL;
 #else
 		g_message(_("[database]:[backend] not set or invalid, default to sqite"));
 		backend = "GSQLConnectSqlite";
@@ -110,9 +106,7 @@ void	ksql_init()
 
 	GSQLConnect * con;
 
-	GType sqlconnector_type =  g_type_from_name(backend);
-
-	con = (GSQLConnect*)g_object_new(sqlconnector_type,NULL);
+	con = (GSQLConnect*)g_object_new(backend,NULL);
 
 	g_sql_connect_check_config(con);
 
