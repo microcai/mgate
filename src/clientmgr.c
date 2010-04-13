@@ -5,6 +5,10 @@
  *      Author: cai
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <sys/syslog.h>
 #include <sys/socket.h>
 #include <net/ethernet.h>
@@ -19,12 +23,7 @@
 #include <string.h>
 #include <glib.h>
 
-#ifdef HAVE_GETTEXT
-#include <locale.h>
-#include <libintl.h>
-#define _(x) gettext(x)
-#define N_(x) (x)
-#endif
+#include "i18n.h"
 
 #include "clientmgr.h"
 #include "utils.h"
