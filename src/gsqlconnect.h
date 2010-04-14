@@ -34,5 +34,7 @@ typedef struct _GSQLConnectClass{
 GType g_sql_connect_get_type() G_GNUC_CONST;
 
 gboolean g_sql_connect_check_config(GSQLConnect*);
+gboolean g_sql_connect_real_connect(GSQLConnect* obj);
+
 
 #endif /* GSQLCONNECT_H_ */

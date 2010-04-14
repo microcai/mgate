@@ -51,3 +51,12 @@ gboolean g_sql_connect_check_config(GSQLConnect* obj)
 	}
 }
 
+gboolean g_sql_connect_real_connect(GSQLConnect* obj)
+{
+	GSQLConnectClass * klass = G_SQL_CONNECT_GET_CLASS(obj) ;
+
+	if(klass->connect)
+	{
+		return klass->connect(obj);
+	}
+}

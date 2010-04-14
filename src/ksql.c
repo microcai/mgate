@@ -44,9 +44,18 @@ GAsyncQueue	*			asqueue;
 
 static gpointer ksql_thread(gpointer user_data)
 {
-//	mysql_commit()
-	GSQLConnect * connector;
+	//	mysql_commit()
+	GSQLConnect * connector = (typeof(connector)) user_data;
 
+	if (g_sql_connect_real_connect(connector))
+	{
+		;
+	}
+	else
+	{
+		g_warning(_("unable to connect to database server"));
+
+	}
 
 	gchar * sql;
 	for (;;)
@@ -110,7 +119,7 @@ void	ksql_init()
 
 	g_sql_connect_check_config(con);
 
-	g_thread_create(ksql_thread,0,0,0);
+	g_thread_create(ksql_thread,con,0,0);
 }
 
 //打开并连接到数据库, sqlite or mysql?

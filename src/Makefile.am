@@ -23,10 +23,10 @@ monitor_SOURCES += module.c module.h
 monitor_SOURCES += $(md5_SOURCE)
 monitor_SOURCES += kpolice.c kpolice.h
 monitor_SOURCES += gsqlconnect.c  gsqlconnect.h
-monitor_SOURCES += ksql.h
+monitor_SOURCES += ksql.h ksql.c
 
 		 
 if WITH_MYSQL
   monitor_SOURCES += gsqlconnect_mysql.c	 gsqlconnect_mysql.h
-  monitor_SOURCES += ksql.c ksql_static_template.h
+  monitor_SOURCES += ksql_static_template.h
 endif

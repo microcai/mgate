@@ -78,9 +78,13 @@ gboolean g_sql_connect_mysql_real_connect(GSQLConnect * obj)
 
 	GSQLConnectMysql * mobj = (GSQLConnectMysql*)obj;
 
+	gchar * host,*user,*passwd,*db;
+	g_object_get(obj,"host",&host,"user",&user,"dbname",&db,NULL);
 
+	if(mysql_real_connect(mobj->mysql,host,user,passwd,db,0,NULL,0))
+		return TRUE;
+	return FALSE;
 //	mysql_real_connect(mobj->mysql,NULL,g_user,g_passwd,g_db,0,NULL,0);
-
 }
 
 #define INSTALL_PROPERTY_STRING(klass,id,name,defaultval,type) \
