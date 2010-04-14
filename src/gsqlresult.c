@@ -27,3 +27,15 @@
 
 #include "gsqlresult.h"
 
+static void g_sql_result_class_init(GSQLResultClass * klass)
+{
+	GObjectClass	* gobjclass = G_OBJECT_CLASS(klass);
+
+}
+
+static void g_sql_result_init(GSQLResult * obj)
+{
+}
+
+
+G_DEFINE_TYPE(GSQLResult,g_sql_result,G_TYPE_SQL_RESULT);
