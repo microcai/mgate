@@ -3,9 +3,9 @@ ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = src modules po
 dist_doc_DATA = README 
-EXTRA_DIST = @PACKAGE_NAME@-hotel.spec.in @PACKAGE_NAME@-cafe.spec.in
+EXTRA_DIST = @PACKAGE_NAME@.spec.in
 
-DISTCLEANFILES = @PACKAGE_NAME@-hotel.spec @PACKAGE_NAME@-cafe.spec
+DISTCLEANFILES = @PACKAGE_NAME@.spec
 
 rpm: dist @PACKAGE_NAME@-hotel.spec @PACKAGE_NAME@-cafe.spec
 	rpmbuild -bb \

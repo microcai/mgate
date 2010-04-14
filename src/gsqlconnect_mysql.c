@@ -17,6 +17,8 @@
 #include <config.h>
 #endif
 
+#include <unistd.h>
+#include <sys/stat.h>
 #include <sys/syslog.h>
 #include <sys/socket.h>
 #include <net/ethernet.h>
@@ -62,6 +64,39 @@ static void g_sql_connect_mysql_class_init(GSQLConnectMysqlClass * klass)
 	gobjclass->get_property = g_sql_connect_mysql_get_property;
 
 	g_sql_connect_mysql_register_property(klass);
+
+	gchar * arg_datadir = NULL ;
+
+	gchar * datadir = g_key_file_get_string(gkeyfile,"mysql","datadir",NULL);
+
+	if(datadir)
+	{
+		arg_datadir = g_strdup_printf("--datadir=\"%s\"", g_strchomp(g_strchug(datadir)));
+		g_mkdir_with_parents(g_strchomp(g_strchug(datadir)),755);
+		g_free(datadir);
+	}
+	else
+	{
+		g_mkdir_with_parents("/tmp/monitor",S_IRWXU|S_IRWXG|S_IRWXO);
+		arg_datadir = g_strdup("--datadir=/tmp/monitor");
+	}
+
+	char *server_args[] = {
+	  "this_program",       /* this string is not used */
+	  arg_datadir,
+	  "--key_buffer_size=32M"
+	};
+
+	char *server_groups[] = {
+	  "embedded",
+	  "server",
+	  "mysql_SERVER_in_monitor",
+	  (char *)NULL
+	};
+
+	mysql_server_init(3,server_args,server_groups);
+
+	g_free(arg_datadir);
 }
 
 static void g_sql_connect_mysql_init(GSQLConnectMysql * obj)
@@ -137,7 +172,6 @@ void g_sql_connect_mysql_get_property(GObject *object,
 	default:
 		break;
 	}
-
 }
 
 gboolean g_sql_connect_mysql_check_config(GSQLConnect * obj)

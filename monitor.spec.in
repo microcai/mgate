@@ -4,17 +4,17 @@
 Name:           @PACKAGE_NAME@
 Version:        @PACKAGE_VERSION@
 Release:        1%{?dist}
-Summary:        The @PACKAGE_NAME@-cafe-version-%{version}
+Summary:        The @PACKAGE_NAME@-version-%{version}
 
 Group:          Applications/Internet
 License:        Kingstone Lisence
 URL:            http://www.chuangyuan.net
 Source0:        monitor-%{version}.tar.bz2
 
-BuildRequires:  libpcap-devel libstdc++-devel glibc-devel mysql-devel sqlite-devel
+BuildRequires:  libpcap-devel libglib2-devel glibc-devel mysql-devel
 
-Requires:       libpcap libstdc++ mysql-libs glibc sqlite
-Conflicts:		monitor-hotel
+Requires:       libpcap libstdc++ mysql-libs glibc sqlite libglib2
+Conflicts:		monitor-hotel monitor-cafe
 Vendor:			Kingstone Soft, Inc.  
 
 %description
@@ -22,22 +22,17 @@ Vendor:			Kingstone Soft, Inc.
 				It monitors the network and upload critical logs to the 
 				public security department. 
 
-%package cafe
+%package 
 Summary:        The cafe-version of monitor
 Group:          Applications/Internet
 BuildRoot:      %{_tmppath}/monitor-hotel-%{version}-%{release}-root-%(%{__id_u} -n)
 
-%description cafe
-				monitor is a product of Kingstone Software,Inc. 
-				It monitors the network and upload critical logs to the 
-				public security department. 
-				This package is for cafe use				
 
 %prep 
 %setup -q 
 %build 
 unset CFLAGS
-%configure --with-sqlite3
+%configure 
 make %{?_smp_mflags}
 
 %install
@@ -50,7 +45,6 @@ rm -rf $RPM_BUILD_ROOT
 %files cafe
 %defattr(-,root,root,-)
 /etc/init.d/monitord
-%{_prefix}/bin/runmonitor
 %{_prefix}/bin/monitor
 %{_prefix}/libexec/monitor/
 %{_docdir}/monitor/README

@@ -99,8 +99,7 @@ AC_CONFIG_FILES( [
 					src/Makefile
 					modules/Makefile
 					po/Makefile.in
-					monitor-hotel.spec
-					monitor-cafe.spec
+					monitor.spec
 		])
 
 AS_IF([test "$prefix" = "NONE"],[prefix="/usr/local"])

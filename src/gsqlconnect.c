@@ -43,6 +43,8 @@ G_DEFINE_TYPE(GSQLConnect,g_sql_connect,G_TYPE_OBJECT);
 
 gboolean g_sql_connect_check_config(GSQLConnect* obj)
 {
+	g_return_val_if_fail(IS_G_SQL_CONNECT(obj),FALSE);
+
 	GSQLConnectClass * klass = G_SQL_CONNECT_GET_CLASS(obj) ;
 
 	if(klass->check_config)
@@ -54,6 +56,8 @@ gboolean g_sql_connect_check_config(GSQLConnect* obj)
 
 gboolean g_sql_connect_real_connect(GSQLConnect* obj,GError ** err)
 {
+	g_return_val_if_fail(IS_G_SQL_CONNECT(obj),FALSE);
+
 	GSQLConnectClass * klass = G_SQL_CONNECT_GET_CLASS(obj) ;
 
 	if(klass->connect)
@@ -61,4 +65,26 @@ gboolean g_sql_connect_real_connect(GSQLConnect* obj,GError ** err)
 		return klass->connect(obj,err);
 	}
 	return FALSE;
+}
+
+gboolean g_sql_connect_run_query(GSQLConnect * obj,const gchar * sqlstatement,gsize size)
+{
+	g_return_val_if_fail(IS_G_SQL_CONNECT(obj),FALSE);
+
+	GSQLConnectClass * klass = G_SQL_CONNECT_GET_CLASS(obj) ;
+
+	if(klass->run_query)
+	{
+		return klass->run_query(obj,sqlstatement,size);
+	}
+	return FALSE;
+}
+
+GSQLResult* g_sql_connect_use_result(GSQLConnect * obj)
+{
+	g_return_val_if_fail(IS_G_SQL_CONNECT(obj),NULL);
+
+	GSQLResult	* ret = obj->lastresult;
+	obj->lastresult = NULL;
+	return ret;
 }
