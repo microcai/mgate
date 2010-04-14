@@ -66,7 +66,9 @@ static void g_sql_connect_mysql_class_init(GSQLConnectMysqlClass * klass)
 
 static void g_sql_connect_mysql_init(GSQLConnectMysql * obj)
 {
+	gboolean	bltrue=TRUE;
 	mysql_init(obj->mysql);
+	mysql_options(obj->mysql,MYSQL_OPT_RECONNECT,&bltrue);
 }
 
 
