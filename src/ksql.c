@@ -45,16 +45,17 @@ GAsyncQueue	*			asqueue;
 static gpointer ksql_thread(gpointer user_data)
 {
 	//	mysql_commit()
+	GError * err = NULL;
 	GSQLConnect * connector = (typeof(connector)) user_data;
 
-	if (g_sql_connect_real_connect(connector))
+	if (g_sql_connect_real_connect(connector,&err))
 	{
 		;
 	}
 	else
 	{
-		g_warning(_("unable to connect to database server"));
-
+		g_warning(_("unable to connect to database server : %s"),err->message);
+		g_error_free(err);
 	}
 
 	gchar * sql;

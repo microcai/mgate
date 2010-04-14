@@ -19,7 +19,7 @@ typedef struct _GSQLConnect{
 typedef struct _GSQLConnectClass{
 	GObjectClass parent_class;
 	gboolean	(*check_config)(GSQLConnect*);
-	gboolean	(*connect)(GSQLConnect*);
+	gboolean	(*connect)(GSQLConnect*,GError **);
 	gboolean	(*run_query)(GSQLConnect*,const char * sql_stmt,gsize len /* -1 for nul-terminated string*/);
 	GList*		(*get_resust)(GSQLConnect*,gpointer host,gpointer user,gpointer passwd);
 }GSQLConnectClass;
@@ -34,7 +34,7 @@ typedef struct _GSQLConnectClass{
 GType g_sql_connect_get_type() G_GNUC_CONST;
 
 gboolean g_sql_connect_check_config(GSQLConnect*);
-gboolean g_sql_connect_real_connect(GSQLConnect* obj);
+gboolean g_sql_connect_real_connect(GSQLConnect* obj,GError **);
 
 
 #endif /* GSQLCONNECT_H_ */

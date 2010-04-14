@@ -44,7 +44,7 @@ enum G_SQL_CONNECT_MYSQL_PROPERTY{
 	GSQL_CONNECT_MYSQL_DB
 };
 
-static gboolean g_sql_connect_mysql_real_connect(GSQLConnect * obj);
+gboolean g_sql_connect_mysql_real_connect(GSQLConnect * obj,GError ** err);
 static gboolean g_sql_connect_mysql_check_config(GSQLConnect * obj);
 static void g_sql_connect_mysql_register_property(GSQLConnectMysqlClass * klass);
 static void g_sql_connect_mysql_set_property(GObject *object,
@@ -72,7 +72,7 @@ static void g_sql_connect_mysql_init(GSQLConnectMysql * obj)
 
 G_DEFINE_TYPE(GSQLConnectMysql,g_sql_connect_mysql,G_TYPE_SQL_CONNNECT);
 
-gboolean g_sql_connect_mysql_real_connect(GSQLConnect * obj)
+gboolean g_sql_connect_mysql_real_connect(GSQLConnect * obj,GError ** err)
 {
 	g_assert(IS_G_SQL_CONNECT(obj));
 
@@ -83,8 +83,8 @@ gboolean g_sql_connect_mysql_real_connect(GSQLConnect * obj)
 
 	if(mysql_real_connect(mobj->mysql,host,user,passwd,db,0,NULL,0))
 		return TRUE;
+	g_set_error_literal(err,g_quark_from_static_string(GETTEXT_PACKAGE),mysql_errno(mobj->mysql),mysql_error(mobj->mysql));
 	return FALSE;
-//	mysql_real_connect(mobj->mysql,NULL,g_user,g_passwd,g_db,0,NULL,0);
 }
 
 #define INSTALL_PROPERTY_STRING(klass,id,name,defaultval,type) \
@@ -96,24 +96,26 @@ void g_sql_connect_mysql_register_property(GSQLConnectMysqlClass * klass)
 	GObjectClass* objclass =(GObjectClass*) klass ;
 	INSTALL_PROPERTY_STRING(objclass,GSQL_CONNECT_MYSQL_HOST,"host",NULL,G_PARAM_CONSTRUCT|G_PARAM_READWRITE);
 	INSTALL_PROPERTY_STRING(objclass,GSQL_CONNECT_MYSQL_USER,"user","root",G_PARAM_CONSTRUCT|G_PARAM_READWRITE);
-	INSTALL_PROPERTY_STRING(objclass,GSQL_CONNECT_MYSQL_PASSWD,"passwd","",G_PARAM_CONSTRUCT|G_PARAM_READWRITE);
+	INSTALL_PROPERTY_STRING(objclass,GSQL_CONNECT_MYSQL_PASSWD,"passwd",NULL,G_PARAM_CONSTRUCT|G_PARAM_READWRITE);
 	INSTALL_PROPERTY_STRING(objclass,GSQL_CONNECT_MYSQL_DB,"dbname","hotel",G_PARAM_CONSTRUCT|G_PARAM_READWRITE);
 
 }
 
-void g_sql_connect_mysql_set_property(GObject *object,guint property_id, const GValue *value, GParamSpec *pspec)
+void g_sql_connect_mysql_set_property(GObject *object, guint property_id,
+		const GValue *value, GParamSpec *pspec)
 {
-	GSQLConnectMysql * mobj = (GSQLConnectMysql*)object;
+	GSQLConnectMysql * mobj = (GSQLConnectMysql*) object;
 
 	g_return_if_fail(IS_G_SQL_CONNECT_MYSQL(mobj));
 
-	switch (property_id) {
-		case GSQL_CONNECT_MYSQL_HOST ... GSQL_CONNECT_MYSQL_DB:
+	switch (property_id)
+	{
+	case GSQL_CONNECT_MYSQL_HOST ... GSQL_CONNECT_MYSQL_DB:
 		g_free(mobj->porperty_string[property_id]);
 		mobj->porperty_string[property_id] = g_value_dup_string(value);
 		break;
-		default:
-			break;
+	default:
+		break;
 	}
 
 }
@@ -128,7 +130,7 @@ void g_sql_connect_mysql_get_property(GObject *object,
 	switch (property_id)
 	{
 	case GSQL_CONNECT_MYSQL_HOST ... GSQL_CONNECT_MYSQL_DB:
-		g_value_set_string(value, mobj->porperty_string[property_id]);
+		g_value_set_static_string(value, mobj->porperty_string[property_id]);
 		break;
 	default:
 		break;

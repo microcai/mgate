@@ -49,14 +49,16 @@ gboolean g_sql_connect_check_config(GSQLConnect* obj)
 	{
 		return klass->check_config(obj);
 	}
+	return FALSE;
 }
 
-gboolean g_sql_connect_real_connect(GSQLConnect* obj)
+gboolean g_sql_connect_real_connect(GSQLConnect* obj,GError ** err)
 {
 	GSQLConnectClass * klass = G_SQL_CONNECT_GET_CLASS(obj) ;
 
 	if(klass->connect)
 	{
-		return klass->connect(obj);
+		return klass->connect(obj,err);
 	}
+	return FALSE;
 }
