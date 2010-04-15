@@ -35,27 +35,21 @@
 #include "gsqlconnect.h"
 #include "gsqlconnect_mysql.h"
 
-static MYSQL	mysql[1];
-static const gchar *	user = "root";
-static const gchar * 	passwd = "";
-static const gchar * 	db = "hotel";
 GAsyncQueue	*			asqueue;
-
 
 static gpointer ksql_thread(gpointer user_data)
 {
+	g_sql_connect_thread_init();
 	//	mysql_commit()
 	GError * err = NULL;
 	GSQLConnect * connector = (typeof(connector)) user_data;
 
-	if (g_sql_connect_real_connect(connector,&err))
+	while(!g_sql_connect_real_connect(connector,&err))
 	{
-		;
-	}
-	else
-	{
-		g_warning(_("unable to connect to database server : %s"),err->message);
+		g_warning(_("unable to connect to database server (%d): %s"),err->code,err->message);
 		g_error_free(err);
+		err = NULL;
+		sleep(2);
 	}
 
 	gchar * sql;
@@ -65,13 +59,12 @@ static gpointer ksql_thread(gpointer user_data)
 	//	mysql_query(mysql,sql);
 		g_free(sql);
 	}
+	g_sql_connect_thread_end();
 	return NULL;
 }
 
 void	ksql_init()
 {
-	mysql_thread_init();
-	mysql_init(mysql);
 	g_assert(gkeyfile);
 
 	//make sure it present
@@ -118,6 +111,8 @@ void	ksql_init()
 
 	con = (GSQLConnect*)g_object_new(backend,NULL);
 
+	g_sql_connect_thread_init();
+
 	g_sql_connect_check_config(con);
 
 	g_thread_create(ksql_thread,con,0,0);
@@ -148,5 +143,5 @@ gboolean	ksql_connect_sql_assync()
 void ksql_create_db()
 {
 	for (int i = 0; i < (int) (sizeof(create_sql) / sizeof(char*)); ++i)
-		mysql_query(mysql, create_sql[i]);
+		;//mysql_query(mysql, create_sql[i]);
 }

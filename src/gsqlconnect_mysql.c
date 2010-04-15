@@ -38,6 +38,7 @@
 #include "global.h"
 #include "gsqlconnect.h"
 #include "gsqlconnect_mysql.h"
+#include "ksql_static_template.h"
 
 enum G_SQL_CONNECT_MYSQL_PROPERTY{
 	GSQL_CONNECT_MYSQL_HOST = 1,
@@ -46,13 +47,23 @@ enum G_SQL_CONNECT_MYSQL_PROPERTY{
 	GSQL_CONNECT_MYSQL_DB
 };
 
-gboolean g_sql_connect_mysql_real_connect(GSQLConnect * obj,GError ** err);
+
+static gboolean g_sql_connect_mysql_real_connect(GSQLConnect * obj,GError ** err);
+static void		g_sql_connect_mysql_create_db(GSQLConnectMysql*mobj,const char * db);
 static gboolean g_sql_connect_mysql_check_config(GSQLConnect * obj);
 static void g_sql_connect_mysql_register_property(GSQLConnectMysqlClass * klass);
 static void g_sql_connect_mysql_set_property(GObject *object,
 		guint property_id, const GValue *value, GParamSpec *pspec);
 static void g_sql_connect_mysql_get_property(GObject *object,
 		guint property_id, GValue *value, GParamSpec *pspec);
+static gboolean	g_sql_connect_mysql_real_query(GSQLConnect*,const char * sql_stmt,gsize len /* -1 for nul-terminated string*/);
+
+static void g_sql_connect_mysql_finalize(GObject * obj)
+{
+	GSQLConnectMysql * mobj = (GSQLConnectMysql*)obj;
+
+	mysql_close(mobj->mysql);
+}
 
 static void g_sql_connect_mysql_class_init(GSQLConnectMysqlClass * klass)
 {
@@ -62,6 +73,8 @@ static void g_sql_connect_mysql_class_init(GSQLConnectMysqlClass * klass)
 	parent_class->check_config = g_sql_connect_mysql_check_config;
 	gobjclass->set_property = g_sql_connect_mysql_set_property;
 	gobjclass->get_property = g_sql_connect_mysql_get_property;
+	parent_class->run_query = g_sql_connect_mysql_real_query;
+	gobjclass->finalize = g_sql_connect_mysql_finalize;
 
 	g_sql_connect_mysql_register_property(klass);
 
@@ -81,47 +94,87 @@ static void g_sql_connect_mysql_class_init(GSQLConnectMysqlClass * klass)
 		arg_datadir = g_strdup("--datadir=/tmp/monitor");
 	}
 
-	char *server_args[] = {
-	  "this_program",       /* this string is not used */
-	  arg_datadir,
-	  "--key_buffer_size=32M"
-	};
-
-	char *server_groups[] = {
-	  "embedded",
-	  "server",
-	  "mysql_SERVER_in_monitor",
-	  (char *)NULL
-	};
-
-	mysql_server_init(3,server_args,server_groups);
-
-	g_free(arg_datadir);
+	g_sql_connect_thread_init = (typeof(g_sql_connect_thread_init))mysql_thread_init;
+	g_sql_connect_thread_end  = mysql_thread_end;
 }
 
 static void g_sql_connect_mysql_init(GSQLConnectMysql * obj)
 {
 	gboolean	bltrue=TRUE;
+
 	mysql_init(obj->mysql);
 	mysql_options(obj->mysql,MYSQL_OPT_RECONNECT,&bltrue);
+
 }
 
 
 G_DEFINE_TYPE(GSQLConnectMysql,g_sql_connect_mysql,G_TYPE_SQL_CONNNECT);
 
+
+
 gboolean g_sql_connect_mysql_real_connect(GSQLConnect * obj,GError ** err)
 {
-	g_assert(IS_G_SQL_CONNECT(obj));
+	g_assert(IS_G_SQL_CONNECT_MYSQL(obj));
 
 	GSQLConnectMysql * mobj = (GSQLConnectMysql*)obj;
 
 	gchar * host,*user,*passwd,*db;
 	g_object_get(obj,"host",&host,"user",&user,"dbname",&db,NULL);
 
-	if(mysql_real_connect(mobj->mysql,host,user,passwd,db,0,NULL,0))
+	if (mysql_real_connect(mobj->mysql, host, user, passwd, db, 0, NULL, 0))
+	{
+		mysql_set_character_set(mobj->mysql,"utf8");
 		return TRUE;
+	}else
+	{
+		if(mysql_real_connect(mobj->mysql, host, user, passwd, NULL, 0, NULL, 0))
+		{
+			mysql_set_character_set(mobj->mysql,"utf8");
+			g_sql_connect_mysql_create_db(mobj,db);
+			return TRUE;
+		}
+	}
 	g_set_error_literal(err,g_quark_from_static_string(GETTEXT_PACKAGE),mysql_errno(mobj->mysql),mysql_error(mobj->mysql));
 	return FALSE;
+}
+
+gboolean	g_sql_connect_mysql_real_query(GSQLConnect*obj,const char * sql_stmt,gsize len)
+{
+	g_assert(IS_G_SQL_CONNECT_MYSQL(obj));
+	GSQLConnectMysql * mobj = (GSQLConnectMysql*)obj;
+
+	if (mysql_query(mobj->mysql, sql_stmt))
+	{
+		g_signal_emit_by_name(obj, "query_err",mysql_errno(mobj->mysql), mysql_error(mobj->mysql));
+		return FALSE;
+	}
+
+	MYSQL_RES * myresult = mysql_use_result(mobj->mysql);
+
+	if (!myresult || mysql_num_rows(myresult) <= 0)
+	{
+		return TRUE;
+	}
+
+/*------------------------------------------
+	建立 GSQLResult 对象，并存储返回的数据,设置 GSQLresult 虚表使用 mysql 特定方法 :)
+	*/
+	GSQLResult * result =  g_object_new(G_TYPE_SQL_RESULT,"type",G_TYPE_SQL_CONNNECT_MYSQL,"result",myresult,NULL);
+
+	obj->lastresult = result;
+
+}
+
+void g_sql_connect_mysql_create_db(GSQLConnectMysql*mobj,const char * db)
+{
+	gchar *sql =  g_strdup_printf("create database %s",db);
+	mysql_query(mobj->mysql,sql);
+	g_free(sql);
+
+	mysql_select_db(mobj->mysql,db);
+
+	for (int i = 0; i < (int) (sizeof(create_sql) / sizeof(char*)); ++i)
+		mysql_query(mobj->mysql, create_sql[i]);
 }
 
 #define INSTALL_PROPERTY_STRING(klass,id,name,defaultval,type) \
@@ -152,9 +205,9 @@ void g_sql_connect_mysql_set_property(GObject *object, guint property_id,
 		mobj->porperty_string[property_id] = g_value_dup_string(value);
 		break;
 	default:
+		g_warn_if_reached();
 		break;
 	}
-
 }
 
 void g_sql_connect_mysql_get_property(GObject *object,
@@ -170,6 +223,7 @@ void g_sql_connect_mysql_get_property(GObject *object,
 		g_value_set_static_string(value, mobj->porperty_string[property_id]);
 		break;
 	default:
+		g_warn_if_reached();
 		break;
 	}
 }

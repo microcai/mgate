@@ -11,8 +11,19 @@
 #include <glib.h>
 #include <glib-object.h>
 
+#ifndef GSQLConnect
+
+typedef struct _GSQLConnect GSQLConnect;
+
+#define GSQLConnect GSQLConnect
+
+#endif
+
 typedef struct _GSQLResult{
 	GObject	parent;
+	GType	connector_type;
+	GSQLConnect	*connector;
+	gpointer	 result;
 }GSQLResult;
 
 typedef struct _GSQLResultClass{
@@ -27,5 +38,11 @@ typedef struct _GSQLResultClass{
 #define G_SQL_RESULT_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), G_TYPE_SQL_RESULT, GSQLResultClass))
 
 
+GType	g_sql_result_get_type() G_GNUC_CONST;
+
+/* Don't free the returned results!*/
+GStrv	g_sql_result_next_row();
+
+void	g_sql_result_set_result_array(GSQLResult * , const gchar * first , gsize offset, ... );
 
 #endif /* GSQLRESULT_H_ */
