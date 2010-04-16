@@ -5,13 +5,6 @@
  *      Author: cai
  */
 
-/*
- * gsqlconnect.c
- *
- *  Created on: 2010-4-13
- *      Author: cai
- */
-
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -57,6 +50,9 @@ static void g_sql_connect_mysql_set_property(GObject *object,
 static void g_sql_connect_mysql_get_property(GObject *object,
 		guint property_id, GValue *value, GParamSpec *pspec);
 static gboolean	g_sql_connect_mysql_real_query(GSQLConnect*,const char * sql_stmt,gsize len /* -1 for nul-terminated string*/);
+
+static gboolean	g_sql_connect_mysql_get_row(GSQLResult * obj);
+
 
 static void g_sql_connect_mysql_finalize(GObject * obj)
 {
@@ -111,7 +107,6 @@ static void g_sql_connect_mysql_init(GSQLConnectMysql * obj)
 G_DEFINE_TYPE(GSQLConnectMysql,g_sql_connect_mysql,G_TYPE_SQL_CONNNECT);
 
 
-
 gboolean g_sql_connect_mysql_real_connect(GSQLConnect * obj,GError ** err)
 {
 	g_assert(IS_G_SQL_CONNECT_MYSQL(obj));
@@ -159,10 +154,26 @@ gboolean	g_sql_connect_mysql_real_query(GSQLConnect*obj,const char * sql_stmt,gs
 /*------------------------------------------
 	建立 GSQLResult 对象，并存储返回的数据,设置 GSQLresult 虚表使用 mysql 特定方法 :)
 	*/
-	GSQLResult * result =  g_object_new(G_TYPE_SQL_RESULT,"type",G_TYPE_SQL_CONNNECT_MYSQL,"result",myresult,NULL);
+	GSQLResult * result =  g_object_new(G_TYPE_SQL_RESULT,
+			"type",G_TYPE_SQL_CONNNECT_MYSQL,"result",myresult,
+			"fields",mysql_num_fields(myresult),NULL);
 
 	obj->lastresult = result;
 
+	result->currow = mysql_fetch_row(myresult);
+
+	result->nextrow = g_sql_connect_mysql_get_row;
+}
+
+gboolean	g_sql_connect_mysql_get_row(GSQLResult * obj)
+{
+	MYSQL_RES * myres = (MYSQL_RES*)obj->result;
+
+	GStrv row = mysql_fetch_row(myres);
+
+	obj->currow = row;
+
+	return (row!=NULL);
 }
 
 void g_sql_connect_mysql_create_db(GSQLConnectMysql*mobj,const char * db)

@@ -19,12 +19,19 @@ typedef struct _GSQLConnect GSQLConnect;
 
 #endif
 
-typedef struct _GSQLResult{
-	GObject	parent;
-	GType	connector_type;
-	GSQLConnect	*connector;
-	gpointer	 result;
-}GSQLResult;
+typedef struct _GSQLResult GSQLResult;
+
+struct _GSQLResult{
+	GObject parent;
+	GType connector_type;
+	GSQLConnect *connector;
+	gpointer result;
+	GPtrArray *colum;
+	GStrv	   currow;
+	gboolean (*nextrow)(GSQLResult *);
+	gboolean (*seekrow)(GSQLResult *,guint);
+
+};
 
 typedef struct _GSQLResultClass{
 	GObjectClass parent_class;
@@ -41,8 +48,12 @@ typedef struct _GSQLResultClass{
 GType	g_sql_result_get_type() G_GNUC_CONST;
 
 /* Don't free the returned results!*/
-GStrv	g_sql_result_next_row();
+GStrv	g_sql_result_get_row(GSQLResult * );
 
-void	g_sql_result_set_result_array(GSQLResult * , const gchar * first , gsize offset, ... );
+gboolean	g_sql_result_next_row(GSQLResult * );
+
+void	g_sql_result_set_result_array(GSQLResult * , ...  /* const gchar * first , ...*/ );
+const gchar* g_sql_result_colum_by_name(GSQLResult * obj,const gchar * columname);
+const gchar* g_sql_result_colum(GSQLResult * obj,const guint index);
 
 #endif /* GSQLRESULT_H_ */
