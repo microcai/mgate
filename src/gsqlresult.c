@@ -61,7 +61,7 @@ static void g_sql_result_class_init(GSQLResultClass * klass)
 
 	g_object_class_install_property(gobjclass,G_SQL_RESULT_PROPERTY_RESULT,g_param_spec_pointer("result","result","result",G_PARAM_CONSTRUCT_ONLY|G_PARAM_READABLE));
 	g_object_class_install_property(gobjclass,G_SQL_RESULT_PROPERTY_TYPE,g_param_spec_gtype("type","type","type",G_TYPE_SQL_CONNNECT,G_PARAM_CONSTRUCT_ONLY|G_PARAM_READABLE));
-	g_object_class_install_property(gobjclass,G_SQL_RESULT_PROPERTY_FIELDS,g_param_spec_int("type","type","type",0,99,0,G_PARAM_CONSTRUCT_ONLY|G_PARAM_READABLE));
+	g_object_class_install_property(gobjclass,G_SQL_RESULT_PROPERTY_FIELDS,g_param_spec_int("fields","fields","fields",0,99,0,G_PARAM_CONSTRUCT_ONLY|G_PARAM_READABLE));
 
 }
 
@@ -138,6 +138,8 @@ void g_sql_result_set_property(GObject *object, guint property_id,const GValue *
 	case G_SQL_RESULT_PROPERTY_RESULT:
 		mobj->result = g_value_get_pointer(value);
 		break;
+	case G_SQL_RESULT_PROPERTY_FIELDS:
+		mobj->fields = g_value_get_int(value);
 	default:
 		g_warn_if_reached();
 		break;
@@ -159,6 +161,9 @@ void g_sql_result_get_property(GObject *object, guint property_id,GValue *value,
 		break;
 	case G_SQL_RESULT_PROPERTY_RESULT:
 		g_value_set_pointer(value, mobj->result);
+		break;
+	case G_SQL_RESULT_PROPERTY_FIELDS:
+		g_value_set_int(value,mobj->fields);
 		break;
 	default:
 		g_warn_if_reached();

@@ -28,6 +28,7 @@ struct _GSQLResult{
 	gpointer result;
 	GPtrArray *colum;
 	GStrv	   currow;
+	gint	   fields;
 	gboolean (*nextrow)(GSQLResult *);
 	gboolean (*seekrow)(GSQLResult *,guint);
 
