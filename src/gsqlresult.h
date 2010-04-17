@@ -11,27 +11,19 @@
 #include <glib.h>
 #include <glib-object.h>
 
-#ifndef GSQLConnect
-
-typedef struct _GSQLConnect GSQLConnect;
-
-#define GSQLConnect GSQLConnect
-
-#endif
-
 typedef struct _GSQLResult GSQLResult;
+
 
 struct _GSQLResult{
 	GObject parent;
 	GType connector_type;
-	GSQLConnect *connector;
+	GObject *connector;
 	gpointer result;
 	GPtrArray *colum;
 	GStrv	   currow;
 	gint	   fields;
 	gboolean (*nextrow)(GSQLResult *);
 	gboolean (*seekrow)(GSQLResult *,guint);
-
 };
 
 typedef struct _GSQLResultClass{

@@ -12,18 +12,10 @@
 #include <glib-object.h>
 #include "gsqlresult.h"
 
-#ifndef GSQLConnect
-
-typedef struct _GSQLConnect GSQLConnect;
-
-#define GSQLConnect GSQLConnect
-#endif
-
-
-struct _GSQLConnect{
+typedef struct _GSQLConnect{
 	GObject		parent;
-	GSQLResult *lastresult;
-};
+	GObject *lastresult;
+}GSQLConnect;
 
 typedef struct _GSQLConnectClass{
 	GObjectClass parent_class;

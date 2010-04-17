@@ -44,7 +44,6 @@ static void g_sql_result_dispose(GObject * obj)
 
 }
 
-
 static void g_sql_result_finalize(GObject * gobj)
 {
 	GSQLResult * obj = (GSQLResult*)gobj;

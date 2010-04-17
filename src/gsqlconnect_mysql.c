@@ -158,7 +158,7 @@ gboolean	g_sql_connect_mysql_real_query(GSQLConnect*obj,const char * sql_stmt,gs
 			"type",G_TYPE_SQL_CONNNECT_MYSQL,"result",myresult,
 			"fields",mysql_num_fields(myresult),NULL);
 
-	obj->lastresult = result;
+	obj->lastresult = (GObject*)result;
 
 	result->currow = mysql_fetch_row(myresult);
 

@@ -106,13 +106,16 @@ gboolean g_sql_connect_run_query(GSQLConnect * obj,const gchar * sqlstatement,gs
 GSQLResult* g_sql_connect_use_result(GSQLConnect * obj)
 {
 	g_return_val_if_fail(IS_G_SQL_CONNECT(obj),NULL);
-	return obj->lastresult;
+	return G_SQL_RESULT(obj->lastresult);
 }
 
 void g_sql_connect_result_weak_notify(gpointer data,GObject *where_the_object_was)
 {
-	GSQLConnect * sql_connect = (GSQLConnect*)data;
-	sql_connect->lastresult = NULL;
+	GSQLConnect * sql_connect = (GSQLConnect*) data;
+	if (sql_connect->lastresult == where_the_object_was)
+	{
+		sql_connect->lastresult = NULL;
+	}
 }
 
 
