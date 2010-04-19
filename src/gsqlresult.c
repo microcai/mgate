@@ -10,17 +10,6 @@
 #include <config.h>
 #endif
 #include <stdarg.h>
-#include <sys/syslog.h>
-#include <sys/socket.h>
-#include <net/ethernet.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
-#include <pcap.h>
-#include <stdio.h>
-#include <string.h>
-#include <pthread.h>
-#include <pcap/pcap.h>
-#include <syslog.h>
 #include <string.h>
 #include <glib.h>
 #include <glib-object.h>
@@ -57,10 +46,23 @@ static void g_sql_result_finalize(GObject * gobj)
 		klass->finalize(gobj);
 }
 
+static void g_sql_result_dispose(GObject * gobj)
+{
+	GSQLResult * obj = (GSQLResult*)gobj;
+	GObjectClass* klass = G_OBJECT_CLASS(g_sql_result_parent_class);
+
+	g_signal_emit_by_name(gobj,"destory");
+
+	if(klass->dispose)
+		klass->dispose(gobj);
+}
+
+
 void g_sql_result_class_init(GSQLResultClass * klass)
 {
 	GObjectClass	* gobjclass = G_OBJECT_CLASS(klass);
 	gobjclass->finalize = g_sql_result_finalize;
+	gobjclass->dispose = g_sql_result_dispose;
 	gobjclass->set_property = g_sql_result_set_property;
 	gobjclass->get_property = g_sql_result_get_property;
 
