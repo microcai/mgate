@@ -14,7 +14,10 @@ G_BEGIN_DECLS
 
 guint64	mac2uint64( guchar mac[6]);
 
-
+int gbk_utf8(char *outbuf, size_t outlen, const char *inbuf, size_t inlen);
+int utf8_gbk(char *outbuf, size_t outlen, const char *inbuf, size_t inlen);
+double GetDBTime_str(char *pTime);
+double GetDBTime_tm(struct tm * ptm);
 
 G_END_DECLS
 

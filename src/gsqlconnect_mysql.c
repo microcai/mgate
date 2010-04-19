@@ -135,6 +135,9 @@ gboolean g_sql_connect_mysql_real_connect(GSQLConnect * obj,GError ** err)
 
 gboolean	g_sql_connect_mysql_real_query(GSQLConnect*obj,const char * sql_stmt,gsize len)
 {
+	MYSQL_FIELD * fields ;
+	MYSQL_RES * myresult ;
+
 	g_assert(IS_G_SQL_CONNECT_MYSQL(obj));
 	GSQLConnectMysql * mobj = (GSQLConnectMysql*)obj;
 
@@ -144,7 +147,7 @@ gboolean	g_sql_connect_mysql_real_query(GSQLConnect*obj,const char * sql_stmt,gs
 		return FALSE;
 	}
 
-	MYSQL_RES * myresult = mysql_use_result(mobj->mysql);
+	myresult = mysql_store_result(mobj->mysql);
 
 	if (!myresult || mysql_num_rows(myresult) <= 0)
 	{
@@ -163,11 +166,29 @@ gboolean	g_sql_connect_mysql_real_query(GSQLConnect*obj,const char * sql_stmt,gs
 	result->currow = mysql_fetch_row(myresult);
 
 	result->nextrow = g_sql_connect_mysql_get_row;
+
+	while (fields = mysql_fetch_fields(myresult))
+	{
+		g_sql_result_append_result_array(result,fields->name);
+	}
 }
 
 gboolean	g_sql_connect_mysql_get_row(GSQLResult * obj)
 {
 	MYSQL_RES * myres = (MYSQL_RES*)obj->result;
+
+	GStrv row = mysql_fetch_row(myres);
+
+	obj->currow = row;
+
+	return (row!=NULL);
+}
+
+gboolean	g_sql_connect_mysql_seek_row(GSQLResult * obj,guint offset)
+{
+	MYSQL_RES * myres = (MYSQL_RES*)obj->result;
+
+	mysql_data_seek(myres,offset);
 
 	GStrv row = mysql_fetch_row(myres);
 

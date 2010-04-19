@@ -11,11 +11,8 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <glib.h>
-#include "libmicrocai-macros.h"
 #include "libmicrocai-types.h"
 #include "functions.h"
 #include "ksql.h"
-
-extern GKeyFile *  gkeyfile;
 
 #endif

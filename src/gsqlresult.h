@@ -44,8 +44,8 @@ GType	g_sql_result_get_type() G_GNUC_CONST;
 GStrv	g_sql_result_get_row(GSQLResult * );
 
 gboolean	g_sql_result_next_row(GSQLResult * );
-
 void	g_sql_result_set_result_array(GSQLResult * , ...  /* const gchar * first , ...*/ );
+void	g_sql_result_append_result_array(GSQLResult * obj, const char * field);
 const gchar* g_sql_result_colum_by_name(GSQLResult * obj,const gchar * columname);
 const gchar* g_sql_result_colum(GSQLResult * obj,const guint index);
 
