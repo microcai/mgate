@@ -122,13 +122,7 @@ int main(int argc, char*argv[], char*env[])
 		run_daemon = daemon(FALSE,FALSE);
 
 	//连接到 mysql
-	ksql_init();
-
-	if(createdb)
-	{
-		ksql_connect_sql();
-		ksql_create_db();
-	}
+	ksql_init(createdb);
 
 	//初始化人员管理
 	clientmgr_init();

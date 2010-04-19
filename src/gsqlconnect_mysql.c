@@ -27,27 +27,23 @@ enum G_SQL_CONNECT_MYSQL_PROPERTY{
 	GSQL_CONNECT_MYSQL_DB
 };
 
+static void g_sql_connect_mysql_class_init(GSQLConnectMysqlClass * klass);
+static void g_sql_connect_mysql_init(GSQLConnectMysql * obj);
+static void g_sql_connect_mysql_finalize(GObject * obj);
+static void g_sql_connect_mysql_set_property(GObject *object,guint property_id, const GValue *value, GParamSpec *pspec);
+static void g_sql_connect_mysql_get_property(GObject *object,guint property_id, GValue *value, GParamSpec *pspec);
 
 static gboolean g_sql_connect_mysql_real_connect(GSQLConnect * obj,GError ** err);
 static void		g_sql_connect_mysql_create_db(GSQLConnectMysql*mobj,const char * db);
 static gboolean g_sql_connect_mysql_check_config(GSQLConnect * obj);
 static void g_sql_connect_mysql_register_property(GSQLConnectMysqlClass * klass);
-static void g_sql_connect_mysql_set_property(GObject *object,
-		guint property_id, const GValue *value, GParamSpec *pspec);
-static void g_sql_connect_mysql_get_property(GObject *object,
-		guint property_id, GValue *value, GParamSpec *pspec);
 static gboolean	g_sql_connect_mysql_real_query(GSQLConnect*,const char * sql_stmt,gsize len /* -1 for nul-terminated string*/);
 static gboolean	g_sql_connect_mysql_get_row(GSQLResult * obj);
 static void g_sql_connect_mysql_free_result(GSQLResult * );
 
-static void g_sql_connect_mysql_finalize(GObject * obj)
-{
-	GSQLConnectMysql * mobj = (GSQLConnectMysql*)obj;
+G_DEFINE_TYPE(GSQLConnectMysql,g_sql_connect_mysql,G_TYPE_SQL_CONNNECT);
 
-	mysql_close(mobj->mysql);
-}
-
-static void g_sql_connect_mysql_class_init(GSQLConnectMysqlClass * klass)
+void g_sql_connect_mysql_class_init(GSQLConnectMysqlClass * klass)
 {
 	GObjectClass	* gobjclass = G_OBJECT_CLASS(klass);
 	GSQLConnectClass * parent_class = (GSQLConnectClass*)klass;
@@ -64,7 +60,7 @@ static void g_sql_connect_mysql_class_init(GSQLConnectMysqlClass * klass)
 	g_sql_connect_thread_end  = mysql_thread_end;
 }
 
-static void g_sql_connect_mysql_init(GSQLConnectMysql * obj)
+void g_sql_connect_mysql_init(GSQLConnectMysql * obj)
 {
 	gboolean	bltrue=TRUE;
 
@@ -73,8 +69,12 @@ static void g_sql_connect_mysql_init(GSQLConnectMysql * obj)
 
 }
 
+void g_sql_connect_mysql_finalize(GObject * obj)
+{
+	GSQLConnectMysql * mobj = (GSQLConnectMysql*)obj;
 
-G_DEFINE_TYPE(GSQLConnectMysql,g_sql_connect_mysql,G_TYPE_SQL_CONNNECT);
+	mysql_close(mobj->mysql);
+}
 
 
 gboolean g_sql_connect_mysql_real_connect(GSQLConnect * obj,GError ** err)

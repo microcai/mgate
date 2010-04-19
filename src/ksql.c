@@ -39,7 +39,7 @@ GAsyncQueue	*			asqueue;
 
 static gpointer ksql_thread(gpointer user_data)
 {
-	g_sql_connect_thread_init();
+//	g_sql_connect_thread_init();
 	//	mysql_commit()
 	GError * err = NULL;
 	GSQLConnect * connector = (typeof(connector)) user_data;
@@ -71,7 +71,7 @@ static gpointer ksql_thread(gpointer user_data)
 	return NULL;
 }
 
-void	ksql_init()
+void	ksql_init(gboolean createdb)
 {
 	g_assert(gkeyfile);
 
@@ -88,7 +88,6 @@ void	ksql_init()
 		{
 			g_free(bk);
 			backend = G_TYPE_SQL_CONNNECT_MYSQL;
-			 ;
 		}
 		else
 #endif
@@ -119,37 +118,18 @@ void	ksql_init()
 
 	con = (GSQLConnect*)g_object_new(backend,NULL);
 
-	g_sql_connect_thread_init();
-
 	g_sql_connect_check_config(con);
 
-	g_thread_create(ksql_thread,con,0,0);
-}
+	if(createdb)
+	{
+		GError * err = NULL;
 
-//打开并连接到数据库, sqlite or mysql?
-gboolean	ksql_connect_sql()
-{
-
-
-
-	//mysql_real_connect(&mysql,NULL,);
-
-}
-
-gboolean	ksql_connect_sql_assync()
-{
-	g_assert(gkeyfile);
-
-//	mysql_real_connect(&mysql,)
-
-
-	//mysql_real_connect(&mysql,NULL,);
-
-}
-
-
-void ksql_create_db()
-{
-	for (int i = 0; i < (int) (sizeof(create_sql) / sizeof(char*)); ++i)
-		;//mysql_query(mysql, create_sql[i]);
+		if(!g_sql_connect_real_connect(con,&err))
+		{
+			g_error(_("unable to connect to database server (%d): %s"),err->code,err->message);
+		}
+	}else
+	{
+		g_thread_create(ksql_thread,con,0,0);
+	}
 }
