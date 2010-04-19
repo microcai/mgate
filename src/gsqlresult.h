@@ -24,6 +24,7 @@ struct _GSQLResult{
 	gint	   fields;
 	gboolean (*nextrow)(GSQLResult *);
 	gboolean (*seekrow)(GSQLResult *,guint);
+	void	 (*freerows)(GSQLResult*);
 };
 
 typedef struct _GSQLResultClass{
@@ -31,7 +32,7 @@ typedef struct _GSQLResultClass{
 }GSQLResultClass;
 
 #define G_TYPE_SQL_RESULT	g_sql_result_get_type()
-#define G_SQL_RESULT(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), G_TYPE_SQL_CONNNECT, GSQLResult))
+#define G_SQL_RESULT(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), G_TYPE_SQL_RESULT, GSQLResult))
 #define G_SQL_RESULT_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), G_TYPE_SQL_RESULT, GSQLResultClass))
 #define IS_G_SQL_RESULT(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), G_TYPE_SQL_RESULT))
 #define IS_G_SQL_RESULT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), G_TYPE_SQL_RESULT))

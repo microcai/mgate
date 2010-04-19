@@ -52,6 +52,14 @@ static gpointer ksql_thread(gpointer user_data)
 		sleep(2);
 	}
 
+	g_sql_connect_run_query(connector,"select * from users",0);
+
+	GSQLResult * res = 	g_sql_connect_use_result(connector);
+
+	g_debug( "id = %s" , g_sql_result_colum_by_name(res,"id"));
+
+	g_object_unref(res);
+
 	gchar * sql;
 	for (;;)
 	{

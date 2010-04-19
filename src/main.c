@@ -70,9 +70,9 @@ int main(int argc, char*argv[], char*env[])
 #endif
 
 	g_thread_init(NULL);
+	g_type_init();
 	g_set_prgname(PACKAGE_NAME);
 	g_set_application_name(_("monitor - A monitor tool"));
-	g_type_init();
 
 	GOptionEntry args[] =
 	{

@@ -38,40 +38,44 @@ enum{
 
 void g_sql_result_set_property(GObject *object, guint property_id,const GValue *value, GParamSpec *pspec);
 void g_sql_result_get_property(GObject *object, guint property_id,GValue *value, GParamSpec *pspec);
+static void g_sql_result_class_init(GSQLResultClass * klass);
+static void g_sql_result_init(GSQLResult * obj);
 
-static void g_sql_result_dispose(GObject * obj)
-{
 
-}
+G_DEFINE_TYPE(GSQLResult,g_sql_result,G_TYPE_OBJECT);
 
 static void g_sql_result_finalize(GObject * gobj)
 {
 	GSQLResult * obj = (GSQLResult*)gobj;
+	GObjectClass* klass = G_OBJECT_CLASS(g_sql_result_parent_class);
+
 	g_ptr_array_free(obj->colum,TRUE);
+
+	obj->freerows(obj);
+	g_signal_emit_by_name(gobj,"destory");
+	if(klass->finalize)
+		klass->finalize(gobj);
 }
 
-static void g_sql_result_class_init(GSQLResultClass * klass)
+void g_sql_result_class_init(GSQLResultClass * klass)
 {
 	GObjectClass	* gobjclass = G_OBJECT_CLASS(klass);
 	gobjclass->finalize = g_sql_result_finalize;
-	gobjclass->dispose = g_sql_result_dispose;
 	gobjclass->set_property = g_sql_result_set_property;
 	gobjclass->get_property = g_sql_result_get_property;
 
-	g_signal_new("destory",G_OBJECT_CLASS_TYPE(klass),G_SIGNAL_RUN_CLEANUP,0,0,0,g_cclosure_marshal_VOID__INT,G_TYPE_NONE,0);
+	g_signal_new("destory",G_OBJECT_CLASS_TYPE(klass),G_SIGNAL_RUN_LAST,0,0,0,g_cclosure_marshal_VOID__VOID,G_TYPE_NONE,0);
 
-	g_object_class_install_property(gobjclass,G_SQL_RESULT_PROPERTY_RESULT,g_param_spec_pointer("result","result","result",G_PARAM_CONSTRUCT_ONLY|G_PARAM_READABLE));
-	g_object_class_install_property(gobjclass,G_SQL_RESULT_PROPERTY_TYPE,g_param_spec_gtype("type","type","type",G_TYPE_SQL_CONNNECT,G_PARAM_CONSTRUCT_ONLY|G_PARAM_READABLE));
-	g_object_class_install_property(gobjclass,G_SQL_RESULT_PROPERTY_FIELDS,g_param_spec_int("fields","fields","fields",0,99,0,G_PARAM_CONSTRUCT_ONLY|G_PARAM_READABLE));
+	g_object_class_install_property(gobjclass,G_SQL_RESULT_PROPERTY_RESULT,g_param_spec_pointer("result","result","result",G_PARAM_CONSTRUCT_ONLY|G_PARAM_READWRITE));
+	g_object_class_install_property(gobjclass,G_SQL_RESULT_PROPERTY_TYPE,g_param_spec_gtype("type","type","type",G_TYPE_SQL_CONNNECT,G_PARAM_CONSTRUCT_ONLY|G_PARAM_READWRITE));
+	g_object_class_install_property(gobjclass,G_SQL_RESULT_PROPERTY_FIELDS,g_param_spec_int("fields","fields","fields",0,99,0,G_PARAM_CONSTRUCT_ONLY|G_PARAM_READWRITE));
 
 }
 
-static void g_sql_result_init(GSQLResult * obj)
+void g_sql_result_init(GSQLResult * obj)
 {
 	obj->colum = g_ptr_array_new_with_free_func(g_free);
 }
-
-G_DEFINE_TYPE(GSQLResult,g_sql_result,G_TYPE_SQL_RESULT);
 
 void	g_sql_result_set_result_array(GSQLResult * obj, ...)
 {
@@ -147,6 +151,7 @@ void g_sql_result_set_property(GObject *object, guint property_id,const GValue *
 		break;
 	case G_SQL_RESULT_PROPERTY_FIELDS:
 		mobj->fields = g_value_get_int(value);
+		break;
 	default:
 		g_warn_if_reached();
 		break;

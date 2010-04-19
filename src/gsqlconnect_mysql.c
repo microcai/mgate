@@ -50,9 +50,8 @@ static void g_sql_connect_mysql_set_property(GObject *object,
 static void g_sql_connect_mysql_get_property(GObject *object,
 		guint property_id, GValue *value, GParamSpec *pspec);
 static gboolean	g_sql_connect_mysql_real_query(GSQLConnect*,const char * sql_stmt,gsize len /* -1 for nul-terminated string*/);
-
 static gboolean	g_sql_connect_mysql_get_row(GSQLResult * obj);
-
+static void g_sql_connect_mysql_free_result(GSQLResult * );
 
 static void g_sql_connect_mysql_finalize(GObject * obj)
 {
@@ -73,22 +72,6 @@ static void g_sql_connect_mysql_class_init(GSQLConnectMysqlClass * klass)
 	gobjclass->finalize = g_sql_connect_mysql_finalize;
 
 	g_sql_connect_mysql_register_property(klass);
-
-	gchar * arg_datadir = NULL ;
-
-	gchar * datadir = g_key_file_get_string(gkeyfile,"mysql","datadir",NULL);
-
-	if(datadir)
-	{
-		arg_datadir = g_strdup_printf("--datadir=\"%s\"", g_strchomp(g_strchug(datadir)));
-		g_mkdir_with_parents(g_strchomp(g_strchug(datadir)),755);
-		g_free(datadir);
-	}
-	else
-	{
-		g_mkdir_with_parents("/tmp/monitor",S_IRWXU|S_IRWXG|S_IRWXO);
-		arg_datadir = g_strdup("--datadir=/tmp/monitor");
-	}
 
 	g_sql_connect_thread_init = (typeof(g_sql_connect_thread_init))mysql_thread_init;
 	g_sql_connect_thread_end  = mysql_thread_end;
@@ -114,7 +97,7 @@ gboolean g_sql_connect_mysql_real_connect(GSQLConnect * obj,GError ** err)
 	GSQLConnectMysql * mobj = (GSQLConnectMysql*)obj;
 
 	gchar * host,*user,*passwd,*db;
-	g_object_get(obj,"host",&host,"user",&user,"dbname",&db,NULL);
+	g_object_get(obj,"host",&host,"user",&user,"passwd",&passwd,"dbname",&db,NULL);
 
 	if (mysql_real_connect(mobj->mysql, host, user, passwd, db, 0, NULL, 0))
 	{
@@ -167,10 +150,14 @@ gboolean	g_sql_connect_mysql_real_query(GSQLConnect*obj,const char * sql_stmt,gs
 
 	result->nextrow = g_sql_connect_mysql_get_row;
 
-	while (fields = mysql_fetch_fields(myresult))
+	while (fields = mysql_fetch_field(myresult))
 	{
 		g_sql_result_append_result_array(result,fields->name);
 	}
+
+	result->freerows = g_sql_connect_mysql_free_result ;
+
+	return TRUE;
 }
 
 gboolean	g_sql_connect_mysql_get_row(GSQLResult * obj)
@@ -197,6 +184,12 @@ gboolean	g_sql_connect_mysql_seek_row(GSQLResult * obj,guint offset)
 	return (row!=NULL);
 }
 
+void g_sql_connect_mysql_free_result(GSQLResult * obj)
+{
+	mysql_free_result((MYSQL_RES*)(obj->result));
+}
+
+
 void g_sql_connect_mysql_create_db(GSQLConnectMysql*mobj,const char * db)
 {
 	gchar *sql =  g_strdup_printf("create database %s",db);
@@ -220,7 +213,6 @@ void g_sql_connect_mysql_register_property(GSQLConnectMysqlClass * klass)
 	INSTALL_PROPERTY_STRING(objclass,GSQL_CONNECT_MYSQL_USER,"user","root",G_PARAM_CONSTRUCT|G_PARAM_READWRITE);
 	INSTALL_PROPERTY_STRING(objclass,GSQL_CONNECT_MYSQL_PASSWD,"passwd",NULL,G_PARAM_CONSTRUCT|G_PARAM_READWRITE);
 	INSTALL_PROPERTY_STRING(objclass,GSQL_CONNECT_MYSQL_DB,"dbname","hotel",G_PARAM_CONSTRUCT|G_PARAM_READWRITE);
-
 }
 
 void g_sql_connect_mysql_set_property(GObject *object, guint property_id,
@@ -262,7 +254,7 @@ void g_sql_connect_mysql_get_property(GObject *object,
 
 gboolean g_sql_connect_mysql_check_config(GSQLConnect * obj)
 {
-	g_assert(IS_G_SQL_CONNECT(obj));
+	g_assert(IS_G_SQL_CONNECT_MYSQL(obj));
 
 	gchar * g_db = g_key_file_get_string(gkeyfile,"mysql","db",NULL);
 	gchar * g_user = g_key_file_get_string(gkeyfile,"mysql","user",NULL);
