@@ -82,6 +82,7 @@ int start_server()
 
 	soup_server_add_handler(server,"/",SoupServer_path_root,NULL,NULL);
 	soup_server_add_handler(server,"/index.html",SoupServer_path_index,NULL,NULL);
+	soup_server_add_handler(server,"/index.htm",SoupServer_path_index,NULL,NULL);
 
 	soup_server_run_async(server);
 
