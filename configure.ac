@@ -50,9 +50,11 @@ AC_TYPE_UINT16_T
 AC_TYPE_UINT32_T
 
 # Checks for library functions.
-
+PKG_CHECK_MODULES(LIBSOUP, [libsoup-2.4 >= 2.26])
 PKG_CHECK_MODULES(GLIB2, [glib-2.0 >= 2.18 gthread-2.0 gobject-2.0 gmodule-2.0 gio-2.0 ])
+PKG_CHECK_MODULES(NEED_ALL, [libsoup-2.4 >= 2.26 glib-2.0 >= 2.18 gthread-2.0 gobject-2.0 gmodule-2.0 gio-2.0 ])
 AC_CHECK_LIB([pthread], [main])
+AC_CHECK_LIB([pcap], [main],[],[AC_MSG_ERROR(need libpcap)])
 AC_CHECK_LIB([pcap], [main],[AC_CHECK_HEADER(pcap.h)],[AC_MSG_ERROR(need libpcap)])
 
 AS_IF( [ test "x$enable_hotel" != xno ],[AC_CHECK_LIB([net], [main],[ AC_CHECK_HEADER( libnet.h) ],[AC_MSG_ERROR(need libnet)])])

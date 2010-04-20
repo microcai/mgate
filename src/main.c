@@ -42,6 +42,7 @@
 #include "module.h"
 #include "kpolice.h"
 #include "ksql.h"
+#include "http_server.h"
 
 static void on_term(int p )
 {
@@ -120,6 +121,9 @@ int main(int argc, char*argv[], char*env[])
 
 	if(run_daemon)
 		run_daemon = daemon(FALSE,FALSE);
+
+	//启用内建的 http server
+	start_server();
 
 	//连接到 mysql
 	ksql_init(createdb);

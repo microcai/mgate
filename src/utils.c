@@ -20,7 +20,8 @@
 
 guint64	mac2uint64( guchar mac[6])
 {
-
+	return (guint64)mac[0] + ((guint64)mac[1]<<8) + ((guint64)mac[2] <<16) +
+			((guint64)mac[3]<<24) + ((guint64)mac[4]<<32) + ((guint64)mac[5] << 40);
 }
 
 

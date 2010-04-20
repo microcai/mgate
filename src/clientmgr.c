@@ -41,11 +41,15 @@ enum{
 static void client_set_property(GObject *object, guint property_id,const GValue *value, GParamSpec *pspec);
 static void client_get_property(GObject *object, guint property_id,GValue *value, GParamSpec *pspec);
 
+static void client_init(Client * obj);
+static void client_finalize(GObject * obj);
+
 static void client_class_init(ClientClass * klass)
 {
 	GObjectClass * gobjclass = G_OBJECT_CLASS(klass);
 	gobjclass->set_property = client_set_property;
 	gobjclass->get_property = client_get_property;
+	gobjclass->finalize = client_finalize;
 
 	g_object_class_install_property(gobjclass,CLIENT_NAME,
 			g_param_spec_string("name","name","name","",G_PARAM_CONSTRUCT_ONLY|G_PARAM_READABLE));
@@ -57,10 +61,20 @@ static void client_class_init(ClientClass * klass)
 			g_param_spec_boolean("enable","enable","enable",TRUE,G_PARAM_CONSTRUCT|G_PARAM_READWRITE));
 }
 
-static void client_init(Client * obj)
+G_DEFINE_TYPE(Client,client,G_TYPE_OBJECT);
+
+void client_init(Client * obj)
 {
 	obj->name = g_string_new("");
 	obj->id = g_string_new("");
+}
+
+void client_finalize(GObject * gobj)
+{
+	Client * obj = (typeof(obj))gobj;
+	g_string_free(obj->id,TRUE);
+	g_string_free(obj->name,TRUE);
+	G_OBJECT_CLASS(client_parent_class)->finalize(gobj);
 }
 
 static void client_set_property(GObject *object, guint property_id,const GValue *value, GParamSpec *pspec)
@@ -83,6 +97,7 @@ static void client_set_property(GObject *object, guint property_id,const GValue 
 		obj->enable = g_value_get_boolean(value);
 		break;
 	default:
+		g_warn_if_reached();
 		break;
 	}
 
@@ -106,6 +121,7 @@ static void client_get_property(GObject *object, guint property_id,GValue *value
 		g_value_set_boolean(value,obj->enable);
 		break;
 	default:
+		g_warn_if_reached();
 		break;
 	}
 }
@@ -115,23 +131,16 @@ Client * client_new(const gchar * name, const gchar * id)
 	return g_object_new(G_TYPE_CLIENT,"name",name,"id",id,NULL);
 }
 
-G_DEFINE_TYPE(Client,client,G_TYPE_OBJECT);
-
 static GTree	* client_tree;
 static gboolean g_tree_compare_func(gconstpointer a , gconstpointer b , gpointer user_data)
 {
-	return mac2uint64((guchar*)a) - mac2uint64((guchar*)b);
+	return mac2uint64((guchar*)b) - mac2uint64((guchar*)a);
 }
 
 void clientmgr_init()
 {
 	g_type_init();
 	client_tree = g_tree_new_full(g_tree_compare_func,0,g_free,g_object_unref);
-}
-
-Client * clientmgr_get_client_by_mac(const guchar * mac)
-{
-	return (Client*)g_tree_lookup(client_tree,mac);
 }
 
 static gboolean g_tree_travel_findval_func(gpointer key,gpointer val, gpointer user_data)
@@ -158,7 +167,13 @@ Client * clientmgr_get_client_by_ip(in_addr_t ip)
 	return ret;
 }
 
+Client * clientmgr_get_client_by_mac(const guchar * mac)
+{
+	return (Client*)g_tree_lookup(client_tree,mac);
+}
+
 void clientmgr_insert_client_by_mac(guchar * mac,Client * client)
 {
-	g_tree_insert(client_tree,mac,client);
+	guchar * mac_ = g_strdup(mac);
+	g_tree_insert(client_tree,mac_,client);
 }

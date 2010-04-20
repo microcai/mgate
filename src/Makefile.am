@@ -1,8 +1,8 @@
 AUTOMAKE_OPTIONS = foreign
 
-AM_CPPFLAGS = @GLIB2_CFLAGS@ @MYSQL_CFLAGS@
+AM_CPPFLAGS = @NEED_ALL_CFLAGS@ @MYSQL_CFLAGS@
 
-LIBS = @MYSQL_LIBS@ @GLIB2_LIBS@ -lpcap -ldl
+LIBS += @NEED_ALL_LIBS@ @MYSQL_LIBS@ 
 
 sbindir=/etc/init.d/
 
@@ -26,6 +26,7 @@ monitor_SOURCES += gsqlconnect.c  gsqlconnect.h
 monitor_SOURCES += gsqlresult.c gsqlresult.h
 
 monitor_SOURCES += ksql.h ksql.c
+monitor_SOURCES += http_server.c
 
 		 
 if WITH_MYSQL

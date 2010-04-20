@@ -30,7 +30,6 @@
 
 #include "i18n.h"
 #include "global.h"
-#include "ksql_static_template.h"
 #include "ksql.h"
 #include "gsqlconnect.h"
 #include "gsqlconnect_mysql.h"
@@ -107,7 +106,7 @@ void	ksql_init(gboolean createdb)
 		g_message(_("[database]:[backend] not set or invalid, default to mysql"));
 		backend = G_TYPE_SQL_CONNNECT_MYSQL;
 #else
-		g_message(_("[database]:[backend] not set or invalid, default to sqite"));
+		g_message(_("[database]:[backend] not set or invalid, default to sqlite"));
 		backend = "GSQLConnectSqlite";
 #endif
 	}
