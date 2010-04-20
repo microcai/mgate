@@ -14,6 +14,7 @@ AC_ARG_ENABLE(debug,
               )
 # Checks for programs.
 AC_PROG_CC_C99
+AC_GNU_SOURCE
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([-Wall -Werror])
 

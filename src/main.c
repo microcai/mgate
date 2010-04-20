@@ -27,14 +27,12 @@
 #include <string.h>
 
 #include <unistd.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h>
-#include <sys/fcntl.h>
 #include <sys/signal.h>
-#include <sys/syslog.h>
 #include <pcap.h>
 #include <errno.h>
 #include <glib.h>
+#include <fcntl.h>
+
 #include "i18n.h"
 #include "global.h"
 #include "pcap_thread.h"
@@ -44,13 +42,11 @@
 #include "ksql.h"
 #include "http_server.h"
 
-static void on_term(int p )
-{
-//	ksql_close();
-	exit(0);
-}
+static gboolean do_daemon(gpointer user_data);
+static void check_pid() ;
 
 const gchar * config_file_name = "/etc/monitor.cfg";
+
 
 int main(int argc, char*argv[], char*env[])
 {
@@ -89,14 +85,6 @@ int main(int argc, char*argv[], char*env[])
 
 	time(&t);
 
-#ifdef DEBUG
-	openlog(PACKAGE_TARNAME,LOG_PERROR|LOG_PID,LOG_USER);
-#else
-	openlog(PACKAGE_TARNAME,LOG_PID,LOG_USER);
-#endif
-
-	syslog(LOG_NOTICE, _("%s loaded at %s"), PACKAGE_NAME,	ctime(&t));
-
 	GOptionContext * context;
 	context = g_option_context_new("");
 	g_option_context_add_main_entries(context,args,PACKAGE_NAME);
@@ -117,10 +105,9 @@ int main(int argc, char*argv[], char*env[])
 
 	if (g_key_file_load_from_file(gkeyfile, config_file_name,
 			G_KEY_FILE_KEEP_TRANSLATIONS, NULL))
-		syslog(LOG_WARNING, "Err opening config file");
+		g_warning(_("Err opening config file"));
 
-	if(run_daemon)
-		run_daemon = daemon(FALSE,FALSE);
+	check_pid();
 
 	//启用内建的 http server
 	start_server();
@@ -137,10 +124,67 @@ int main(int argc, char*argv[], char*env[])
 
 	g_thread_create((GThreadFunc)pcap_thread_func,NULL,FALSE,NULL);
 
-	signal(15,on_term);
-	signal(2,on_term);
+	signal(15,exit);
+	signal(2,exit);
+	g_idle_add(do_daemon,GINT_TO_POINTER(run_daemon));
 	g_main_loop_run(loop);
 	return 0;
+}
+
+static void check_pid()
+{
+	int create;
+
+	int fd = open("/tmp/"PACKAGE_NAME ".pid" , O_NONBLOCK|O_RDWR|O_CLOEXEC );
+
+	if(fd < 0)
+	{
+		fd = open("/tmp/"PACKAGE_NAME ".pid" , O_CLOEXEC|O_RDWR|O_CREAT,S_IRWXG|S_IRWXU|S_IRWXO);
+		create = TRUE;
+	}else{
+		create = FALSE;
+	}
+
+	if(fd < 0)
+	{
+		g_error(_("unable to create pid file %s : %s"),"/tmp/"PACKAGE_NAME ".pid", g_strerror(errno));
+	}
+
+	gchar * buf = g_strdup_printf("%d",getpid());
+
+	if (create)
+	{
+		write(fd, buf, strlen(buf));
+		g_free(buf);
+		close(fd);
+		return ;
+	}
+	char buff[21]={0};
+
+	read(fd,buff,20);
+
+	GPid pid = atoi(buff);
+
+	int status;
+
+	if (kill(pid,0))
+	{
+		lseek(fd,0,SEEK_SET);
+		write(fd, buf, strlen(buf));
+		g_free(buf);
+		close(fd);
+		return ;
+	}else
+	{
+		g_error(_("pidfile exist, another one is running?"));
+	}
+}
+
+gboolean do_daemon(gpointer user_data)
+{
+	if(GPOINTER_TO_INT(user_data))
+		daemon(FALSE,FALSE);
+	return FALSE;
 }
 
 GKeyFile * gkeyfile;

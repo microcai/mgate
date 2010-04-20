@@ -22,7 +22,7 @@ typedef struct _GSQLConnectClass{
 	gboolean	(*check_config)(GSQLConnect*);
 	gboolean	(*connect)(GSQLConnect*,GError **);
 	gboolean	(*run_query)(GSQLConnect*,const char * sql_stmt,gsize len /* -1 for nul-terminated string*/);
-	GList*		(*get_resust)(GSQLConnect*,gpointer host,gpointer user,gpointer passwd);
+	gboolean	(*ping)(GSQLConnect*,GError **);
 }GSQLConnectClass;
 
 #define G_TYPE_SQL_CONNNECT	g_sql_connect_get_type()
@@ -38,6 +38,8 @@ gboolean g_sql_connect_check_config(GSQLConnect*);
 gboolean g_sql_connect_real_connect(GSQLConnect* obj,GError **);
 gboolean g_sql_connect_run_query(GSQLConnect * obj,const gchar * sqlstatement,gsize size);
 GSQLResult* g_sql_connect_use_result(GSQLConnect * obj);
+gboolean g_sql_connect_ping(GSQLConnect * obj,GError ** err);
+
 extern void (*g_sql_connect_thread_init)();
 extern void (*g_sql_connect_thread_end)();
 

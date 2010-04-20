@@ -34,6 +34,7 @@ static void g_sql_connect_mysql_set_property(GObject *object,guint property_id, 
 static void g_sql_connect_mysql_get_property(GObject *object,guint property_id, GValue *value, GParamSpec *pspec);
 
 static gboolean g_sql_connect_mysql_real_connect(GSQLConnect * obj,GError ** err);
+static gboolean g_sql_connect_mysql_ping(GSQLConnect * obj,GError ** );
 static void		g_sql_connect_mysql_create_db(GSQLConnectMysql*mobj,const char * db);
 static gboolean g_sql_connect_mysql_check_config(GSQLConnect * obj);
 static void g_sql_connect_mysql_register_property(GSQLConnectMysqlClass * klass);
@@ -53,6 +54,7 @@ void g_sql_connect_mysql_class_init(GSQLConnectMysqlClass * klass)
 	gobjclass->get_property = g_sql_connect_mysql_get_property;
 	parent_class->run_query = g_sql_connect_mysql_real_query;
 	gobjclass->finalize = g_sql_connect_mysql_finalize;
+	parent_class->ping = g_sql_connect_mysql_ping;
 
 	g_sql_connect_mysql_register_property(klass);
 
@@ -101,6 +103,14 @@ gboolean g_sql_connect_mysql_real_connect(GSQLConnect * obj,GError ** err)
 	}
 	g_set_error_literal(err,g_quark_from_static_string(GETTEXT_PACKAGE),mysql_errno(mobj->mysql),mysql_error(mobj->mysql));
 	return FALSE;
+}
+
+gboolean g_sql_connect_mysql_ping(GSQLConnect * obj,GError ** err)
+{
+	g_assert(IS_G_SQL_CONNECT_MYSQL(obj));
+	GSQLConnectMysql * mobj = (GSQLConnectMysql*)obj;
+
+	return !mysql_ping(mobj->mysql);
 }
 
 gboolean	g_sql_connect_mysql_real_query(GSQLConnect*obj,const char * sql_stmt,gsize len)

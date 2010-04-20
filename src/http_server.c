@@ -97,6 +97,10 @@ static void SoupServer_path_index(SoupServer *server, SoupMessage *msg,
 	static int i;
 
 	soup_message_set_status(msg,SOUP_STATUS_OK);
+
+
+
+
 	gchar * body = g_strdup_printf("<html><body>" PACKAGE_STRING "</body></html>",i++);
 
 	soup_message_set_response(msg,"text/html",SOUP_MEMORY_TAKE,body,strlen(body));

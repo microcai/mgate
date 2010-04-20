@@ -1,3 +1,12 @@
 src/main.c
 src/kpolice.c
 src/pcap_thread.c
+src/gsqlresult.c
+src/clientmgr.c
+src/gsqlconnect.c
+src/gsqlconnect_mysql.c
+src/http_server.c
+src/ksql.c
+src/module.c
+src/pcap_hander.c
+src/utils.c

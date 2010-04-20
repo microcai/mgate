@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
-"POT-Creation-Date: 2010-04-11 18:05+0800\n"
+"POT-Creation-Date: 2010-04-20 20:09+0800\n"
 "PO-Revision-Date: 2010-04-11 16:57+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
@@ -14,80 +14,142 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: UTF-8\n"
 
-#: src/main.c:81
+#: src/main.c:72
+msgid "monitor - A monitor tool"
+msgstr "monitor － 一个监控工具"
+
+#: src/main.c:76
+msgid "run as daemon"
+msgstr "运行为守护进程"
+
+#: src/main.c:77
 msgid "flash the db"
 msgstr "清空数据"
 
-#: src/main.c:82
+#: src/main.c:78
 msgid "Create database"
 msgstr "建立数据库"
 
-#: src/main.c:83
+#: src/main.c:79
 msgid "set domain dir root"
 msgstr "设置翻译目录"
 
-#: src/main.c:83 src/main.c:85
+#: src/main.c:79 src/main.c:81
 msgid "dir"
 msgstr "目录"
 
-#: src/main.c:84
+#: src/main.c:80
 msgid "set alternative config file"
 msgstr "制定配置文件"
 
-#: src/main.c:84
+#: src/main.c:80
 msgid "filename"
 msgstr "文件名"
 
-#: src/main.c:85
+#: src/main.c:81
 msgid "set alternative module dir"
 msgstr "设置 模块目录"
 
-#: src/main.c:103
-#, c-format
-msgid "%s loaded at %s"
-msgstr "%s 启动于 %s"
+#: src/main.c:108
+#, fuzzy
+msgid "Err opening config file"
+msgstr "制定配置文件"
 
-#: src/kpolice.c:97
+#: src/main.c:150
+#, c-format
+msgid "unable to create pid file %s : %s"
+msgstr "无法创建 pid 文件 %s : %s"
+
+#: src/main.c:179
+msgid "pidfile exist, another one is running?"
+msgstr "pid文件存在，是否已经运行了一个？"
+
+#: src/kpolice.c:95
 msgid "connection to police center lost, reconnect!"
 msgstr "连接被重置, 重试！"
 
-#: src/kpolice.c:177
+#: src/kpolice.c:271
 msgid "A connection to the police server has been successfully established"
 msgstr "成功建立到公安机关中心服务器的连接"
 
-#: src/kpolice.c:237
+#: src/kpolice.c:318
+msgid ""
+"A connection to the police server port2 has been successfully established"
+msgstr "成功建立到公安机关中心服务器 端口2 的连接"
+
+#: src/kpolice.c:377
 msgid ""
 "[kpolice]:[HotelID] not set, monitor will not be able to send infomation"
 msgstr "[kpolice]:[HotelID] 客户端 ID 未指定，数据将无法上传"
 
-#: src/kpolice.c:247
-msgid "police ip ot set, monitor will not upload any infomation!"
+#: src/kpolice.c:387
+msgid "police ip not set, monitor will not upload any infomation!"
 msgstr "公安IP没有设置，数据将不会上传!"
 
-#: src/kpolice.c:262
+#: src/kpolice.c:402
 #, c-format
 msgid "[kpolice]:[port1] not set, default to %d"
 msgstr "[kpolice]:[port1] 未设置，使用默认值 %d"
 
-#: src/kpolice.c:271
+#: src/kpolice.c:411
 #, c-format
 msgid "[kpolice]:[port2] not set, default to 'port1+1'(%d)"
 msgstr "[kpolice]:[port1] 未设置，使用默认值 %d ( port1+1)"
 
-#: src/pcap_thread.c:106
+#: src/kpolice.c:540
+#, c-format
+msgid "Got message, %s"
+msgstr "获得消息 , %s"
+
+#: src/pcap_thread.c:100
 #, c-format
 msgid "ERROR:can not open %s for capturing!\n"
 msgstr "错误：无法打开 %s 进行抓包\n"
 
-#: src/pcap_thread.c:113
+#: src/pcap_thread.c:107
 #, c-format
 msgid "ERROR:%s is not an ethernet adapter\n"
 msgstr "错误：%s不是一个有效的网卡\n"
 
-#: src/pcap_thread.c:136
+#: src/pcap_thread.c:130
 #, c-format
 msgid "[monitor]:[threads] not set, using 2x cpu (%d) threads"
 msgstr "[monitor]:[threads] 未设置，默认使用2倍 CPU 个数 (%d) "
+
+#: src/http_server.c:32
+msgid "finish called"
+msgstr ""
+
+#: src/http_server.c:68
+#, c-format
+msgid "using port %d as default duto the missing [http]:[port] settings"
+msgstr "使用端口 %d 作为默认端口，因为没有设置 [http]:[port]"
+
+#: src/http_server.c:75
+#, c-format
+msgid "server failt to start at port %d, will use random port!"
+msgstr "从端口%d 启动失败，将使用随机端口！"
+
+#: src/http_server.c:79
+#, c-format
+msgid "server started at port %u"
+msgstr "服务器在端口%u启动"
+
+#: src/ksql.c:49 src/ksql.c:142
+#, c-format
+msgid "unable to connect to database server (%d): %s"
+msgstr "无法连接到数据库 (%d) : %s"
+
+#: src/ksql.c:113
+msgid "[database]:[backend] not set or invalid, default to mysql"
+msgstr "[database]:[backend]未设置，将使用 mysql"
+
+#: src/ksql.c:116
+msgid "[database]:[backend] not set or invalid, default to sqlite"
+msgstr "[database]:[backend]未设置，将使用 sqlite"
+
+#~ msgid "%s loaded at %s"
+#~ msgstr "%s 启动于 %s"
 
 #~ msgid "all tables truncated!\n"
 #~ msgstr "所有的表都已经清空！ :)\n"

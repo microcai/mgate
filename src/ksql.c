@@ -34,7 +34,8 @@
 #include "gsqlconnect.h"
 #include "gsqlconnect_mysql.h"
 
-GAsyncQueue	*			asqueue;
+static GAsyncQueue * asqueue;
+static GSQLConnect * connector;
 
 static gpointer ksql_thread(gpointer user_data)
 {
@@ -70,7 +71,13 @@ static gpointer ksql_thread(gpointer user_data)
 	return NULL;
 }
 
-void	ksql_init(gboolean createdb)
+static gboolean ksql_ping(gpointer user_data)
+{
+	g_sql_connect_ping(G_SQL_CONNECT(user_data),NULL);
+	return TRUE;
+}
+
+GType	ksql_get_backend()
 {
 	g_assert(gkeyfile);
 
@@ -110,25 +117,59 @@ void	ksql_init(gboolean createdb)
 		backend = "GSQLConnectSqlite";
 #endif
 	}
+	return backend ;
+}
 
+
+
+void	ksql_init(gboolean createdb)
+{
 	asqueue = g_async_queue_new_full(g_free);
 
-	GSQLConnect * con;
+	GType	backend =  ksql_get_backend();
 
-	con = (GSQLConnect*)g_object_new(backend,NULL);
 
-	g_sql_connect_check_config(con);
+	connector = (GSQLConnect*)g_object_new(backend,NULL);
+
+	g_sql_connect_check_config(connector);
 
 	if(createdb)
 	{
 		GError * err = NULL;
 
-		if(!g_sql_connect_real_connect(con,&err))
+		if(!g_sql_connect_real_connect(connector,&err))
 		{
 			g_error(_("unable to connect to database server (%d): %s"),err->code,err->message);
 		}
 	}else
 	{
-		g_thread_create(ksql_thread,con,0,0);
+		g_thread_create(ksql_thread,connector,0,0);
+		g_timeout_add_seconds(30,ksql_ping,connector);
 	}
+}
+
+GSQLResult * ksql_query(const gchar * stm)
+{
+	if (g_sql_connect_run_query(connector, stm, strlen(stm)))
+	{
+		return g_sql_connect_use_result(connector);
+	}
+	return NULL;
+}
+
+GSQLResult * ksql_query_free_str(gchar * stm)
+{
+	GSQLResult * ret = ksql_query(stm);
+	g_free(stm);
+	return ret;
+}
+
+GSQLResult * ksql_vquery(const gchar * stmformat , ...)
+{
+	va_list v;
+	gchar * stm ;
+	va_start(v,stmformat);
+	stm = g_strdup_vprintf(stmformat,v);
+	va_end(v);
+	return ksql_query_free_str(stm);
 }

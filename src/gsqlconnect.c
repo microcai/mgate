@@ -98,6 +98,19 @@ GSQLResult* g_sql_connect_use_result(GSQLConnect * obj)
 	return G_SQL_RESULT(obj->lastresult);
 }
 
+gboolean g_sql_connect_ping(GSQLConnect * obj,GError ** err)
+{
+	g_return_val_if_fail(IS_G_SQL_CONNECT(obj),FALSE);
+
+	GSQLConnectClass * klass = G_SQL_CONNECT_GET_CLASS(obj) ;
+
+	if(klass->ping)
+	{
+		return klass->ping(obj,err);
+	}
+	return FALSE;
+}
+
 void g_sql_connect_result_weak_notify(gpointer data,GObject *where_the_object_was)
 {
 	GSQLConnect * sql_connect = (GSQLConnect*) data;
