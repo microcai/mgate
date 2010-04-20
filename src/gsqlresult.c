@@ -105,7 +105,7 @@ GStrv	g_sql_result_get_row(GSQLResult * obj)
 	return obj->currow;
 }
 
-gboolean g_sql_result_next_row(GSQLResult * obj)
+gboolean g_sql_result_fetch_row(GSQLResult * obj)
 {
 	return obj->nextrow(obj);
 }
@@ -132,6 +132,7 @@ const gchar* g_sql_result_colum_by_name(GSQLResult * obj,const gchar * columname
 			return g_sql_result_colum(obj,i);
 		}
 	}
+	return NULL;
 }
 
 void g_sql_result_set_property(GObject *object, guint property_id,const GValue *value, GParamSpec *pspec)

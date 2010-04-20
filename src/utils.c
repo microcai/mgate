@@ -16,7 +16,7 @@
 #include <string.h>
 #include <glib.h>
 #include "i18n.h"
-
+#include "utils.h"
 
 guint64	mac2uint64( guchar mac[6])
 {

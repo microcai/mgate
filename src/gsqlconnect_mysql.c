@@ -129,7 +129,7 @@ gboolean	g_sql_connect_mysql_real_query(GSQLConnect*obj,const char * sql_stmt,gs
 
 	myresult = mysql_store_result(mobj->mysql);
 
-	if (!myresult || mysql_num_rows(myresult) <= 0)
+	if (!myresult )
 	{
 		return TRUE;
 	}
@@ -142,8 +142,6 @@ gboolean	g_sql_connect_mysql_real_query(GSQLConnect*obj,const char * sql_stmt,gs
 			"fields",mysql_num_fields(myresult),NULL);
 
 	obj->lastresult = (GObject*)result;
-
-	result->currow = mysql_fetch_row(myresult);
 
 	result->nextrow = g_sql_connect_mysql_get_row;
 

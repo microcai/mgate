@@ -52,20 +52,16 @@ static gpointer ksql_thread(gpointer user_data)
 		sleep(2);
 	}
 
-	g_sql_connect_run_query(connector,"select * from users",0);
-
-	GSQLResult * res = 	g_sql_connect_use_result(connector);
-
-	g_debug( "id = %s" , g_sql_result_colum_by_name(res,"id"));
-
-	g_object_unref(res);
+	GSQLResult * res;
 
 	gchar * sql;
 	for (;;)
 	{
 		sql = (gchar*) g_async_queue_pop(asqueue);
-	//	mysql_query(mysql,sql);
-		g_free(sql);
+		res = ksql_query_free_str(sql);
+
+		if(res)
+			g_object_unref(res);
 	}
 	g_sql_connect_thread_end();
 	return NULL;
