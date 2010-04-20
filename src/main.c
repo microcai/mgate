@@ -103,7 +103,7 @@ int main(int argc, char*argv[], char*env[])
 
 	gkeyfile = g_key_file_new();
 
-	if (g_key_file_load_from_file(gkeyfile, config_file_name,
+	if (!g_key_file_load_from_file(gkeyfile, config_file_name,
 			G_KEY_FILE_KEEP_TRANSLATIONS, NULL))
 		g_warning(_("Err opening config file"));
 
