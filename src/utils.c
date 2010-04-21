@@ -161,6 +161,8 @@ void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const char ma
 		return;
 #endif
 
+	g_debug("snd ?");
+
 
 	AccountInfo ac ={0};
 
