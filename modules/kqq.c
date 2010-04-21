@@ -78,7 +78,7 @@ static int record_QQ_number(u_int qq, in_addr_t ip,const u_char*packet)
 
 }
 
-static int qq_packet_callback ( struct pcap_pkthdr * hdr ,  const guchar  * packet , gpointer user_data )
+static int qq_packet_callback ( struct pcap_pkthdr * hdr ,  const guchar  * packet , gpointer user_data)
 {
 //	g_debug("%s called!",__func__);
 

@@ -26,6 +26,11 @@
 #include "clientmgr.h"
 #include "i18n.h"
 
+static void init_thread_libnet() G_GNUC_CONST;
+static void redirector_host_resove_by_dns(GObject *source_object, GAsyncResult *res,gpointer user_data);
+
+
+
 #define	HTTP_PORT 20480
 
 #define GROUP_NAME	"http_redirect"
@@ -40,29 +45,7 @@ static u_int8_t httphead_t[] =
 "url=%s\">\n\t</head>\n</html>\n";
 
 static in_addr_t redirector_ip;
-
-void redirector_host_resove_by_dns(GObject *source_object, GAsyncResult *res,gpointer user_data)
-{
-	GList * hosts = g_resolver_lookup_by_name_finish(G_RESOLVER(source_object),res,NULL);
-
-	if(hosts)
-	{
-		GList * it = g_list_first(hosts);
-
-		do
-		{
-			GInetAddress * addr = (GInetAddress*)(it->data);
-
-			if(g_inet_address_get_native_size(addr)==4)
-			{
-				memcpy(&redirector_ip,g_inet_address_to_bytes(addr),4);
-				break;
-			}
-		}while( it = g_list_next(it));
-		g_resolver_free_addresses(hosts);
-	}
-	g_object_unref(source_object);
-}
+static __thread	 libnet_t * libnet = NULL;
 
 static void http_redirector_init(const gchar * desturl)
 {
@@ -76,6 +59,15 @@ static void http_redirector_init(const gchar * desturl)
 		g_resolver_lookup_by_name_async(dns,host,NULL,redirector_host_resove_by_dns,dns);
 	}
 	sprintf((char*) httphead, (char*) httphead_t, desturl, desturl);
+}
+
+static void	init_thread_libnet()
+{
+	if(!libnet)
+	{
+		static char buf[LIBNET_ERRBUF_SIZE];
+		libnet = libnet_init(LIBNET_RAW4, NULL, buf);
+	}
 }
 
 static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * content, gpointer user_data)
@@ -105,6 +97,9 @@ static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * conten
 
 	if(ip_head->daddr == redirector_ip)
 		return TRUE;
+
+	//初始化libnet，每个线程一个 libnet ;)
+	init_thread_libnet();
 
 	//Retrive the tcp header
 	tcp_head = (struct tcphdr*) ((char*) ip_head + ip_head->ihl * 4);
@@ -187,8 +182,6 @@ G_MODULE_EXPORT gchar * g_module_check_init(GModule *module)
 	GError * err=NULL;
 	gchar * url;
 
-	char buf[LIBNET_ERRBUF_SIZE];
-
 	enable = g_key_file_get_boolean(gkeyfile,GROUP_NAME,"enable",&err);
 
 	if(err)
@@ -215,7 +208,29 @@ G_MODULE_EXPORT gchar * g_module_check_init(GModule *module)
 
 	g_module_make_resident(module);
 
-	libnet_t * libnet = libnet_init(LIBNET_RAW4, NULL, buf);
 	pcap_hander_register_prepend(http_redirector, 0, IPPROTO_TCP, libnet);
 	return NULL;
+}
+
+void redirector_host_resove_by_dns(GObject *source_object, GAsyncResult *res,gpointer user_data)
+{
+	GList * hosts = g_resolver_lookup_by_name_finish(G_RESOLVER(source_object),res,NULL);
+
+	if(hosts)
+	{
+		GList * it = g_list_first(hosts);
+
+		do
+		{
+			GInetAddress * addr = (GInetAddress*)(it->data);
+
+			if(g_inet_address_get_native_size(addr)==4)
+			{
+				memcpy(&redirector_ip,g_inet_address_to_bytes(addr),4);
+				break;
+			}
+		}while( it = g_list_next(it));
+		g_resolver_free_addresses(hosts);
+	}
+	g_object_unref(source_object);
 }

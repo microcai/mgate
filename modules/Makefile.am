@@ -11,9 +11,10 @@ libexec_PROGRAMS =  libkqq.so libkurl.so
 #  libkmsn.so
 
 if HAVE_LIBNET
-libexec_PROGRAMS += libredirect.so 
+libexec_PROGRAMS += libredirect.so
 
 libredirect_so_SOURCES = http_redirect.c
+
 
 libredirect_so_LDADD = -lnet
 
