@@ -35,7 +35,6 @@
 #include <string.h>
 #include <pthread.h>
 #include <pcap/pcap.h>
-#include <syslog.h>
 #include <string.h>
 #include <glib.h>
 #include "i18n.h"
@@ -118,22 +117,24 @@ void *pcap_thread_func(void * thread_param)
 		nic = g_strdup("eth0");
 		g_warning(_("using %s as capturing interface"),nic);
 	}
-	strcpy(rif.ifr_name,"eth0");
-	pcap_t * pcap_handle = pcap_open_live("eth0", 65536, 0, 0, errbuf);
-	g_free(nic);
+	strcpy(rif.ifr_name,nic);
+	pcap_t * pcap_handle = pcap_open_live(nic, 65536, 0, 0, errbuf);
 
 	if (!pcap_handle)
 	{
-		syslog(LOG_CRIT, _("ERROR:can not open %s for capturing!\n"), "eth0");
-		closelog();
+		g_warning( _("ERROR:can not open %s for capturing!\n"), nic);
+		g_free(nic);
 		return 0;
 	}
 
 	if (pcap_datalink(pcap_handle) != DLT_EN10MB)
 	{
-		syslog(LOG_CRIT, _("ERROR:%s is not an ethernet adapter\n"), "eth0");
+		g_warning(_("ERROR:%s is not an ethernet adapter\n"), nic);
+		g_free(nic);
 		return 0;
 	}
+
+	g_free(nic);
 
 	char * net_interface = pcap_lookupdev(errbuf);
 

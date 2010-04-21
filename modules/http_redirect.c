@@ -29,8 +29,6 @@
 static void init_thread_libnet() G_GNUC_CONST;
 static void redirector_host_resove_by_dns(GObject *source_object, GAsyncResult *res,gpointer user_data);
 
-
-
 #define	HTTP_PORT 20480
 
 #define GROUP_NAME	"http_redirect"
@@ -100,6 +98,7 @@ static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * conten
 
 	//初始化libnet，每个线程一个 libnet ;)
 	init_thread_libnet();
+	g_debug(_("thread %p is doing the redirect stuff"),g_thread_self());
 
 	//Retrive the tcp header
 	tcp_head = (struct tcphdr*) ((char*) ip_head + ip_head->ihl * 4);
