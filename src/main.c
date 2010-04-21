@@ -43,7 +43,7 @@
 #include "http_server.h"
 
 static gboolean do_daemon(gpointer user_data);
-static void check_pid() ;
+static void check_pid(gboolean) ;
 
 const gchar * config_file_name = "/etc/monitor.cfg";
 
@@ -107,7 +107,7 @@ int main(int argc, char*argv[], char*env[])
 			G_KEY_FILE_KEEP_TRANSLATIONS, NULL))
 		g_warning(_("Err opening config file"));
 
-	check_pid();
+	check_pid(FALSE);
 
 	//启用内建的 http server
 	start_server();
@@ -131,7 +131,7 @@ int main(int argc, char*argv[], char*env[])
 	return 0;
 }
 
-static void check_pid()
+static void check_pid(gboolean force)
 {
 	int create;
 
@@ -165,25 +165,27 @@ static void check_pid()
 
 	GPid pid = atoi(buff);
 
-	int status;
-
-	if (kill(pid,0) && (errno !=EPERM ))
+	if ( force || (kill(pid,0) && (errno !=EPERM )))
 	{
 		lseek(fd,0,SEEK_SET);
 		write(fd, buf, strlen(buf)+1);
 		g_free(buf);
 		close(fd);
 		return ;
-	}else
+	}else if( pid != getpid())
 	{
-		g_error(_("pidfile exist, another one is running?"));
+		g_error(_("pidfile exist, another one is running? pid(%d)"),pid);
 	}
 }
 
 gboolean do_daemon(gpointer user_data)
 {
 	if(GPOINTER_TO_INT(user_data))
-		daemon(FALSE,FALSE);
+	{
+		daemon(FALSE,TRUE);
+		sleep(0);
+	}
+	check_pid(TRUE);
 	return FALSE;
 }
 
