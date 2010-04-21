@@ -37,6 +37,8 @@
 #include <pcap/pcap.h>
 #include <string.h>
 #include <glib.h>
+#include <ulimit.h>
+
 #include "i18n.h"
 
 #include "pcap_thread.h"
@@ -72,20 +74,12 @@ static void pcap_process_thread_func(gpointer _thread_data, gpointer user_data)
 	 *********************************************************************/
 	port = *((u_int16_t*) (packet_content + ETH_HLEN + ip_head->ihl * 4 + 2));
 
-//	g_debug("got one packet, length %d, port is %d",thread_data->pcaphdr.caplen,(int)ntohs(port));
-
-//	struct in_addr ip; ip.s_addr = ip_head->saddr ;
-
-//	g_debug("saddr is %s",inet_ntoa(ip));
-
 	pcap_hander_callback_trunk	handers[1024];
 
 	//here we get a list of handler;
 	bzero(handers, sizeof(handers));
 
 	i = pcap_hander_get(port,ip_head->protocol,handers);
-
-//	g_debug("got %d handers",i);
 
 	//then we call these handler one by one
 	for(j=0;j<i;j++)
@@ -117,6 +111,7 @@ void *pcap_thread_func(void * thread_param)
 		nic = g_strdup("eth0");
 		g_warning(_("using %s as capturing interface"),nic);
 	}
+
 	strcpy(rif.ifr_name,nic);
 	pcap_t * pcap_handle = pcap_open_live(nic, 65536, 0, 0, errbuf);
 
@@ -163,11 +158,21 @@ void *pcap_thread_func(void * thread_param)
 
 	if(err)
 	{
+
 		num_threads = sysconf(_SC_NPROCESSORS_ONLN) * 2;
 		g_message(_("[monitor]:[threads] not set, using 2x cpu (%d) threads"),num_threads);
 		g_error_free(err);
 		err = NULL;
 	}
+	if (num_threads <= 0)
+		num_threads = 1;
+
+	else if(num_threads > ulimit(0 ))
+	{
+
+
+	}
+
 
 
 	GThreadPool * threadpool = g_thread_pool_new(pcap_process_thread_func, NULL, num_threads, TRUE, NULL);

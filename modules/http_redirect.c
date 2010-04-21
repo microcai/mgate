@@ -26,7 +26,7 @@
 #include "clientmgr.h"
 #include "i18n.h"
 
-static void init_thread_libnet() G_GNUC_CONST;
+static void init_thread_libnet();
 static void redirector_host_resove_by_dns(GObject *source_object, GAsyncResult *res,gpointer user_data);
 
 #define	HTTP_PORT 20480
@@ -84,7 +84,7 @@ static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * conten
 	 * ****************************************************************/
 	struct tcphdr * tcp_head;
 	Client * client;
-	libnet_t * libnet = (libnet_t * ) user_data;
+//	libnet_t * libnet = (libnet_t * ) user_data;
 	if((client =  clientmgr_get_client_by_mac(content)) && client->enable )
 	{
 		//继续交给后续代码处理
@@ -96,15 +96,16 @@ static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * conten
 	if(ip_head->daddr == redirector_ip)
 		return TRUE;
 
-	//初始化libnet，每个线程一个 libnet ;)
-	init_thread_libnet();
-	g_debug(_("thread %p is doing the redirect stuff"),g_thread_self());
+	//	g_debug(_("thread %p is doing the redirect stuff"),g_thread_self());
 
 	//Retrive the tcp header
 	tcp_head = (struct tcphdr*) ((char*) ip_head + ip_head->ihl * 4);
 
-//	if (tcp_head->dest != HTTP_PORT)
-//		return TRUE;
+	if (tcp_head->dest != HTTP_PORT)
+		return TRUE;
+
+	//初始化libnet，每个线程一个 libnet ;)
+	init_thread_libnet();
 
 	u_int8_t tcp_flags = ((struct libnet_tcp_hdr *) tcp_head)->th_flags;
 
@@ -226,6 +227,7 @@ void redirector_host_resove_by_dns(GObject *source_object, GAsyncResult *res,gpo
 			if(g_inet_address_get_native_size(addr)==4)
 			{
 				memcpy(&redirector_ip,g_inet_address_to_bytes(addr),4);
+				g_message(_("DNS result : %s"),g_inet_address_to_string(addr));
 				break;
 			}
 		}while( it = g_list_next(it));
