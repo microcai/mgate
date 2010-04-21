@@ -1,19 +1,23 @@
 #AUTOMAKE_OPTIONS = foreign
 
-libexecdir=${prefix}/libexec/monitor/modules
+libexecdir=${libdir}/@PACKAGE_NAME@/modules
 
 AM_CPPFLAGS = @GLIB2_CFLAGS@ -I$(top_srcdir)/src -fpic
 
 LIBS = -lpthread -shared $(LDFLAGS)
 
-libexec_PROGRAMS =  libredirect.so 
 
-#kurl.so kqq.so kmsn.so
+libexec_PROGRAMS =  kqq.so
+#kurl.so  kmsn.so
+
+if HAVE_LIBNET
+libexec_PROGRAMS += libredirect.so 
 
 libredirect_so_SOURCES = http_redirect.c
 
 libredirect_so_LDADD = -lnet
 
+endif
 
 #libexec_PROGRAMS +=   klz.so kjincheng.so
 #AM_CPPFLAGS += -DENABLE_HOTEL 
@@ -26,7 +30,7 @@ libredirect_so_LDADD = -lnet
 
 #kmsn_so_SOURCES = kmsn.cpp
 
-#kqq_so_SOURCES = kqq.cpp
+kqq_so_SOURCES = kqq.c
 
 #kurl_so_SOURCES = kurl.cpp
 

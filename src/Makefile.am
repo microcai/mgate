@@ -2,14 +2,16 @@ AUTOMAKE_OPTIONS = foreign
 
 AM_CPPFLAGS = @NEED_ALL_CFLAGS@ @MYSQL_CFLAGS@
 
-LIBS += @NEED_ALL_LIBS@ @MYSQL_LIBS@ 
+LIBS += @NEED_ALL_LIBS@ @MYSQL_LIBS@
+
+DISTCLEANFILES = monitord 
 
 sbindir=/etc/init.d/
 
 bin_PROGRAMS = monitor 
 sbin_SCRIPTS = monitord
 
-EXTRA_DIST = runmonitor monitord
+EXTRA_DIST =  monitord.in
 
 md5_SOURCE = md5.c md5.h
 
@@ -26,7 +28,7 @@ monitor_SOURCES += gsqlconnect.c  gsqlconnect.h
 monitor_SOURCES += gsqlresult.c gsqlresult.h
 
 monitor_SOURCES += ksql.h ksql.c
-monitor_SOURCES += http_server.c
+monitor_SOURCES += http_server.c http_server.h
 
 		 
 if WITH_MYSQL

@@ -5,6 +5,9 @@
  *      Author: cai
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <sys/socket.h>
 #include <net/ethernet.h>
@@ -17,6 +20,9 @@
 #include <glib.h>
 #include "i18n.h"
 #include "utils.h"
+#include "kpolice.h"
+#include "ksql.h"
+#include "global.h"
 
 guint64	mac2uint64( guchar mac[6])
 {
@@ -137,6 +143,102 @@ double GetDBTime_str(char *pTime)
 
 	double dbTime = (double) nDate + ((nDate >= 0) ? dblTime : -dblTime);
 	return dbTime;
+}
+
+static void sprintf_mac(char mac_addr[PROLEN_COMPUTERMAC],const char mac[6])
+{
+	sprintf(mac_addr,"%02x%02x%02x%02x%02x%02x",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+}
+
+void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const char mac[6], const char * host , const char * passwd,const void * data, unsigned short dport)
+{
+#ifdef ENABLE_HOTEL
+	struct Clients_DATA cd;
+	struct Clients_DATA *pcd = &cd;
+
+
+	if (get_client_data(mac,pcd)!=0) // there is no ..... so, let's just ignore it.
+		return;
+#endif
+
+
+	AccountInfo ac ={0};
+
+//	formattime(strTime);
+
+	ac.DateTime = GetDBTime_tm(GetCurrentTime());
+
+	strcpy(ac.SiteID, strHotelID);
+	strcpy(ac.SiteName, strHotelName);
+
+#ifdef ENABLE_HOTEL
+
+	if (pcd && strlen(pcd->mac_addr) < 2)
+	{
+		GetMac(pcd->ip_addr, pcd->mac_addr, pcd->MAC_ADDR);
+	}
+
+	strncpy(ac.CertType, pcd->CustomerIDType,sizeof(ac.CertType)-1);
+	strncpy(ac.CertNo, pcd->CustomerID,sizeof(ac.CertNo)-1);
+
+	utf8_gbk(ac.ClientName ,PROLEN_CLIENTNAME, pcd->CustomerName,strlen(pcd->CustomerName));
+
+	snprintf(ac.ComputerName,sizeof(ac.ComputerName),"%c%c%02d",
+			*pcd->Build,*pcd->Floor, atoi(pcd->RoomNum));
+
+	snprintf(ac.ComputerIp, sizeof(ac.ComputerIp)-1, "%03d.%03d.%03d.%03d",
+			((u_char*) &(pcd->ip))[0], ((u_char*) &(pcd->ip))[1],
+			((u_char*) &(pcd->ip))[2], ((u_char*) &(pcd->ip))[3]);
+#endif
+
+	sprintf_mac(ac.ComputerMac,mac);
+
+	strcpy(ac.ServType, type);
+
+	snprintf(ac.ComputerIp, sizeof(ac.ComputerIp), "%03d.%03d.%03d.%03d",
+			((u_char*) &(ip))[0], ((u_char*) &(ip))[1],
+			((u_char*) &(ip))[2], ((u_char*) &(ip))[3]);
+
+	strncpy(ac.Key1, data, 60);
+	strncpy(ac.Key2, passwd, sizeof(ac.Key2));
+
+	snprintf(ac.Port, sizeof(ac.Port), "%d", dport);
+
+	snprintf(ac.DestIp, sizeof(ac.DestIp), "%03d.%03d.%03d.%03d",
+			((u_char*) &(destip))[0], ((u_char*) &(destip))[1],
+			((u_char*) &(destip))[2], ((u_char*) &(destip))[3]);
+
+	kpolice_send_command(COMMAND_ACCOUNT, (char *) &ac, sizeof(ac));
+
+#ifndef ENABLE_HOTEL
+//
+//	g_string_printf(strSQL,SQL_template, pcd->Build,pcd->Floor,atoi(pcd->RoomNum),
+//			pcd->ip_addr,			pcd->mac_addr, pcd->CustomerIDType,
+//			pcd->CustomerID, pcd->CustomerName, na->strType,
+//			na->data.c_str(), strTime);
+#else
+	char strmac[32];
+	in_addr in_addr_ip={0};
+
+	in_addr_ip.s_addr = na->ip;
+
+	formatMAC(mac,strmac);
+
+	g_string_printf(strSQL,
+			"insert into t_netlog (MachineIP,MachineMac,nLogType,strLogInfo,nTime) values   ('%s','%s','%s','%s','%s')",
+			inet_ntoa(in_addr_ip),
+			strmac, na->strType,
+			na->data.c_str(), strTime->str);
+
+#endif
+//	ksql_run_query_async(strSQL->str);
+//
+
+//
+
+//
+//	g_string_free(strTime,1);
+//	g_string_free(strSQL,1);
 }
 
 int utf8_gbk(char *outbuf, size_t outlen, const char *inbuf, size_t inlen)

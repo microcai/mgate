@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
-"POT-Creation-Date: 2010-04-20 20:09+0800\n"
+"POT-Creation-Date: 2010-04-21 13:40+0800\n"
 "PO-Revision-Date: 2010-04-11 16:57+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
@@ -64,39 +64,39 @@ msgstr "无法创建 pid 文件 %s : %s"
 msgid "pidfile exist, another one is running?"
 msgstr "pid文件存在，是否已经运行了一个？"
 
-#: src/kpolice.c:95
+#: src/kpolice.c:104
 msgid "connection to police center lost, reconnect!"
 msgstr "连接被重置, 重试！"
 
-#: src/kpolice.c:271
+#: src/kpolice.c:283
 msgid "A connection to the police server has been successfully established"
 msgstr "成功建立到公安机关中心服务器的连接"
 
-#: src/kpolice.c:318
+#: src/kpolice.c:325
 msgid ""
 "A connection to the police server port2 has been successfully established"
 msgstr "成功建立到公安机关中心服务器 端口2 的连接"
 
-#: src/kpolice.c:377
+#: src/kpolice.c:384
 msgid ""
 "[kpolice]:[HotelID] not set, monitor will not be able to send infomation"
 msgstr "[kpolice]:[HotelID] 客户端 ID 未指定，数据将无法上传"
 
-#: src/kpolice.c:387
+#: src/kpolice.c:394
 msgid "police ip not set, monitor will not upload any infomation!"
 msgstr "公安IP没有设置，数据将不会上传!"
 
-#: src/kpolice.c:402
+#: src/kpolice.c:409
 #, c-format
 msgid "[kpolice]:[port1] not set, default to %d"
 msgstr "[kpolice]:[port1] 未设置，使用默认值 %d"
 
-#: src/kpolice.c:411
+#: src/kpolice.c:418
 #, c-format
 msgid "[kpolice]:[port2] not set, default to 'port1+1'(%d)"
 msgstr "[kpolice]:[port1] 未设置，使用默认值 %d ( port1+1)"
 
-#: src/kpolice.c:540
+#: src/kpolice.c:641
 #, c-format
 msgid "Got message, %s"
 msgstr "获得消息 , %s"
@@ -135,16 +135,16 @@ msgstr "从端口%d 启动失败，将使用随机端口！"
 msgid "server started at port %u"
 msgstr "服务器在端口%u启动"
 
-#: src/ksql.c:49 src/ksql.c:142
+#: src/ksql.c:49 src/ksql.c:138
 #, c-format
 msgid "unable to connect to database server (%d): %s"
 msgstr "无法连接到数据库 (%d) : %s"
 
-#: src/ksql.c:113
+#: src/ksql.c:109
 msgid "[database]:[backend] not set or invalid, default to mysql"
 msgstr "[database]:[backend]未设置，将使用 mysql"
 
-#: src/ksql.c:116
+#: src/ksql.c:112
 msgid "[database]:[backend] not set or invalid, default to sqlite"
 msgstr "[database]:[backend]未设置，将使用 sqlite"
 

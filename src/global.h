@@ -10,6 +10,9 @@
 
 #include <glib.h>
 
-GKeyFile * gkeyfile;
+extern GKeyFile * gkeyfile;
+extern const gchar * strHotelID ;
+extern const gchar * strHotelName ;
+
 
 #endif /* GLOBAL_H_ */

@@ -89,7 +89,18 @@ AC_SUBST(MYSQL_CFLAGS)
 AC_SUBST(MYSQL_LIBS)
 
 # Checks for library functions.
-AC_FUNC_MMAP
+AC_CHECK_HEADER([libnet/libnet.h],[],[])
+AC_CHECK_LIB(net,libnet_init,[have_libnet=yes],[])
+
+AS_IF([test "x${have_libnet}" = "xyes" ],
+	[
+		AM_CONDITIONAL(HAVE_LIBNET,[true])
+	],
+	[
+		AM_CONDITIONAL(HAVE_LIBNET,[false])
+	]
+)
+
 AC_CHECK_FUNCS([inet_ntoa memset munmap setenv socket strerror strstr])
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h memory.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h unistd.h])
@@ -100,6 +111,7 @@ AC_CHECK_DECL(_SC_NPROCESSORS_ONLN,[],[AC_MSG_FAILURE(_SC_NPROCESSORS_ONLN not f
 AC_CONFIG_FILES( [
 					Makefile
 					src/Makefile
+					src/monitord
 					modules/Makefile
 					po/Makefile.in
 					monitor.spec

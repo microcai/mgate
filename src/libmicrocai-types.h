@@ -15,15 +15,7 @@
 
 typedef char* LPSTR;
 
-enum LOG_PRINT_LEVEL{
-	L_OUTPUT,
-	L_FAITAL,
-	L_ERROR,
-	L_WARNING,
-	L_NOTICE,
-	L_DEBUG_OUTPUT_MORE,
-	L_DEBUG_OUTPUT
-};
+
 enum enum_PROTOL{
 	HTTP=80,
  	QQ,
@@ -43,47 +35,6 @@ typedef union AccountData{
     char*     url;
     char*     post;
 }AccountData;
-
-
-struct so_data
-{
-    void* module;
-};
-
-
-typedef struct Clients_DATA
-{
-	in_addr_t ip;
-	struct tm logintime;
-	struct tm onlinetime;
-	u_char MAC_ADDR[6];
-	gchar CustomerIDType[32];
-	char CustomerName[32];
-	char CustomerID[32];
-	char RoomNum[32];
-	char Floor[32];
-	char Build[32];
-	char mac_addr[32];// (xx:xx:xx:xx:xx:xx format)
-	char ip_addr[32];
-	int nIndex;
-}Clients_DATA;
-
-typedef int (*PROTOCOL_HANDLER)(struct so_data*,u_char *packet);
-
-typedef int (*pModuleInitFunc)(struct so_data*);
-
-struct handler
-{
-	u_char magic;
-	struct handler * pre,*next;
-	int port;//big ending
-	int protocol_type;//IPPROTOCOL_TCP or IPPROTOCOL_UDP
-	PROTOCOL_HANDLER handler;
-};
-
-typedef void ** KSQL_RES;
-typedef char ** KSQL_ROW;
-
 
 #ifdef _______DDDDD
 struct tm

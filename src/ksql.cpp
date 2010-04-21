@@ -18,32 +18,9 @@
 #include <glib.h>
 #include "libdreamtop.h"
 #include "./KSQL/kmysql.h"
-#include "./KSQL/ksqlite.h"
+#include "ksql_old.h"
 
-struct AccountInfo
-{
-     char		SiteID[PROLEN_NETBARID];
-     double		ClientID;
-     char		SiteName[PROLEN_NETBARNAME];
-     char		ComputerName[PROLEN_COMPUTERNAME];		//机器网络标识
-     char		ComputerIp[PROLEN_COMPUTERIP];
-     char		ComputerMac[PROLEN_COMPUTERMAC];		//Mac地址
-     char		DestIp[PROLEN_COMPUTERIP];
-     char		Port[6];
-     char		ServType[PROLEN_SERVTYPE];
-     char		Key1[PROLEN_KEY1];
-     char		Key2[PROLEN_KEY2];
-     char		Key3;
-     double		DateTime;
-     char		ClientName[PROLEN_CLIENTNAME];			// 顾客姓名
-     char		CertType[PROLEN_CERTTYPE];
-     char    	CertNo[PROLEN_CERTNO];
-     char		Organ[PROLEN_ORGAN];
-     char		Country[PROLEN_NATIONALITY];
-     char		PassWord[PROLEN_PASSWD];
-};
 
-static void NOP_SENDDATA(int cmd,void *data,int ulen){syslog(LOG_WARNING,"SendData function not set!\n");}
 static const char	SQL_template[]=
 	"insert into t_netlog (RoomNum,MachineIP,MachineMac,CustomerIDType,CustomerIDNum, "
 		"CustomerName,nLogType,strLogInfo,nTime) values   ('%s%s%02d','%s','%s','%s','%s','%s','%s','%s','%s')";
@@ -76,111 +53,6 @@ void RecordAccout(struct CustomerData & cd)
 {
 	SendData(COMMAND_CUSTOMER, (char *) &cd, sizeof(CustomerData));
 }
-
-void RecordAccout(struct NetAcount*na)
-{
-	u_char * mac = (u_char*)( na->packet + 6);
-
-#ifdef ENABLE_HOTEL
-	struct Clients_DATA cd;
-	struct Clients_DATA *pcd = &cd;
-
-
-	if (get_client_data(mac,pcd)!=0) // there is no ..... so, let's just ignore it.
-		return;
-#endif
-
-
-	GString * strTime = g_string_new("");
-	GString * strSQL = g_string_new("");
-
-	AccountInfo ac ={{0}};
-
-	formattime(strTime);
-
-	ac.DateTime = GetDBTime_tm(GetCurrentTime());
-
-	strcpy(ac.SiteID, hotel::strHotelID);
-	strcpy(ac.SiteName, hotel::strHoteName);
-
-#ifdef ENABLE_HOTEL
-
-	if (pcd && strlen(pcd->mac_addr) < 2)
-	{
-		GetMac(pcd->ip_addr, pcd->mac_addr, pcd->MAC_ADDR);
-	}
-
-	strncpy(ac.CertType, pcd->CustomerIDType,sizeof(ac.CertType)-1);
-	strncpy(ac.CertNo, pcd->CustomerID,sizeof(ac.CertNo)-1);
-
-	utf8_gbk(ac.ClientName ,PROLEN_CLIENTNAME, pcd->CustomerName,strlen(pcd->CustomerName));
-
-	snprintf(ac.ComputerName,sizeof(ac.ComputerName),"%c%c%02d",
-			*pcd->Build,*pcd->Floor, atoi(pcd->RoomNum));
-
-	snprintf(ac.ComputerIp, sizeof(ac.ComputerIp)-1, "%03d.%03d.%03d.%03d",
-			((u_char*) &(pcd->ip))[0], ((u_char*) &(pcd->ip))[1],
-			((u_char*) &(pcd->ip))[2], ((u_char*) &(pcd->ip))[3]);
-#endif
-
-	MAC_ADDR2macaddr(ac.ComputerMac,mac);
-
-	strcpy(ac.ServType, na->strType);
-
-#ifdef ENABLE_HOTEL
-
-	g_string_printf(strSQL,SQL_template, pcd->Build,pcd->Floor,atoi(pcd->RoomNum),
-			pcd->ip_addr,			pcd->mac_addr, pcd->CustomerIDType,
-			pcd->CustomerID, pcd->CustomerName, na->strType,
-			na->data.c_str(), strTime);
-#else
-	char strmac[32];
-	in_addr in_addr_ip={0};
-
-	in_addr_ip.s_addr = na->ip;
-
-	snprintf(ac.ComputerIp, sizeof(ac.ComputerIp), "%03d.%03d.%03d.%03d",
-			((u_char*) &(in_addr_ip))[0], ((u_char*) &(in_addr_ip))[1],
-			((u_char*) &(in_addr_ip))[2], ((u_char*) &(in_addr_ip))[3]);
-
-	formatMAC(mac,strmac);
-
-	g_string_printf(strSQL,
-			"insert into t_netlog (MachineIP,MachineMac,nLogType,strLogInfo,nTime) values   ('%s','%s','%s','%s','%s')",
-			inet_ntoa(in_addr_ip),
-			strmac, na->strType,
-			na->data.c_str(), strTime->str);
-
-#endif
-	ksql_run_query_async(strSQL->str);
-//	syslog(LOG_NOTICE,"%s",strSQL.c_str());
-
-	strncpy(ac.Key1, na->data.c_str(), 60);
-	strncpy(ac.Key2, na->passwd.c_str(), sizeof(ac.Key2));
-
-	snprintf(ac.DestIp, sizeof(ac.DestIp), "%03d.%03d.%03d.%03d",
-			((u_char*) &(na->dstip))[0], ((u_char*) &(na->dstip))[1],
-			((u_char*) &(na->dstip))[2], ((u_char*) &(na->dstip))[3]);
-
-	snprintf(ac.Port, sizeof(ac.Port), "%d", na->dport);
-
-#ifdef DEBUG
-
-	std::cout << "ID: " << ac.CertNo << std::endl;
-	std::cout << "IDTYPE: " << ac.CertType << std::endl;
-	std::cout << "帐号:" << ac.Key1 << std::endl;
-	std::cout << "密码:" << ac.Key2 << std::endl;
-	std::cout << "主机:" << ac.DestIp;
-#ifdef ENABLE_HOTEL
-	std::cout << "用户名:" << pcd->CustomerName << std::endl;
-#endif
-	std::cout << "机器IP:" << ac.ComputerIp << std::endl;
-#endif
-	SendData(COMMAND_ACCOUNT, (char *) &ac, sizeof(ac));
-	g_string_free(strTime,1);
-	g_string_free(strSQL,1);
-}
-
 
 
 static volatile int	ksql_inited=false;

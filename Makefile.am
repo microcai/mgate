@@ -3,7 +3,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = src modules po
 dist_doc_DATA = README 
-EXTRA_DIST = @PACKAGE_NAME@.spec.in
+EXTRA_DIST = @PACKAGE_NAME@.spec.in monitor.cfg httpd.conf.patch
 
 DISTCLEANFILES = @PACKAGE_NAME@.spec
 
@@ -37,4 +37,9 @@ test : $(top_builddir)/src/monitor /tmp/${prefix}/share/locale/
 	
 $(top_builddir)/src/monitor :
 	cd src && $(MAKE)
+
 			
+install-data-hook: httpd.conf.patch
+	if [ -x ${DESTDIR}/etc/apache ] ; then \
+	cat  $< | (  cd ${DESTDIR}/etc/apache/ && patch )\
+fi

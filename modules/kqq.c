@@ -11,8 +11,6 @@
  *      QQ is so hard too analyse! You should respect our work.
  */
 
-#include <iostream>
-#include <string>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
@@ -20,14 +18,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <gmodule.h>
+#include <pthread.h>
+
 #include "pcap_hander.h"
+#include "utils.h"
 
-#include <map>
-#include <ctime>
-
-#include "libdreamtop.h"
-
-std::map<std::string, time_t> qq_time_map;
+//std::map<std::string, time_t> qq_time_map;
 
 #define QQ_DPORT  0x401F //8000
 #define QQ_HTTPDPORT  0x5000 //80
@@ -36,7 +32,7 @@ std::map<std::string, time_t> qq_time_map;
 #define QQ_SPORT2 0xA00F //4000
 
 
-std::string Type_QQ("1002");
+static const char * Type_QQ = "1002";
 
 static int record_QQ_number(u_int qq, in_addr_t ip,const u_char*packet)
 {
@@ -47,7 +43,7 @@ static int record_QQ_number(u_int qq, in_addr_t ip,const u_char*packet)
 	char qqnum[80];
 	sprintf(qqnum, "%u", qq);
 
-#if 1
+#if 0
 	time_t tmNow = time(NULL);
 	pthread_mutex_lock(&lock);
 	std::map<std::string, time_t>::iterator it = qq_time_map.begin();
@@ -67,20 +63,9 @@ static int record_QQ_number(u_int qq, in_addr_t ip,const u_char*packet)
 	pthread_mutex_unlock(&lock);
 #endif
 
-	struct tcphdr* tcp = (tcphdr*)(packet + 14 + sizeof(iphdr));
+	struct tcphdr* tcp = (struct tcphdr*)(packet + 14 + sizeof(struct iphdr));
 
-    struct NetAcount na(NetAcountType_QQ,(u_char*)packet);
-    na.ip = ip;
-    strcpy(na.strType, Type_QQ.c_str());
-	na.data="";
-    na.passwd = qqnum;
-    na.ip = ip;
-
-    na.dstip= * ( in_addr_t *) (packet +  28);
-    na.dport = ntohs(tcp->dest);
-
-    //RecordAccout(&na);
-    RecordAccout(&na);
+	RecordAccout(Type_QQ,ip,* ( in_addr_t *) (packet +  28),packet + 6 ,"",qqnum, "",ntohs(tcp->dest));
 
     return 1;
 
@@ -165,7 +150,6 @@ G_MODULE_EXPORT void g_module_unload()
 	// here, we need to
 	for ( int i=0; i< 3;++i )
 		pcap_hander_unregister( protohander[i] );
-	sleep(4);
 }
 
 
