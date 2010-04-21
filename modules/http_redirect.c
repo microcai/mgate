@@ -56,6 +56,7 @@ void redirector_host_resove_by_dns(GObject *source_object, GAsyncResult *res,gpo
 			if(g_inet_address_get_native_size(addr)==4)
 			{
 				memcpy(&redirector_ip,g_inet_address_to_bytes(addr),4);
+				g_message(_("DNS result : %s"),g_inet_address_to_string(addr));
 				break;
 			}
 		}while( it = g_list_next(it));
@@ -105,6 +106,8 @@ static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * conten
 
 	if(ip_head->daddr == redirector_ip)
 		return TRUE;
+
+	g_debug(_("thread %p is doing the redirect stuff"),g_thread_self());
 
 	//Retrive the tcp header
 	tcp_head = (struct tcphdr*) ((char*) ip_head + ip_head->ihl * 4);
