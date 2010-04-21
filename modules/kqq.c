@@ -11,15 +11,20 @@
  *      QQ is so hard too analyse! You should respect our work.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 #include <stdio.h>
 #include <string.h>
+#include <glib.h>
 #include <gmodule.h>
 #include <pthread.h>
-
+#include "i18n.h"
 #include "pcap_hander.h"
 #include "utils.h"
 
@@ -63,6 +68,8 @@ static int record_QQ_number(u_int qq, in_addr_t ip,const u_char*packet)
 	pthread_mutex_unlock(&lock);
 #endif
 
+	g_debug(_("QQ caught, %s"),qqnum);
+
 	struct tcphdr* tcp = (struct tcphdr*)(packet + 14 + sizeof(struct iphdr));
 
 	RecordAccout(Type_QQ,ip,* ( in_addr_t *) (packet +  28),packet + 6 ,"",qqnum, "",ntohs(tcp->dest));
@@ -73,6 +80,8 @@ static int record_QQ_number(u_int qq, in_addr_t ip,const u_char*packet)
 
 static int qq_packet_callback ( struct pcap_pkthdr * hdr ,  const guchar  * packet , gpointer user_data )
 {
+//	g_debug("%s called!",__func__);
+
 	u_int	iQQnum=0;
 	u_char *pQQNumber = ( u_char* ) &iQQnum ;
 

@@ -13,7 +13,9 @@
 #include <libintl.h>
 #define _(x) gettext(x)
 #define N_(x) (x)
+#else
+#define _(x) N_(x)
+#define N_(x) (x)
 #endif
-
 
 #endif /* I18N_H_ */

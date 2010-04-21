@@ -49,12 +49,6 @@ static void MAC_ADDR2macaddr(char mac_addr[PROLEN_COMPUTERMAC],const u_char mac[
 	sprintf(mac_addr,"%02x%02x%02x%02x%02x%02x",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
 }
 
-void RecordAccout(struct CustomerData & cd)
-{
-	SendData(COMMAND_CUSTOMER, (char *) &cd, sizeof(CustomerData));
-}
-
-
 static volatile int	ksql_inited=false;
 static volatile int	ksql_usemysql=false;
 

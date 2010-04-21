@@ -13,8 +13,9 @@ AC_ARG_ENABLE(debug,
                 [ CXXFLAGS="-g2 -DDEBUG -Wall -O0"]
               )
 # Checks for programs.
-AC_PROG_CC_C99
 AC_GNU_SOURCE
+AC_PROG_CC_C99
+AC_PROG_CXX
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([-Wall -Werror])
 

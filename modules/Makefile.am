@@ -7,8 +7,8 @@ AM_CPPFLAGS = @GLIB2_CFLAGS@ -I$(top_srcdir)/src -fpic
 LIBS = -lpthread -shared $(LDFLAGS)
 
 
-libexec_PROGRAMS =  kqq.so
-#kurl.so  kmsn.so
+libexec_PROGRAMS =  libkqq.so libkurl.so
+#  libkmsn.so
 
 if HAVE_LIBNET
 libexec_PROGRAMS += libredirect.so 
@@ -19,6 +19,10 @@ libredirect_so_LDADD = -lnet
 
 endif
 
+libkqq_so_SOURCES = kqq.c
+
+libkurl_so_SOURCES = kurl.cpp
+
 #libexec_PROGRAMS +=   klz.so kjincheng.so
 #AM_CPPFLAGS += -DENABLE_HOTEL 
 
@@ -28,10 +32,7 @@ endif
 
 #kjincheng_so_SOURCES = kServer.cpp kServer.hpp
 
-#kmsn_so_SOURCES = kmsn.cpp
+#libkmsn_so_SOURCES = kmsn.cpp
 
-kqq_so_SOURCES = kqq.c
-
-#kurl_so_SOURCES = kurl.cpp
 
 

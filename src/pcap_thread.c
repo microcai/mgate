@@ -23,9 +23,11 @@
 #endif
 
 #include <unistd.h>
-#include <sys/syslog.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <net/if.h>
 #include <net/ethernet.h>
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <pcap.h>
@@ -52,6 +54,9 @@ typedef struct _pcap_process_thread_param
 
 static void pcap_process_thread_func(gpointer _thread_data, gpointer user_data)
 {
+
+	struct in_addr ip;
+
 	u_int16_t port;
 	int i,j;
 	pcap_process_thread_param * thread_data = _thread_data;
@@ -68,12 +73,20 @@ static void pcap_process_thread_func(gpointer _thread_data, gpointer user_data)
 	 *********************************************************************/
 	port = *((u_int16_t*) (packet_content + ETH_HLEN + ip_head->ihl * 4 + 2));
 
+//	g_debug("got one packet, length %d, port is %d",thread_data->pcaphdr.caplen,(int)ntohs(port));
+
+//	struct in_addr ip; ip.s_addr = ip_head->saddr ;
+
+//	g_debug("saddr is %s",inet_ntoa(ip));
+
 	pcap_hander_callback_trunk	handers[1024];
 
 	//here we get a list of handler;
 	bzero(handers, sizeof(handers));
 
 	i = pcap_hander_get(port,ip_head->protocol,handers);
+
+//	g_debug("got %d handers",i);
 
 	//then we call these handler one by one
 	for(j=0;j<i;j++)
@@ -87,6 +100,7 @@ static void pcap_process_thread_func(gpointer _thread_data, gpointer user_data)
 
 void *pcap_thread_func(void * thread_param)
 {
+	struct ifreq rif={0};
 	GError * err = NULL;
 	bpf_u_int32 ip, mask;
 
@@ -94,7 +108,20 @@ void *pcap_thread_func(void * thread_param)
 	struct bpf_program bpf_filter =
 	{ 0 };
 
+	g_assert(gkeyfile);
+
+	gchar * nic = g_key_file_get_string(gkeyfile,"monitor","nic",NULL);
+	if(nic)
+		g_strchomp(g_strchug(nic));
+	else
+	{
+		nic = g_strdup("eth0");
+		g_warning(_("using %s as capturing interface"),nic);
+	}
+	strcpy(rif.ifr_name,"eth0");
 	pcap_t * pcap_handle = pcap_open_live("eth0", 65536, 0, 0, errbuf);
+	g_free(nic);
+
 	if (!pcap_handle)
 	{
 		syslog(LOG_CRIT, _("ERROR:can not open %s for capturing!\n"), "eth0");
@@ -111,6 +138,15 @@ void *pcap_thread_func(void * thread_param)
 	char * net_interface = pcap_lookupdev(errbuf);
 
 	pcap_lookupnet(net_interface, &ip, &mask, errbuf);
+
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if (!ioctl(sock, SIOCGIFADDR, &rif))
+	{
+		struct sockaddr_in * in_address;
+		in_address = (struct sockaddr_in*)&(rif.ifr_addr);
+		ip = in_address->sin_addr.s_addr;
+	}
+	close(sock);
 
 	pcap_compile(pcap_handle, &bpf_filter, "tcp or udp", 1, 0);
 
@@ -147,18 +183,20 @@ void *pcap_thread_func(void * thread_param)
 		//	    //non TCP or UDP is ignored
 		if (ip_head->protocol != IPPROTO_TCP && ip_head->protocol != IPPROTO_UDP)
 			continue;
-
 		//out -> in is ignored
 		if ((ip_head->saddr & mask) != (ip & mask))
 		{
 			continue;
 		}
 
+#ifndef DEBUG
 		//local communication is ignored
-		if ((ip_head->daddr & mask) == (ip & mask))
-			continue;
 		if (ip_head->saddr == ip)
 			continue;
+
+		if ((ip_head->daddr & mask) == (ip & mask))
+			continue;
+#endif
 
 		thread_data = g_new(pcap_process_thread_param,1);
 

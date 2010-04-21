@@ -72,9 +72,6 @@ void formattime(std::string & strtime);
 typedef void (*FUNC_SENDDATA)(int cmd,void *data,int ulen);
 
 
-
-void RecordAccout(struct NetAcount*na);
-void RecordAccout(struct CustomerData & cd);
 void InsertCustomerLog(const char * build,const char * floor,const char * room, const char * name ,
 		const char * idtype , const char * id, const char * type,const char * ip, const char * mac, const char * time);
 

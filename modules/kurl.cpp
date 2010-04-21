@@ -1,22 +1,30 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include <iostream>
 #include <map>
+#include <vector>
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <net/ethernet.h>
-#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
-#include <vector>
 #include <stdio.h>
-
+#include <string.h>
+#include <glib.h>
 #include <gmodule.h>
-#include "libdreamtop.h"
+#include <pthread.h>
+#include "i18n.h"
 #include "pcap_hander.h"
+#include "utils.h"
 
 #include <ctime>
+
+#ifndef ETH_HLEN
+#define ETH_HLEN 14
+#endif
+
 std::map<std::string, time_t> url_time_map;
 
 struct MAIL_LOGIN_KEY
@@ -208,40 +216,19 @@ bool ParseTcpPkt(std::string strIndex, const char* tcpdata, size_t tcpdata_len, 
 
 static int RecordPOST(const char *user, const char*pswd, const char*host, const u_char*packet,in_addr_t sip,in_addr_t dip)
 {
-	struct NetAcount na(NetAcountType_POST,(u_char*)packet);// = (struct NetAcount*)malloc(8190);
-
 	struct tcphdr* tcp = (tcphdr*)(packet + 14 + sizeof(iphdr));
-
-	na.data = host;
-	na.ip = sip;
-	na.dstip = dip;
-
-	strcpy(na.strType,"0006");
 
 	char key2[80];
 	snprintf(key2,80,"%s:%s",user,pswd);
-	na.passwd = key2 ;
-	na.host = host;
-	na.dport = ntohs(tcp->dest);
-
-	RecordAccout(&na);
+	RecordAccout("0006",sip,dip,(char*)packet+6,host,key2,host,ntohs(tcp->dest));
 	return 1;
 }
 
 static int RecordUrl(char *url,const u_char*packet,in_addr_t sip,in_addr_t dip)
 {
-	std::string strUrl(url);
-
-    struct NetAcount na(NetAcountType_HTTP,(u_char*)packet);// = (struct NetAcount*)malloc(8190);
-
-	na.data = url;
-	na.ip = sip;
-	na.dstip = dip;
-	strcpy(na.strType,"0001");
-
-	na.dport =  (80);
-    RecordAccout(&na);
-
+	g_debug("got url  %s",url);
+	struct tcphdr* tcp = (tcphdr*)(packet + 14 + sizeof(iphdr));
+	RecordAccout("0001",sip,dip,(char*)packet+6,"","",url,ntohs(tcp->dest));
     return 1;
 }
 
@@ -373,10 +360,11 @@ static int url_packet_callback(struct pcap_pkthdr * dhr, const u_char * packet,g
 }
 
 static void * protocol_handler[2];
+G_BEGIN_DECLS
 G_MODULE_EXPORT gchar * g_module_check_init(GModule *module)
 {
     //不是只有 80 端口才是 http !!!
-    protocol_handler[0] = pcap_hander_register(url_packet_callback,0x5000, IPPROTO_TCP , 0);
+    protocol_handler[0] = pcap_hander_register(url_packet_callback,htons(80), IPPROTO_TCP , 0);
     protocol_handler[1] = pcap_hander_register(GetHttpPost,0x5000, IPPROTO_TCP , 0);
     return 0;
 }
@@ -386,5 +374,5 @@ G_MODULE_EXPORT void g_module_unload()
 	pcap_hander_unregister( protocol_handler[0] );
 	pcap_hander_unregister( protocol_handler[1] );
 }
-
+G_END_DECLS
 char module_name[]="URL分析";
