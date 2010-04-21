@@ -18,11 +18,13 @@
 #include <libnet.h>
 
 #include <glib.h>
+#include <gio/gio.h>
 #include <gmodule.h>
 
 #include "global.h"
 #include "pcap_hander.h"
 #include "clientmgr.h"
+#include "i18n.h"
 
 #define	HTTP_PORT 20480
 
@@ -37,8 +39,42 @@ static u_int8_t httphead_t[] =
 "<html>\n\t<head>\n\t\t<meta http-equiv=\"Refresh\"content=\"0 ; "
 "url=%s\">\n\t</head>\n</html>\n";
 
+static in_addr_t redirector_ip;
+
+void redirector_host_resove_by_dns(GObject *source_object, GAsyncResult *res,gpointer user_data)
+{
+	GList * hosts = g_resolver_lookup_by_name_finish(G_RESOLVER(source_object),res,NULL);
+
+	if(hosts)
+	{
+		GList * it = g_list_first(hosts);
+
+		do
+		{
+			GInetAddress * addr = (GInetAddress*)(it->data);
+
+			if(g_inet_address_get_native_size(addr)==4)
+			{
+				memcpy(&redirector_ip,g_inet_address_to_bytes(addr),4);
+				break;
+			}
+		}while( it = g_list_next(it));
+		g_resolver_free_addresses(hosts);
+	}
+	g_object_unref(source_object);
+}
+
 static void http_redirector_init(const gchar * desturl)
 {
+	char host[128];
+	sscanf(desturl,"http://%128[^/]",host);
+	redirector_ip = inet_addr(host);
+	if (redirector_ip == INADDR_NONE)
+	{
+		g_debug(_("host in the url is not an ipv4 address, will do async dns lookup"));
+		GResolver * dns =  g_resolver_get_default();
+		g_resolver_lookup_by_name_async(dns,host,NULL,redirector_host_resove_by_dns,dns);
+	}
 	sprintf((char*) httphead, (char*) httphead_t, desturl, desturl);
 }
 
@@ -67,11 +103,14 @@ static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * conten
 	//非 enable 的客户端，现在要开始这般处理了,重定向到 ... 嘿嘿
 	struct iphdr * ip_head = (typeof(ip_head))(content + LIBNET_ETH_H);
 
+	if(ip_head->daddr == redirector_ip)
+		return TRUE;
+
 	//Retrive the tcp header
 	tcp_head = (struct tcphdr*) ((char*) ip_head + ip_head->ihl * 4);
 
-	if (tcp_head->dest != HTTP_PORT)
-		return TRUE;
+//	if (tcp_head->dest != HTTP_PORT)
+//		return TRUE;
 
 	u_int8_t tcp_flags = ((struct libnet_tcp_hdr *) tcp_head)->th_flags;
 
@@ -83,7 +122,7 @@ static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * conten
 		 * 回复一个syn ack 就是了
 		 *********************************/
 		// here we just echo ack and syn.
-		libnet_build_tcp(80, ntohs(tcp_head->source), tcp_head->seq, ntohl(
+		libnet_build_tcp(ntohs(tcp_head->dest), ntohs(tcp_head->source), tcp_head->seq, ntohl(
 				tcp_head->seq) + 1, TH_ACK | TH_SYN, 4096, 0, 0, 20, 0, 0,
 				libnet, 0);
 
@@ -104,7 +143,7 @@ static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * conten
 		 *********************************************/
 		int SIZEHTTPHEAD = strlen((const char*) httphead);
 
-		libnet_build_tcp(80, ntohs(tcp_head->source), ntohl(tcp_head->ack_seq),
+		libnet_build_tcp(ntohs(tcp_head->dest), ntohs(tcp_head->source), ntohl(tcp_head->ack_seq),
 				ntohl(tcp_head->seq) + ntohs(ip_head->tot_len) - 40, TH_ACK
 						| TH_PUSH | TH_FIN, 4096, 0, 0, 20 + SIZEHTTPHEAD,
 				httphead, SIZEHTTPHEAD, libnet, 0);
@@ -126,7 +165,7 @@ static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * conten
 		/*********************************************************
 		 *好，现在结束连接！
 		 ********************************************************/
-		libnet_build_tcp(80, ntohs(tcp_head->source), ntohl(tcp_head->ack_seq),
+		libnet_build_tcp(ntohs(tcp_head->dest), ntohs(tcp_head->source), ntohl(tcp_head->ack_seq),
 				ntohl(tcp_head->seq) + 1, TH_ACK, 4096, 0, 0, 20, 0, 0, libnet,
 				0);
 		libnet_build_ipv4(40, 0, 0, 0x4000, 63/*ttl*/, IPPROTO_TCP, 0,
