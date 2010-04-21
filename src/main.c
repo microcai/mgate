@@ -154,7 +154,7 @@ static void check_pid()
 
 	if (create)
 	{
-		write(fd, buf, strlen(buf));
+		write(fd, buf, strlen(buf)+1);
 		g_free(buf);
 		close(fd);
 		return ;
@@ -167,10 +167,10 @@ static void check_pid()
 
 	int status;
 
-	if (kill(pid,0))
+	if (kill(pid,0) && (errno !=EPERM ))
 	{
 		lseek(fd,0,SEEK_SET);
-		write(fd, buf, strlen(buf));
+		write(fd, buf, strlen(buf)+1);
 		g_free(buf);
 		close(fd);
 		return ;

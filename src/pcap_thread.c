@@ -37,7 +37,7 @@
 #include <pcap/pcap.h>
 #include <string.h>
 #include <glib.h>
-#include <ulimit.h>
+#include <sys/resource.h>
 
 #include "i18n.h"
 
@@ -96,12 +96,15 @@ void *pcap_thread_func(void * thread_param)
 	struct ifreq rif={0};
 	GError * err = NULL;
 	bpf_u_int32 ip, mask;
+	struct rlimit	limit;
 
 	char errbuf[PCAP_ERRBUF_SIZE];
 	struct bpf_program bpf_filter =
 	{ 0 };
 
 	g_assert(gkeyfile);
+
+	getrlimit(RLIMIT_NOFILE,&limit);
 
 	gchar * nic = g_key_file_get_string(gkeyfile,"monitor","nic",NULL);
 	if(nic)
@@ -166,10 +169,11 @@ void *pcap_thread_func(void * thread_param)
 	}
 	if (num_threads <= 0)
 		num_threads = 1;
-
-	else if(num_threads > ulimit(0 ))
+	else if (num_threads > (limit.rlim_cur - 8) )
 	{
+		num_threads = (limit.rlim_cur - 8) & 0xFFFFFFC;
 
+		g_message(_("Too many thread will exclude the resource limite, reduce to %d"),num_threads);
 
 	}
 
