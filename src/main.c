@@ -57,6 +57,7 @@ int main(int argc, char*argv[], char*env[])
 	gboolean flush_db = FALSE;
 	gboolean run_daemon = FALSE;
 	gchar *  domain_dir = NULL;
+	gchar *	 device = NULL;
 
 	const gchar * module_dir = "/usr/lib/monitor/modules" ;
 
@@ -79,7 +80,7 @@ int main(int argc, char*argv[], char*env[])
 			{"locale",'\0',0,G_OPTION_ARG_STRING,&domain_dir,_("set domain dir root"),N_("dir")},
 			{"config",'f',0,G_OPTION_ARG_STRING,&config_file_name,_("set alternative config file"),N_("filename")},
 			{"module_dir",'f',0,G_OPTION_ARG_STRING,&module_dir,_("set alternative module dir"),N_("dir")},
-
+			{"device",'d',0,G_OPTION_ARG_STRING,&device,_("override config, make monitor capturing on that interface"),N_("nic")},
 			{0}
 	};
 
@@ -88,8 +89,13 @@ int main(int argc, char*argv[], char*env[])
 	GOptionContext * context;
 	context = g_option_context_new("");
 	g_option_context_add_main_entries(context,args,PACKAGE_NAME);
-	g_option_context_parse(context,&argc,&argv,NULL);
+	g_option_context_parse(context,&argc,&argv,&err);
 	g_option_context_free(context);
+
+	if(err)
+	{
+		g_error("%s",err->message);
+	}
 
 	if(domain_dir)
 	{
@@ -106,6 +112,11 @@ int main(int argc, char*argv[], char*env[])
 	if (!g_key_file_load_from_file(gkeyfile, config_file_name,
 			G_KEY_FILE_KEEP_TRANSLATIONS, NULL))
 		g_warning(_("Err opening config file"));
+
+	if(device)
+	{
+		g_key_file_set_string(gkeyfile,"monitor","nic",device);
+	}
 
 	check_pid(FALSE);
 
