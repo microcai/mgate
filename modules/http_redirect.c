@@ -59,7 +59,7 @@ static void http_redirector_init(const gchar * desturl)
 	sprintf((char*) httphead, (char*) httphead_t, desturl, desturl);
 }
 
-static void	init_thread_libnet()
+static inline void	init_thread_libnet()
 {
 	if(!libnet)
 	{

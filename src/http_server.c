@@ -18,6 +18,9 @@
 #include "i18n.h"
 #include "global.h"
 
+static void SoupServer_path_info(SoupServer *server, SoupMessage *msg,
+		const char *path, GHashTable *query, SoupClientContext *client,
+		gpointer user_data);
 static void SoupServer_path_index(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
 		gpointer user_data);
@@ -83,12 +86,69 @@ int start_server()
 	soup_server_add_handler(server,"/",SoupServer_path_root,NULL,NULL);
 	soup_server_add_handler(server,"/index.html",SoupServer_path_index,NULL,NULL);
 	soup_server_add_handler(server,"/index.htm",SoupServer_path_index,NULL,NULL);
+	soup_server_add_handler(server,"/info",SoupServer_path_info,NULL,NULL);
 
 	soup_server_run_async(server);
 
 	return soup_server_get_port(server);
 }
 
+const gchar * html_begin = "<htm>\n";
+const gchar * html_head_begin = "\t<head>\n";
+const gchar * html_head_context = "";
+const gchar * html_head_close = "\n\t</head>\n";
+
+const gchar * html_body_begin = "\t<body>\n";
+
+const gchar * html_body_close = "\n\t</body>";
+const gchar * html_close = "\n</html>";
+
+static gboolean monitor_http_append_info(gpointer _msg)
+{
+	gchar * tr ;
+	SoupMessage *msg = _msg;
+	SoupMessageBody * body = msg->response_body;
+	soup_message_body_append(body,SOUP_MEMORY_STATIC,html_body_begin,strlen(html_body_begin));
+	//构造表格吧 :)
+
+	tr = g_strdup_printf("<h1>Info of the running %s , pid %d<h1>",PACKAGE_NAME,getpid());
+	soup_message_body_append(body,SOUP_MEMORY_TAKE,tr,strlen(tr));
+
+	soup_message_body_append(body,SOUP_MEMORY_STATIC,"<dl>",strlen("<dl>"));
+
+	tr = g_strdup_printf("<div id=\"info\"><dd>cpu usage %%%d</dd>",2);
+	soup_message_body_append(body,SOUP_MEMORY_TAKE,tr,strlen(tr));
+
+
+	soup_message_body_append(body,SOUP_MEMORY_STATIC,"</dl>",strlen("</dl>"));
+	soup_message_body_append(body,SOUP_MEMORY_STATIC,html_body_close,strlen(html_body_close));
+	soup_message_body_append(body,SOUP_MEMORY_STATIC,html_close,strlen(html_close));
+	soup_message_body_complete(body);
+	soup_server_unpause_message(server,msg);
+	return FALSE;
+}
+
+
+void SoupServer_path_info(SoupServer *server, SoupMessage *msg,
+		const char *path, GHashTable *query, SoupClientContext *client,
+		gpointer user_data)
+{
+	soup_message_set_status(msg,SOUP_STATUS_OK);
+
+	soup_server_pause_message(server,msg);
+
+	soup_message_headers_set_content_type(msg->response_headers,"text/html",NULL);
+	soup_message_headers_set_encoding(msg->response_headers,SOUP_ENCODING_CHUNKED);
+	soup_message_body_append(msg->response_body,SOUP_MEMORY_STATIC,html_begin,strlen(html_begin));
+	soup_message_body_append(msg->response_body,SOUP_MEMORY_STATIC,html_head_begin,strlen(html_head_begin));
+
+	gchar * title = g_strdup_printf("\t\t<title>Info of the running %s , pid %d</title>",PACKAGE_NAME,getpid());
+
+	soup_message_body_append(msg->response_body,SOUP_MEMORY_TAKE,title,strlen(title));
+
+	soup_message_body_append(msg->response_body,SOUP_MEMORY_STATIC,html_head_close,strlen(html_head_close));
+	g_idle_add(monitor_http_append_info,msg);
+}
 
 static void SoupServer_path_index(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
@@ -98,10 +158,7 @@ static void SoupServer_path_index(SoupServer *server, SoupMessage *msg,
 
 	soup_message_set_status(msg,SOUP_STATUS_OK);
 
-
-
-
-	gchar * body = g_strdup_printf("<html><body>" PACKAGE_STRING "</body></html>",i++);
+	gchar * body = g_strdup_printf("<html><body>" PACKAGE_STRING "  is running ...</body></html>",i++);
 
 	soup_message_set_response(msg,"text/html",SOUP_MEMORY_TAKE,body,strlen(body));
 }
