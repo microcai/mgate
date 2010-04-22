@@ -88,6 +88,7 @@ int main(int argc, char*argv[], char*env[])
 
 	GOptionContext * context;
 	context = g_option_context_new("");
+	g_option_context_set_translation_domain(context,GETTEXT_PACKAGE);
 	g_option_context_add_main_entries(context,args,PACKAGE_NAME);
 	g_option_context_parse(context,&argc,&argv,&err);
 	g_option_context_free(context);
@@ -116,6 +117,7 @@ int main(int argc, char*argv[], char*env[])
 	if(device)
 	{
 		g_key_file_set_string(gkeyfile,"monitor","nic",device);
+		g_free(device);
 	}
 
 	check_pid(FALSE);
