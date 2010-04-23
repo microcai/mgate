@@ -88,6 +88,7 @@ int main(int argc, char*argv[], char*env[])
 
 	GOptionContext * context;
 	context = g_option_context_new("");
+	g_option_context_set_ignore_unknown_options(context,TRUE);
 	g_option_context_set_translation_domain(context,GETTEXT_PACKAGE);
 	g_option_context_add_main_entries(context,args,PACKAGE_NAME);
 	g_option_context_parse(context,&argc,&argv,&err);
