@@ -42,6 +42,8 @@
 #include "ksql.h"
 #include "http_server.h"
 
+static void myLog(const gchar *log_domain, GLogLevelFlags log_level,
+		const gchar *message, gpointer user_data);
 static gboolean do_daemon(gpointer user_data);
 static void check_pid(gboolean) ;
 
@@ -192,10 +194,55 @@ static void check_pid(gboolean force)
 	}
 }
 
+void myLog(const gchar *log_domain, GLogLevelFlags log_level,
+		const gchar *message, gpointer user_data)
+{
+	const char * level = "info";
+
+	if(log_level & G_LOG_LEVEL_USER_SHIFT)
+	{
+		level = "user";
+	}
+	if(log_level & G_LOG_LEVEL_MASK)
+	{
+		level = "mask";
+	}
+	if(log_level & G_LOG_LEVEL_INFO)
+	{
+		level = "info";
+	}
+	if(log_level & G_LOG_LEVEL_DEBUG)
+	{
+		level = "DEBUG";
+	}
+	if(log_level & G_LOG_LEVEL_CRITICAL)
+	{
+		level = "critical";
+	}
+	if(log_level & G_LOG_LEVEL_MESSAGE)
+	{
+		level = "message";
+	}
+	if(log_level & G_LOG_LEVEL_WARNING)
+	{
+		level = "warning";
+	}
+	if(log_level & G_LOG_LEVEL_ERROR)
+	{
+		level = "error";
+	}
+
+	fprintf(user_data,"%s (%d) **%s** : %s\n",PACKAGE_NAME,getpid(),
+			level,
+			message);
+}
+
+
 gboolean do_daemon(gpointer user_data)
 {
 	if(GPOINTER_TO_INT(user_data))
 	{
+		g_log_set_default_handler(myLog,fopen("/tmp/monitor.log","w"));
 		daemon(FALSE,TRUE);
 		sleep(0);
 	}
