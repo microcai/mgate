@@ -131,11 +131,43 @@ Client * client_new(const gchar * name, const gchar * id)
 	return g_object_new(G_TYPE_CLIENT,"name",name,"id",id,NULL);
 }
 
+//================================================================================================================
+static volatile int	reader=0;
+static volatile	int have_writer=0;
+
 static GTree	* client_tree;
 static gboolean g_tree_compare_func(gconstpointer a , gconstpointer b , gpointer user_data)
 {
 	return mac2uint64((guchar*)b) - mac2uint64((guchar*)a);
 }
+
+static inline void spin_read_write_rlock()
+{
+	while(have_writer)g_thread_yield();
+	g_atomic_int_inc(&reader);
+}
+
+static inline void spin_read_write_runlock()
+{
+	g_atomic_int_add(&reader,-1);
+}
+
+static GStaticMutex lock= G_STATIC_MUTEX_INIT;
+
+static inline void spin_read_write_wlock()
+{
+	g_atomic_int_inc(&have_writer);
+	g_static_mutex_lock(&lock);
+	while(g_atomic_int_get(&reader))
+		g_thread_yield();
+}
+
+static inline void spin_read_write_wunlock()
+{
+	g_static_mutex_unlock(&lock);
+	g_atomic_int_add(&have_writer,-1);
+}
+
 
 void clientmgr_init()
 {
@@ -161,7 +193,11 @@ Client * clientmgr_get_client_by_ip(in_addr_t ip)
 	gpointer p_ip = GINT_TO_POINTER(ip);
 	Client * ret = (Client*) p_ip;
 
+	spin_read_write_rlock();
+
 	g_tree_foreach(client_tree,g_tree_travel_findval_func,&ret);
+	spin_read_write_runlock();
+
 	if( ret == p_ip)
 		return NULL;
 	return ret;
@@ -169,11 +205,20 @@ Client * clientmgr_get_client_by_ip(in_addr_t ip)
 
 Client * clientmgr_get_client_by_mac(const guchar * mac)
 {
-	return (Client*)g_tree_lookup(client_tree,mac);
+	spin_read_write_rlock();
+
+	Client * ptr = (Client*)g_tree_lookup(client_tree,mac);
+
+	spin_read_write_runlock();
+
+	return ptr;
 }
 
-void clientmgr_insert_client_by_mac(guchar * mac,Client * client)
+void clientmgr_insert_client_by_mac(guchar * mac, Client * client)
 {
+	spin_read_write_wlock();
 	guchar * mac_ = g_strdup(mac);
-	g_tree_insert(client_tree,mac_,client);
+	g_tree_insert(client_tree, mac_, client);
+	spin_read_write_wunlock();
 }
+
