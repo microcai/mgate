@@ -183,15 +183,19 @@ gboolean htmlnode_to_plane_text_internal(HtmlNode * rootnode, htmlnode_appender 
 
 		appender(">", user_data);
 
-		int first_call =TRUE ;
+		gboolean first_call =TRUE ;
+		gboolean newline_close = FALSE;
 
 		void node_for(HtmlNode * node, gpointer user_data)
 		{
 			if(depth && first_call)
 			{
 				first_call = FALSE;
-				if(node->tag)
+				if (node->tag)
+				{
 					appender("\n", user_data);
+					newline_close = TRUE;
+				}
 			}
 			htmlnode_to_plane_text_internal(node, appender, user_data, depth + 1 , freenode);
 		}
@@ -201,7 +205,7 @@ gboolean htmlnode_to_plane_text_internal(HtmlNode * rootnode, htmlnode_appender 
 			g_list_foreach(rootnode->children, (GFunc) node_for, user_data);
 		}
 
-		if (depth && !first_call)
+		if (newline_close && depth && !first_call)
 		{
 			appender(kg, user_data);
 

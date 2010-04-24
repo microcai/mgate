@@ -246,14 +246,14 @@ static void SoupServer_path_index(SoupServer *server, SoupMessage *msg,
 
 	if (smsurl)
 	{
-		HtmlNode * form = htmlnode_new_form(body,"GET",smsurl,NULL);
+		HtmlNode * form = htmlnode_new_form(body,"GET",smsurl,"targe=\"smsframe\"",NULL);
 
 		HtmlNode * tr = htmlnode_new(htmlnode_new_table(form,"border=\"0\"","align=\"center\"",NULL),"tr",NULL);
 
 
 		htmlnode_new(htmlnode_new(tr,"td",NULL),"input","type=\"submit\"","value=\"获取验证码\"",NULL);
 
-		htmlnode_new_iframe(body,smsurl,"height=\"80%\"","width=\"100%\"",NULL);
+		htmlnode_new_iframe(body,smsurl,"height=\"80%\"","width=\"100%\"","name=\"smsframe\"",NULL);
 
 		g_free(smsurl);
 
