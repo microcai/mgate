@@ -11,6 +11,7 @@
 #endif
 
 #include <unistd.h>
+#include <sys/resource.h>
 #include <stdio.h>
 #include <string.h>
 #include <glib.h>
@@ -37,17 +38,24 @@ static void soup_message_body_appender(const gchar * txt, SoupMessageBody * body
 
 static SoupServer * server;
 
-static gboolean finish(gpointer msg)
-{
-	g_debug(_("finish called"));
-	soup_server_unpause_message(server,msg);
-	return FALSE;
-}
+static int cpu_usage;
 
-static gboolean idel(gpointer msg)
+static gboolean celect_usage(gpointer msg)
 {
-	g_timeout_add(1,finish,msg);
-	return FALSE;
+	static struct rusage usage;
+	struct rusage cur_usage;
+
+	getrusage(RUSAGE_SELF,&cur_usage);
+
+	cpu_usage = ((cur_usage.ru_utime.tv_sec + cur_usage.ru_stime.tv_sec - usage.ru_utime.tv_sec -usage.ru_stime.tv_sec)*1000
+
+		+ ( cur_usage.ru_utime.tv_usec + cur_usage.ru_stime.tv_usec -  usage.ru_utime.tv_usec - usage.ru_stime.tv_usec)/1000
+
+	)/(100);
+
+	usage = cur_usage;
+
+	return TRUE;
 }
 
 int start_server()
@@ -94,31 +102,18 @@ int start_server()
 
 	soup_server_run_async(server);
 
+	g_timeout_add_seconds(10,celect_usage,NULL);
+//
+//	gboolean id(gpointer a)
+//	{
+//		return TRUE;
+//
+//	}
+//
+//	g_timeout_add(1,id,NULL);
+
 	return soup_server_get_port(server);
 }
-
-const gchar * html_begin = "<html>\n";
-const gchar * html_head_begin = "\t<head>\n";
-const gchar * html_head_context = "";
-const gchar * html_head_close = "\n\t</head>\n";
-
-const gchar * html_body_begin = "\t<body>\n";
-
-const gchar * html_body_close = "\n\t</body>";
-const gchar * html_close = "\n</html>";
-
-static void monitor_http_append_html_head(SoupMessageBody * body,const char * title)
-{
-	soup_message_body_append(body,SOUP_MEMORY_STATIC,html_begin,strlen(html_begin));
-	soup_message_body_append(body,SOUP_MEMORY_STATIC,html_head_begin,strlen(html_head_begin));
-
-	gchar * title_ = g_strdup_printf("\t\t<title>%s</title>",title);
-
-	soup_message_body_append(body,SOUP_MEMORY_TAKE,title_,strlen(title_));
-	soup_message_body_append(body,SOUP_MEMORY_STATIC,html_head_close,strlen(html_head_close));
-}
-
-
 
 void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path,
 		GHashTable *query, SoupClientContext *client,gpointer user_data)
@@ -158,6 +153,7 @@ void SoupServer_path_info(SoupServer *_server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
 		gpointer user_data)
 {
+	SoupMessageBody * body = msg->response_body;
 
 	soup_message_set_status(msg,SOUP_STATUS_OK);
 
@@ -166,39 +162,43 @@ void SoupServer_path_info(SoupServer *_server, SoupMessage *msg,
 	soup_message_headers_set_content_type(msg->response_headers,"text/html",NULL);
 	soup_message_headers_set_encoding(msg->response_headers,SOUP_ENCODING_CHUNKED);
 
-	SoupMessageBody * body = msg->response_body ;
+	HtmlNode * html = htmlnode_new(NULL, "html", NULL);
 
-	gchar * title = g_strdup_printf("Info of the running %s , pid %d",PACKAGE_NAME,getpid());
+	gchar * title = g_strdup_printf("Info of the running %s , pid %d",
+			PACKAGE_NAME, getpid());
 
-	monitor_http_append_html_head(msg->response_body,title);
+	htmlnode_new_text(htmlnode_new(htmlnode_new_head(html, NULL), "title", NULL), title);
 
 	g_free(title);
 
-	gboolean monitor_http_append_info(gpointer _msg)
-	{
-		gchar * tr ;
-		SoupMessage *msg = _msg;
-		SoupMessageBody * body = msg->response_body;
-		soup_message_body_append(body,SOUP_MEMORY_STATIC,html_body_begin,strlen(html_body_begin));
-		//构造表格吧 :)
+	gchar * tr;
 
-		tr = g_strdup_printf("<h1>Info of the running %s , pid %d<h1>",PACKAGE_NAME,getpid());
-		soup_message_body_append(body,SOUP_MEMORY_TAKE,tr,strlen(tr));
+	//构造表格吧 :)
 
-		soup_message_body_append(body,SOUP_MEMORY_STATIC,"<dl>",strlen("<dl>"));
+	tr = g_strdup_printf("Info of the running %s , pid %d", PACKAGE_NAME,
+			getpid());
 
-		tr = g_strdup_printf("<div id=\"info\"><dd>cpu usage %%%d</dd>",2);
-		soup_message_body_append(body,SOUP_MEMORY_TAKE,tr,strlen(tr));
+	HtmlNode * htmlbody = htmlnode_new_body(html, NULL);
+
+	htmlnode_new_text(htmlnode_new(htmlbody, "h1", NULL), tr);
+
+	g_free(tr);
+
+	HtmlNode * div = htmlnode_new(htmlbody, "div", "id=\"info\"", NULL);
 
 
-		soup_message_body_append(body,SOUP_MEMORY_STATIC,"</dl>",strlen("</dl>"));
-		soup_message_body_append(body,SOUP_MEMORY_STATIC,html_body_close,strlen(html_body_close));
-		soup_message_body_append(body,SOUP_MEMORY_STATIC,html_close,strlen(html_close));
-		soup_message_body_complete(body);
-		soup_server_unpause_message(server,msg);
-		return FALSE;
-	}
-	g_idle_add(monitor_http_append_info,msg);
+	tr = g_strdup_printf("cpu usage %%%d",cpu_usage);
+
+	htmlnode_new_text(htmlnode_new(div, "dd", NULL), tr);
+
+	g_free(tr);
+
+	htmlnode_to_plane_text_and_free(html,
+			(htmlnode_appender) soup_message_body_appender, msg->response_body);
+
+	soup_message_body_complete(body);
+	soup_server_unpause_message(server, msg);
+
 }
 
 static void SoupServer_path_index(SoupServer *server, SoupMessage *msg,
