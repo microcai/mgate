@@ -33,6 +33,8 @@ static void SoupServer_path_root(SoupServer *server, SoupMessage *msg,
 static void SoupServer_path_login(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
 		gpointer user_data);
+static void soup_message_body_appender(const gchar * txt, SoupMessageBody * body);
+
 static SoupServer * server;
 
 static gboolean finish(gpointer msg)
@@ -146,27 +148,23 @@ void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path
 		soup_message_headers_set_encoding(msg->response_headers,
 				SOUP_ENCODING_CHUNKED);
 
+		HtmlNode * html = htmlnode_new(NULL,"html",NULL);
+
 		char id[32] =
 		{ 0 };
 
 		sscanf(msg->request_body->data, "id=%32[^&]", id);
 
-		monitor_http_append_html_head(msg->response_body, "登录失败!");
+		htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录失败!");
 
-		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
-				html_body_begin, strlen(html_body_begin));
+		HtmlNode * body = htmlnode_new_body(html,NULL);
 
-		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
-				"登录识别，识别啊!你的 ID 是 ", strlen("登录识别，识别啊!你的 ID 是 "));
+		HtmlNode * p = htmlnode_new(body,"p",NULL);
 
-		soup_message_body_append(msg->response_body, SOUP_MEMORY_COPY, id,
-				strlen(id));
+		htmlnode_new_text(p,"登录识别，识别啊!你的 ID 是 ");
+		htmlnode_new_text(p,id);
 
-		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
-				html_body_close, strlen(html_body_close));
-		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
-				html_close, strlen(html_close));
-
+		htmlnode_to_plane_text_and_free(html,(htmlnode_appender)soup_message_body_appender,msg->response_body);
 		soup_message_body_complete(msg->response_body);
 	}
 }
@@ -229,86 +227,40 @@ static void SoupServer_path_index(SoupServer *server, SoupMessage *msg,
 	soup_message_headers_set_encoding(msg->response_headers,
 			SOUP_ENCODING_CHUNKED);
 
-	monitor_http_append_html_head(msg->response_body, "登录以使用网络");
+	HtmlNode * html = htmlnode_new(NULL,"html",NULL);
 
-	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
-			html_body_begin, strlen(html_body_begin));
+	htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录以使用网络");
 
-	const char * form =
-			"\t<form action=\"/login.monitor\" method=\"POST\">\n";
+	HtmlNode * body = htmlnode_new_body(html,NULL);
 
-	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC, form,
-			strlen(form));
+	HtmlNode * tr = htmlnode_new(htmlnode_new_table(htmlnode_new_form(body,"POST","/login.monitor",NULL),"border=\"0\"","align=\"center\"",NULL),"tr",NULL);
 
-	const char * table = "<table border=\"0\" align=\"center\" >\n<tr>\n\t\t";
+	htmlnode_new(htmlnode_new(tr,"td",NULL),"input","type=\"text\"","name=\"id\"",NULL);
 
-	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,table, strlen(table));
+	htmlnode_new_text(htmlnode_new(tr,"td",NULL),"输入验证码:");
 
-	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
-			"<td>输入验证码:</td>", strlen("<td>输入验证码:</td>"));
-
-	const char * input = "<td><input type=\"text\" name=\"id\"></input></td>";
-
-	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC, input,
-			strlen(input));
-
-	input = "<td><input type=\"submit\" value=\"验证\" name=\"Submit\"></input></td>";
-
-	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC, input,
-			strlen(input));
-
-	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
-			"\n</tr>\n</table>\n\n", strlen("\n</tr>\n</table>\n\n"));
-
-	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
-			"\t</form>\n", strlen("\t</form>\n"));
+	htmlnode_new(htmlnode_new(tr,"td",NULL),"input","type=\"submit\"","value=\"验证\"","name=\"Submit\"",NULL);
 
 
 	gchar * smsurl = g_key_file_get_string(gkeyfile, "http", "sms_url", NULL);
 
 	if (smsurl)
 	{
+		HtmlNode * form = htmlnode_new_form(body,"GET",smsurl,NULL);
 
-		form = g_strdup_printf(
-				"<form action=\"%s\" method=\"GET\" target=\"smsframe\">\n",
-				smsurl);
-
-		soup_message_body_append(msg->response_body, SOUP_MEMORY_TAKE, form,
-				strlen(form));
-
-		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,table, strlen(table));
+		HtmlNode * tr = htmlnode_new(htmlnode_new_table(form,"border=\"0\"","align=\"center\"",NULL),"tr",NULL);
 
 
-		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
-				"\t<td><input type=\"submit\" value=\"获取验证码\"></input></td>\n",
-				strlen("\t<td><input type=\"submit\" value=\"获取验证码\"></input></td>\n"));
+		htmlnode_new(htmlnode_new(tr,"td",NULL),"input","type=\"submit\"","value=\"获取验证码\"",NULL);
 
-		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
-				"\n</tr>\n</table>\n\n<br>\n", strlen("\n</tr>\n</table>\n\n<br>\n"));
-
-		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
-				"\t</form>\n", strlen("\t</form>\n"));
-
-		const char * frame = "\n\t\t<iframe name=\"smsfrane\" height=\"80%\" width=\"100%\" src=\"%s\"> </iframe>";
-
-		frame = g_strdup_printf(frame, smsurl);
+		htmlnode_new_iframe(body,smsurl,"height=\"80%\"","width=\"100%\"",NULL);
 
 		g_free(smsurl);
 
-		soup_message_body_append(msg->response_body, SOUP_MEMORY_TAKE, frame,
-				strlen(frame));
-
 	}
-
-
-	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
-			html_body_close, strlen(html_body_close));
-	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
-			html_close, strlen(html_close));
+	htmlnode_to_plane_text_and_free(html,(htmlnode_appender)soup_message_body_appender,msg->response_body);
 
 	soup_message_body_complete(msg->response_body);
-
-
 }
 
 
@@ -335,11 +287,7 @@ static void SoupServer_path_root(SoupServer *server, SoupMessage *msg,
 	htmlnode_new_text(htmlnode_new(htmlnode_new(node, "head", NULL), "title",
 			NULL), "你好");
 
-	HtmlNode * body = htmlnode_new(node, "body", NULL);
-
-	HtmlNode * p = htmlnode_new(body,"p",NULL);
-
-
+	HtmlNode * p = htmlnode_new(htmlnode_new(node, "body", NULL),"p",NULL);
 
 	char * bodytxt = g_strdup_printf(
 			"你好 %d , 你访问的是 %s <br> POST 的是 %s", i++,
@@ -347,12 +295,13 @@ static void SoupServer_path_root(SoupServer *server, SoupMessage *msg,
 
 	htmlnode_new_text(p, bodytxt);
 
-	void appender(const gchar * txt, SoupMessageBody * body)
-	{
-		soup_message_body_append(body,SOUP_MEMORY_COPY,txt,strlen(txt));
-	}
 
-	htmlnode_to_plane_text_and_free(node,(htmlnode_appender)appender,msg->response_body);
+	htmlnode_to_plane_text_and_free(node,(htmlnode_appender)soup_message_body_appender,msg->response_body);
 
 	soup_message_body_complete(msg->response_body);
+}
+
+static void soup_message_body_appender(const gchar * txt, SoupMessageBody * body)
+{
+	soup_message_body_append(body,SOUP_MEMORY_COPY,txt,strlen(txt));
 }

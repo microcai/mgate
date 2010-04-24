@@ -47,9 +47,12 @@ HtmlNode * htmlnode_newv(HtmlNode * parent, const char * tag, va_list v)
 	if(tag)
 	{
 		node->tag = g_strdup(tag);
-		while ((tag = va_arg(v,char*)))
+		if (v)
 		{
-			htmlnode_append_attr(node,tag);
+			while ((tag = va_arg(v,char*)))
+			{
+				htmlnode_append_attr(node, tag);
+			}
 		}
 	}
 
@@ -68,32 +71,26 @@ HtmlNode * htmlnode_new_text(HtmlNode * parent, const char * text)
 
 HtmlNode * htmlnode_new_head(HtmlNode * parent, const char * attrlist, ...)
 {
-
+	va_list v;
+	va_start(v,attrlist);
+	return htmlnode_newv(parent,"head",attrlist?v:NULL);
 }
 
 HtmlNode * htmlnode_new_body(HtmlNode * parent, const char * attrlist, ...)
 {
-
+	va_list v;
+	va_start(v,attrlist);
+	return htmlnode_newv(parent,"body",attrlist?v:NULL);
 }
 
 HtmlNode * htmlnode_new_table(HtmlNode * parent,const char * attrlist, ...)
 {
 	va_list v;
 	va_start(v,attrlist);
-	return htmlnode_newv(parent,"table",v);
+	return htmlnode_newv(parent,"table",attrlist?v:NULL);
 }
 
-HtmlNode * htmlnode_new_tr(HtmlNode * parent, const char * attrlist, ...)
-{
-
-}
-
-HtmlNode * htmlnode_new_td(HtmlNode * parent, const char * attrlist, ...)
-{
-
-}
-
-HtmlNode * htmlnode_new_frame(HtmlNode * parent,const char * method , const char * action ,const char * attrlist, ...)
+HtmlNode * htmlnode_new_form(HtmlNode * parent,const char * method , const char * action ,const char * attrlist, ...)
 {
 	va_list v;
 
@@ -101,7 +98,7 @@ HtmlNode * htmlnode_new_frame(HtmlNode * parent,const char * method , const char
 
 	action = g_strdup_printf("action=\"%s\"",action);
 
-	HtmlNode * node = htmlnode_new(parent,"frame",method,action);
+	HtmlNode * node = htmlnode_new(parent,"form",method,action,NULL);
 
 	g_free((gpointer)method);
 	g_free((gpointer)action);
@@ -114,9 +111,30 @@ HtmlNode * htmlnode_new_frame(HtmlNode * parent,const char * method , const char
 		attrlist = va_arg(v,char*);
 	}
 	va_end(v);
-
+	return node;
 }
 
+HtmlNode * htmlnode_new_iframe(HtmlNode * parent, const char * src,const char * attrlist, ...)
+{
+	va_list v;
+
+	src = g_strdup_printf("src=\"%s\"",src);
+
+	HtmlNode * node = htmlnode_new(parent,"iframe",src,NULL);
+
+	g_free((gpointer)src);
+
+
+	va_start(v,attrlist);
+
+	while (attrlist)
+	{
+		htmlnode_append_attr(node,(const char *)attrlist);
+		attrlist = va_arg(v,char*);
+	}
+	va_end(v);
+	return node;
+}
 
 HtmlNode * htmlnode_append_child(HtmlNode * node,HtmlNode * child)
 {
@@ -143,7 +161,6 @@ gboolean htmlnode_to_plane_text_internal(HtmlNode * rootnode, htmlnode_appender 
 		gchar * kg;
 		if (depth)
 		{
-			appender("\n", user_data);
 			kg = g_malloc0(depth + 1);
 			memset(kg, ' ', depth);
 			appender(kg, user_data);
@@ -166,8 +183,16 @@ gboolean htmlnode_to_plane_text_internal(HtmlNode * rootnode, htmlnode_appender 
 
 		appender(">", user_data);
 
+		int first_call =TRUE ;
+
 		void node_for(HtmlNode * node, gpointer user_data)
 		{
+			if(depth && first_call)
+			{
+				first_call = FALSE;
+				if(node->tag)
+					appender("\n", user_data);
+			}
 			htmlnode_to_plane_text_internal(node, appender, user_data, depth + 1 , freenode);
 		}
 
@@ -176,7 +201,7 @@ gboolean htmlnode_to_plane_text_internal(HtmlNode * rootnode, htmlnode_appender 
 			g_list_foreach(rootnode->children, (GFunc) node_for, user_data);
 		}
 
-		if (depth)
+		if (depth && !first_call)
 		{
 			appender(kg, user_data);
 

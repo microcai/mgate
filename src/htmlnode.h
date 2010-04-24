@@ -29,7 +29,11 @@ HtmlNode * htmlnode_append_attr_take(HtmlNode * node, char * attr);
 HtmlNode * htmlnode_new(HtmlNode * parent, const char * tag , ...);
 HtmlNode * htmlnode_new_text(HtmlNode * parent, const char * text );
 HtmlNode * htmlnode_newv(HtmlNode * parent, const char * tag, va_list v);
+HtmlNode * htmlnode_new_head(HtmlNode * parent, const char * attrlist, ...);
+HtmlNode * htmlnode_new_body(HtmlNode * parent, const char * attrlist, ...);
 HtmlNode * htmlnode_new_table(HtmlNode * parent,const char * attrlist, ...);
+HtmlNode * htmlnode_new_form(HtmlNode * parent,const char * method , const char * action ,const char * attrlist, ...);
+HtmlNode * htmlnode_new_iframe(HtmlNode * parent,const char * src ,const char * attrlist, ...);
 
 //释放一棵树
 void htmlnode_free(HtmlNode * rootnode);
