@@ -18,6 +18,7 @@
 #include "http_server.h"
 #include "i18n.h"
 #include "global.h"
+#include "monitor_icon.h"
 
 static void SoupServer_path_info(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
@@ -91,6 +92,17 @@ int start_server()
 	soup_server_add_handler(server,"/index.html",SoupServer_path_index,NULL,NULL);
 	soup_server_add_handler(server,"/index.htm",SoupServer_path_index,NULL,NULL);
 	soup_server_add_handler(server,"/info",SoupServer_path_info,NULL,NULL);
+
+	void SoupServer_path_root_icon(SoupServer *server, SoupMessage *msg,
+			const char *path, GHashTable *query, SoupClientContext *client,
+			gpointer user_data)
+	{
+		soup_message_set_status(msg, SOUP_STATUS_OK);
+		soup_message_set_response(msg,"image/x-icon",SOUP_MEMORY_STATIC,
+				monitor_icon,sizeof(monitor_icon));
+	}
+
+	soup_server_add_handler(server,"/favicon.ico",SoupServer_path_root_icon,NULL,NULL);
 
 	soup_server_run_async(server);
 

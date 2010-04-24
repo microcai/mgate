@@ -59,6 +59,7 @@ int main(int argc, char*argv[], char*env[])
 	gboolean run_daemon = FALSE;
 	gchar *  domain_dir = NULL;
 	gchar *	 device = NULL;
+	gint	httpport = 0;
 
 	const gchar * module_dir = "/usr/lib/monitor/modules" ;
 
@@ -82,6 +83,7 @@ int main(int argc, char*argv[], char*env[])
 			{"config",'f',0,G_OPTION_ARG_STRING,&config_file_name,_("set alternative config file"),N_("filename")},
 			{"module_dir",'f',0,G_OPTION_ARG_STRING,&module_dir,_("set alternative module dir"),N_("dir")},
 			{"device",'d',0,G_OPTION_ARG_STRING,&device,_("override config, make monitor capturing on that interface"),N_("nic")},
+			{"http-port",0,0,G_OPTION_ARG_INT,&httpport,_("override config, make monitor listen on that port"),N_("port")},
 			{0}
 	};
 
@@ -120,6 +122,11 @@ int main(int argc, char*argv[], char*env[])
 	{
 		g_key_file_set_string(gkeyfile,"monitor","nic",device);
 		g_free(device);
+	}
+
+	if(httpport)
+	{
+		g_key_file_set_integer(gkeyfile,"http","port",httpport);
 	}
 
 	check_pid(FALSE);
