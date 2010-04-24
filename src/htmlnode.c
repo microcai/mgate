@@ -188,7 +188,7 @@ gboolean htmlnode_to_plane_text_internal(HtmlNode * rootnode, htmlnode_appender 
 
 		void node_for(HtmlNode * node, gpointer user_data)
 		{
-			if(depth && first_call)
+			if(first_call)
 			{
 				first_call = FALSE;
 				if (node->tag)
