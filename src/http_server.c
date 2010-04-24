@@ -50,20 +50,6 @@ static gboolean idel(gpointer msg)
 	return FALSE;
 }
 
-static void SoupServer_path_test(SoupServer *server, SoupMessage *msg,
-		const char *path, GHashTable *query, SoupClientContext *client,
-		gpointer user_data)
-{
-	static int i;
-
-	soup_message_set_status(msg,SOUP_STATUS_OK);
-
-	gchar * body = g_strdup_printf("<html><body>你好 %d</body></html>",i++);
-
-	soup_message_set_response(msg,"text/html",SOUP_MEMORY_TAKE,body,strlen(body));
-}
-
-
 int start_server()
 {
 	GError * err = NULL;
@@ -88,7 +74,6 @@ int start_server()
 
 	g_debug(_("server started at port %u"),soup_server_get_port(server));
 
-	soup_server_add_handler(server,"/test",SoupServer_path_test,NULL,NULL);
 	soup_server_add_handler(server,"/login",SoupServer_path_login,NULL,NULL);
 
 	soup_server_add_handler(server,"/",SoupServer_path_root,NULL,NULL);
