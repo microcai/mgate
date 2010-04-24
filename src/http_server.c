@@ -11,6 +11,7 @@
 #endif
 
 #include <unistd.h>
+#include <stdio.h>
 #include <string.h>
 #include <glib.h>
 #include <libsoup/soup.h>
@@ -27,7 +28,9 @@ static void SoupServer_path_index(SoupServer *server, SoupMessage *msg,
 static void SoupServer_path_root(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
 		gpointer user_data);
-
+static void SoupServer_path_login(SoupServer *server, SoupMessage *msg,
+		const char *path, GHashTable *query, SoupClientContext *client,
+		gpointer user_data);
 static SoupServer * server;
 
 static gboolean finish(gpointer msg)
@@ -82,6 +85,7 @@ int start_server()
 	g_debug(_("server started at port %u"),soup_server_get_port(server));
 
 	soup_server_add_handler(server,"/test",SoupServer_path_test,NULL,NULL);
+	soup_server_add_handler(server,"/login",SoupServer_path_login,NULL,NULL);
 
 	soup_server_add_handler(server,"/",SoupServer_path_root,NULL,NULL);
 	soup_server_add_handler(server,"/index.html",SoupServer_path_index,NULL,NULL);
@@ -93,7 +97,7 @@ int start_server()
 	return soup_server_get_port(server);
 }
 
-const gchar * html_begin = "<htm>\n";
+const gchar * html_begin = "<html>\n";
 const gchar * html_head_begin = "\t<head>\n";
 const gchar * html_head_context = "";
 const gchar * html_head_close = "\n\t</head>\n";
@@ -102,6 +106,18 @@ const gchar * html_body_begin = "\t<body>\n";
 
 const gchar * html_body_close = "\n\t</body>";
 const gchar * html_close = "\n</html>";
+
+static void monitor_http_append_html_head(SoupMessageBody * body,const char * title)
+{
+	soup_message_body_append(body,SOUP_MEMORY_STATIC,html_begin,strlen(html_begin));
+	soup_message_body_append(body,SOUP_MEMORY_STATIC,html_head_begin,strlen(html_head_begin));
+
+	gchar * title_ = g_strdup_printf("\t\t<title>%s</title>",title);
+
+	soup_message_body_append(body,SOUP_MEMORY_TAKE,title_,strlen(title_));
+	soup_message_body_append(body,SOUP_MEMORY_STATIC,html_head_close,strlen(html_head_close));
+}
+
 
 static gboolean monitor_http_append_info(gpointer _msg)
 {
@@ -128,25 +144,95 @@ static gboolean monitor_http_append_info(gpointer _msg)
 	return FALSE;
 }
 
+void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path,
+		GHashTable *query, SoupClientContext *client,gpointer user_data)
+{
+	soup_message_set_status(msg, SOUP_STATUS_OK);
+
+	soup_message_headers_set_content_type(msg->response_headers, "text/html",
+			NULL);
+	soup_message_headers_set_encoding(msg->response_headers,
+			SOUP_ENCODING_CHUNKED);
+
+	if (strcmp(msg->method, "POST") == 0)
+	{
+		char id[32]={0};
+
+		sscanf(msg->request_body->data, "id=%32[^&]", id);
+
+		monitor_http_append_html_head(msg->response_body, "登录失败!");
+
+		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
+				html_body_begin, strlen(html_body_begin));
+
+		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
+				"登录识别，识别啊!你的 ID 是 ", strlen("登录识别，识别啊!你的 ID 是 "));
+
+		soup_message_body_append(msg->response_body, SOUP_MEMORY_COPY, id,
+				strlen(id));
+	}
+	else
+	{
+
+		monitor_http_append_html_head(msg->response_body, "登录以使用网络");
+
+		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
+				html_body_begin, strlen(html_body_begin));
+
+		const char * form =
+				"\t<form action=\"/login.monitor\" method=\"POST\">\n"; // "action="/example/html/form_action.asp" method="get""
+
+
+		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC, form,
+				strlen(form));
+
+		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
+				"输入验证码:", strlen("输入验证码:"));
+
+		const char * input = "<br><input type=\"text\" name=\"id\"></input>";
+
+		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC, input,
+				strlen(input));
+
+		input = "<input type=\"submit\" value=\"验证\" name=\"Submit\"></input>";
+
+		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC, input,
+				strlen(input));
+
+		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
+				"\t</form>\n", strlen("\t</form>\n"));
+	}
+
+	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
+			html_body_close, strlen(html_body_close));
+	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
+			html_close, strlen(html_close));
+
+	soup_message_body_complete(msg->response_body);
+	soup_server_unpause_message(server, msg);
+}
+
 
 void SoupServer_path_info(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
 		gpointer user_data)
 {
+
 	soup_message_set_status(msg,SOUP_STATUS_OK);
 
 	soup_server_pause_message(server,msg);
 
 	soup_message_headers_set_content_type(msg->response_headers,"text/html",NULL);
 	soup_message_headers_set_encoding(msg->response_headers,SOUP_ENCODING_CHUNKED);
-	soup_message_body_append(msg->response_body,SOUP_MEMORY_STATIC,html_begin,strlen(html_begin));
-	soup_message_body_append(msg->response_body,SOUP_MEMORY_STATIC,html_head_begin,strlen(html_head_begin));
 
-	gchar * title = g_strdup_printf("\t\t<title>Info of the running %s , pid %d</title>",PACKAGE_NAME,getpid());
+	SoupMessageBody * body = msg->response_body ;
 
-	soup_message_body_append(msg->response_body,SOUP_MEMORY_TAKE,title,strlen(title));
+	gchar * title = g_strdup_printf("Info of the running %s , pid %d",PACKAGE_NAME,getpid());
 
-	soup_message_body_append(msg->response_body,SOUP_MEMORY_STATIC,html_head_close,strlen(html_head_close));
+	monitor_http_append_html_head(msg->response_body,title);
+
+	g_free(title);
+
 	g_idle_add(monitor_http_append_info,msg);
 }
 
@@ -179,7 +265,8 @@ static void SoupServer_path_root(SoupServer *server, SoupMessage *msg,
 	else
 	{
 		soup_message_set_status(msg,SOUP_STATUS_OK);
-		body = g_strdup_printf("<html><body>你好 %d , 你访问的是 %s </body></html>", i++ ,path);
+		body = g_strdup_printf("<html><body>你好 %d , 你访问的是 %s <br> POST 的是 %s</body></html>", i++ ,path,
+				msg->method);
 	}
 
 	soup_message_set_response(msg,"text/html",SOUP_MEMORY_TAKE,body,strlen(body));
