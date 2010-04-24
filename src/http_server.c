@@ -220,9 +220,10 @@ static void SoupServer_path_index(SoupServer *server, SoupMessage *msg,
 
 	HtmlNode * tr = htmlnode_new(htmlnode_new_table(htmlnode_new_form(body,"POST","/login.monitor",NULL),"border=\"0\"","align=\"center\"",NULL),"tr",NULL);
 
+	htmlnode_new_text(htmlnode_new(htmlnode_new(tr,"td",NULL),"p",NULL),"输入验证码:");
+
 	htmlnode_new(htmlnode_new(tr,"td",NULL),"input","type=\"text\"","name=\"id\"",NULL);
 
-	htmlnode_new_text(htmlnode_new(tr,"td",NULL),"输入验证码:");
 
 	htmlnode_new(htmlnode_new(tr,"td",NULL),"input","type=\"submit\"","value=\"验证\"","name=\"Submit\"",NULL);
 
