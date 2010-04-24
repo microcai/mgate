@@ -19,6 +19,7 @@
 #include "i18n.h"
 #include "global.h"
 #include "monitor_icon.h"
+#include "htmlnode.h"
 
 static void SoupServer_path_info(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
@@ -131,44 +132,22 @@ static void monitor_http_append_html_head(SoupMessageBody * body,const char * ti
 }
 
 
-static gboolean monitor_http_append_info(gpointer _msg)
-{
-	gchar * tr ;
-	SoupMessage *msg = _msg;
-	SoupMessageBody * body = msg->response_body;
-	soup_message_body_append(body,SOUP_MEMORY_STATIC,html_body_begin,strlen(html_body_begin));
-	//构造表格吧 :)
-
-	tr = g_strdup_printf("<h1>Info of the running %s , pid %d<h1>",PACKAGE_NAME,getpid());
-	soup_message_body_append(body,SOUP_MEMORY_TAKE,tr,strlen(tr));
-
-	soup_message_body_append(body,SOUP_MEMORY_STATIC,"<dl>",strlen("<dl>"));
-
-	tr = g_strdup_printf("<div id=\"info\"><dd>cpu usage %%%d</dd>",2);
-	soup_message_body_append(body,SOUP_MEMORY_TAKE,tr,strlen(tr));
-
-
-	soup_message_body_append(body,SOUP_MEMORY_STATIC,"</dl>",strlen("</dl>"));
-	soup_message_body_append(body,SOUP_MEMORY_STATIC,html_body_close,strlen(html_body_close));
-	soup_message_body_append(body,SOUP_MEMORY_STATIC,html_close,strlen(html_close));
-	soup_message_body_complete(body);
-	soup_server_unpause_message(server,msg);
-	return FALSE;
-}
 
 void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path,
 		GHashTable *query, SoupClientContext *client,gpointer user_data)
 {
-	soup_message_set_status(msg, SOUP_STATUS_OK);
-
-	soup_message_headers_set_content_type(msg->response_headers, "text/html",
-			NULL);
-	soup_message_headers_set_encoding(msg->response_headers,
-			SOUP_ENCODING_CHUNKED);
 
 	if (strcmp(msg->method, "POST") == 0)
 	{
-		char id[32]={0};
+		soup_message_set_status(msg, SOUP_STATUS_OK);
+
+		soup_message_headers_set_content_type(msg->response_headers, "text/html",
+				NULL);
+		soup_message_headers_set_encoding(msg->response_headers,
+				SOUP_ENCODING_CHUNKED);
+
+		char id[32] =
+		{ 0 };
 
 		sscanf(msg->request_body->data, "id=%32[^&]", id);
 
@@ -182,57 +161,24 @@ void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path
 
 		soup_message_body_append(msg->response_body, SOUP_MEMORY_COPY, id,
 				strlen(id));
+
+		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
+				html_body_close, strlen(html_body_close));
+		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
+				html_close, strlen(html_close));
+
+		soup_message_body_complete(msg->response_body);
 	}
-	else
-	{
-
-		monitor_http_append_html_head(msg->response_body, "登录以使用网络");
-
-		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
-				html_body_begin, strlen(html_body_begin));
-
-		const char * form =
-				"\t<form action=\"/login.monitor\" method=\"POST\">\n"; // "action="/example/html/form_action.asp" method="get""
-
-
-		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC, form,
-				strlen(form));
-
-		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
-				"输入验证码:", strlen("输入验证码:"));
-
-		const char * input = "<br><input type=\"text\" name=\"id\"></input>";
-
-		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC, input,
-				strlen(input));
-
-		input = "<input type=\"submit\" value=\"验证\" name=\"Submit\"></input>";
-
-		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC, input,
-				strlen(input));
-
-		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
-				"\t</form>\n", strlen("\t</form>\n"));
-	}
-
-	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
-			html_body_close, strlen(html_body_close));
-	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
-			html_close, strlen(html_close));
-
-	soup_message_body_complete(msg->response_body);
-	soup_server_unpause_message(server, msg);
 }
 
-
-void SoupServer_path_info(SoupServer *server, SoupMessage *msg,
+void SoupServer_path_info(SoupServer *_server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
 		gpointer user_data)
 {
 
 	soup_message_set_status(msg,SOUP_STATUS_OK);
 
-	soup_server_pause_message(server,msg);
+	soup_server_pause_message(_server,msg);
 
 	soup_message_headers_set_content_type(msg->response_headers,"text/html",NULL);
 	soup_message_headers_set_encoding(msg->response_headers,SOUP_ENCODING_CHUNKED);
@@ -245,6 +191,30 @@ void SoupServer_path_info(SoupServer *server, SoupMessage *msg,
 
 	g_free(title);
 
+	gboolean monitor_http_append_info(gpointer _msg)
+	{
+		gchar * tr ;
+		SoupMessage *msg = _msg;
+		SoupMessageBody * body = msg->response_body;
+		soup_message_body_append(body,SOUP_MEMORY_STATIC,html_body_begin,strlen(html_body_begin));
+		//构造表格吧 :)
+
+		tr = g_strdup_printf("<h1>Info of the running %s , pid %d<h1>",PACKAGE_NAME,getpid());
+		soup_message_body_append(body,SOUP_MEMORY_TAKE,tr,strlen(tr));
+
+		soup_message_body_append(body,SOUP_MEMORY_STATIC,"<dl>",strlen("<dl>"));
+
+		tr = g_strdup_printf("<div id=\"info\"><dd>cpu usage %%%d</dd>",2);
+		soup_message_body_append(body,SOUP_MEMORY_TAKE,tr,strlen(tr));
+
+
+		soup_message_body_append(body,SOUP_MEMORY_STATIC,"</dl>",strlen("</dl>"));
+		soup_message_body_append(body,SOUP_MEMORY_STATIC,html_body_close,strlen(html_body_close));
+		soup_message_body_append(body,SOUP_MEMORY_STATIC,html_close,strlen(html_close));
+		soup_message_body_complete(body);
+		soup_server_unpause_message(server,msg);
+		return FALSE;
+	}
 	g_idle_add(monitor_http_append_info,msg);
 }
 
@@ -252,13 +222,93 @@ static void SoupServer_path_index(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
 		gpointer user_data)
 {
-	static int i;
+	soup_message_set_status(msg, SOUP_STATUS_OK);
 
-	soup_message_set_status(msg,SOUP_STATUS_OK);
+	soup_message_headers_set_content_type(msg->response_headers, "text/html",
+			NULL);
+	soup_message_headers_set_encoding(msg->response_headers,
+			SOUP_ENCODING_CHUNKED);
 
-	gchar * body = g_strdup_printf("<html><body>" PACKAGE_STRING "  is running ...</body></html>",i++);
+	monitor_http_append_html_head(msg->response_body, "登录以使用网络");
 
-	soup_message_set_response(msg,"text/html",SOUP_MEMORY_TAKE,body,strlen(body));
+	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
+			html_body_begin, strlen(html_body_begin));
+
+	const char * form =
+			"\t<form action=\"/login.monitor\" method=\"POST\">\n";
+
+	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC, form,
+			strlen(form));
+
+	const char * table = "<table border=\"0\" align=\"center\" >\n<tr>\n\t\t";
+
+	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,table, strlen(table));
+
+	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
+			"<td>输入验证码:</td>", strlen("<td>输入验证码:</td>"));
+
+	const char * input = "<td><input type=\"text\" name=\"id\"></input></td>";
+
+	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC, input,
+			strlen(input));
+
+	input = "<td><input type=\"submit\" value=\"验证\" name=\"Submit\"></input></td>";
+
+	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC, input,
+			strlen(input));
+
+	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
+			"\n</tr>\n</table>\n\n", strlen("\n</tr>\n</table>\n\n"));
+
+	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
+			"\t</form>\n", strlen("\t</form>\n"));
+
+
+	gchar * smsurl = g_key_file_get_string(gkeyfile, "http", "sms_url", NULL);
+
+	if (smsurl)
+	{
+
+		form = g_strdup_printf(
+				"<form action=\"%s\" method=\"GET\" target=\"smsframe\">\n",
+				smsurl);
+
+		soup_message_body_append(msg->response_body, SOUP_MEMORY_TAKE, form,
+				strlen(form));
+
+		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,table, strlen(table));
+
+
+		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
+				"\t<td><input type=\"submit\" value=\"获取验证码\"></input></td>\n",
+				strlen("\t<td><input type=\"submit\" value=\"获取验证码\"></input></td>\n"));
+
+		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
+				"\n</tr>\n</table>\n\n<br>\n", strlen("\n</tr>\n</table>\n\n<br>\n"));
+
+		soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
+				"\t</form>\n", strlen("\t</form>\n"));
+
+		const char * frame = "\n\t\t<iframe name=\"smsfrane\" height=\"80%\" width=\"100%\" src=\"%s\"> </iframe>";
+
+		frame = g_strdup_printf(frame, smsurl);
+
+		g_free(smsurl);
+
+		soup_message_body_append(msg->response_body, SOUP_MEMORY_TAKE, frame,
+				strlen(frame));
+
+	}
+
+
+	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
+			html_body_close, strlen(html_body_close));
+	soup_message_body_append(msg->response_body, SOUP_MEMORY_STATIC,
+			html_close, strlen(html_close));
+
+	soup_message_body_complete(msg->response_body);
+
+
 }
 
 
@@ -266,7 +316,6 @@ static void SoupServer_path_root(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
 		gpointer user_data)
 {
-	gchar * body;
 	static int i;
 
 
@@ -274,12 +323,36 @@ static void SoupServer_path_root(SoupServer *server, SoupMessage *msg,
 	{
 		return SoupServer_path_index(server,msg,path,query,client,user_data);
 	}
-	else
+	soup_message_set_status(msg, SOUP_STATUS_OK);
+
+	soup_message_headers_set_content_type(msg->response_headers, "text/html",
+			NULL);
+	soup_message_headers_set_encoding(msg->response_headers,
+			SOUP_ENCODING_CHUNKED);
+
+	HtmlNode * node = htmlnode_new(NULL, "html", NULL);
+
+	htmlnode_new_text(htmlnode_new(htmlnode_new(node, "head", NULL), "title",
+			NULL), "你好");
+
+	HtmlNode * body = htmlnode_new(node, "body", NULL);
+
+	HtmlNode * p = htmlnode_new(body,"p",NULL);
+
+
+
+	char * bodytxt = g_strdup_printf(
+			"你好 %d , 你访问的是 %s <br> POST 的是 %s", i++,
+			path, msg->method);
+
+	htmlnode_new_text(p, bodytxt);
+
+	void appender(const gchar * txt, SoupMessageBody * body)
 	{
-		soup_message_set_status(msg,SOUP_STATUS_OK);
-		body = g_strdup_printf("<html><body>你好 %d , 你访问的是 %s <br> POST 的是 %s</body></html>", i++ ,path,
-				msg->method);
+		soup_message_body_append(body,SOUP_MEMORY_COPY,txt,strlen(txt));
 	}
 
-	soup_message_set_response(msg,"text/html",SOUP_MEMORY_TAKE,body,strlen(body));
+	htmlnode_to_plane_text_and_free(node,(htmlnode_appender)appender,msg->response_body);
+
+	soup_message_body_complete(msg->response_body);
 }

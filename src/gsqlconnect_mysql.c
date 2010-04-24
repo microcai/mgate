@@ -131,6 +131,7 @@ gboolean	g_sql_connect_mysql_real_query(GSQLConnect*obj,const char * sql_stmt,gs
 
 	if (!myresult )
 	{
+		obj->lastresult = NULL;
 		return TRUE;
 	}
 

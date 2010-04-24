@@ -84,7 +84,7 @@ gboolean g_sql_connect_run_query(GSQLConnect * obj,const gchar * sqlstatement,gs
 		ret = klass->run_query(obj,sqlstatement,size);
 	}
 
-	if(ret)
+	if(ret && obj->lastresult)
 	{
 		g_object_weak_ref((GObject*)obj->lastresult,g_sql_connect_result_weak_notify,obj);
 	}
