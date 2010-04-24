@@ -16,7 +16,7 @@ G_BEGIN_DECLS
 
 typedef struct _Client{
 	GObject	parent;
-	GString	* name, * id;
+	const gchar * name, * id,*idtype,*room;
 	in_addr_t	ip;
 	guchar		mac[6];
 	gboolean	enable;
@@ -36,7 +36,7 @@ typedef struct _ClientClass{
 
 
 GType client_get_type() G_GNUC_CONST;
-Client * client_new(const gchar * name, const gchar * id);
+Client * client_new(const gchar * name, const gchar * id,const gchar * idtype);
 
 //Client Manager
 

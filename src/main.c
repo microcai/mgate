@@ -49,7 +49,6 @@ static void check_pid(gboolean) ;
 
 const gchar * config_file_name = "/etc/monitor.cfg";
 
-
 int main(int argc, char*argv[], char*env[])
 {
 	time_t t;

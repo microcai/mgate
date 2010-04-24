@@ -17,6 +17,8 @@ GType	ksql_get_backend();
 GSQLResult * ksql_query(const gchar * stm);
 GSQLResult * ksql_query_free_str(gchar * stm);
 GSQLResult * ksql_vquery(const gchar * stmformat , ...);
-
+void ksql_query_async(const gchar * stm);
+void ksql_query_async_free_str(const gchar * stm);
+void ksql_vquery_async(const gchar * stmformat , ...);
 
 #endif /* KSQL_H_ */

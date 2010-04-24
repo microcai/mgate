@@ -24,9 +24,6 @@
 #include <string.h>
 #include <glib.h>
 
-#include "libmicrocai-types.h"
-#include "functions.h"
-
 
 u_int16_t checksum(u_int16_t *buffer, int size)
 {
@@ -48,12 +45,6 @@ u_int16_t checksum(u_int16_t *buffer, int size)
     return (uint16_t) (~cksum);
 }
 
-void formatMAC(const u_char * MAC_ADDR,char * strmac)
-{
-	sprintf(strmac, "%02x:%02x:%02x:%02x:%02x:%02x",
-			MAC_ADDR[0], MAC_ADDR[1], MAC_ADDR[2], MAC_ADDR[3], MAC_ADDR[4], MAC_ADDR[5]);
-
-}
 
 static inline char hex2char(const char str[])
 {

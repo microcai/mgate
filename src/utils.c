@@ -13,6 +13,7 @@
 #include <net/ethernet.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -23,6 +24,7 @@
 #include "kpolice.h"
 #include "ksql.h"
 #include "global.h"
+#include "clientmgr.h"
 
 guint64	mac2uint64( guchar mac[6])
 {
@@ -30,6 +32,12 @@ guint64	mac2uint64( guchar mac[6])
 			((guint64)mac[3]<<24) + ((guint64)mac[4]<<32) + ((guint64)mac[5] << 40);
 }
 
+void formatMAC(const u_char * MAC_ADDR,char * strmac)
+{
+	sprintf(strmac, "%02x:%02x:%02x:%02x:%02x:%02x",
+			MAC_ADDR[0], MAC_ADDR[1], MAC_ADDR[2], MAC_ADDR[3], MAC_ADDR[4], MAC_ADDR[5]);
+
+}
 
 struct tm * GetCurrentTime()
 {
@@ -152,54 +160,42 @@ static void sprintf_mac(char mac_addr[PROLEN_COMPUTERMAC],const char mac[6])
 
 void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const char mac[6], const char * host , const char * passwd,const void * data, unsigned short dport)
 {
-#ifdef ENABLE_HOTEL
-	struct Clients_DATA cd;
-	struct Clients_DATA *pcd = &cd;
 
+	Client * client;
 
-	if (get_client_data(mac,pcd)!=0) // there is no ..... so, let's just ignore it.
-		return;
-#endif
-
-	g_debug("snd ?");
-
+	client = clientmgr_get_client_by_mac(mac);
 
 	AccountInfo ac ={0};
 
-//	formattime(strTime);
+	GTimeVal time;
+
+	g_get_current_time(&time);
+
+	gchar * strtime = g_time_val_to_iso8601(&time);
 
 	ac.DateTime = GetDBTime_tm(GetCurrentTime());
 
 	strcpy(ac.SiteID, strHotelID);
 	strcpy(ac.SiteName, strHotelName);
 
-#ifdef ENABLE_HOTEL
-
-	if (pcd && strlen(pcd->mac_addr) < 2)
+	if (client)
 	{
-		GetMac(pcd->ip_addr, pcd->mac_addr, pcd->MAC_ADDR);
+		strncpy(ac.CertType, client->idtype,sizeof(ac.CertType) - 1);
+		strncpy(ac.CertNo, client->id , sizeof(ac.CertNo) - 1);
+
+		utf8_gbk(ac.ClientName, PROLEN_CLIENTNAME, client->name,strlen(
+				client->name));
+
+		strncpy(ac.ComputerName,client->room,sizeof(ac.ComputerName));
 	}
 
-	strncpy(ac.CertType, pcd->CustomerIDType,sizeof(ac.CertType)-1);
-	strncpy(ac.CertNo, pcd->CustomerID,sizeof(ac.CertNo)-1);
-
-	utf8_gbk(ac.ClientName ,PROLEN_CLIENTNAME, pcd->CustomerName,strlen(pcd->CustomerName));
-
-	snprintf(ac.ComputerName,sizeof(ac.ComputerName),"%c%c%02d",
-			*pcd->Build,*pcd->Floor, atoi(pcd->RoomNum));
-
 	snprintf(ac.ComputerIp, sizeof(ac.ComputerIp)-1, "%03d.%03d.%03d.%03d",
-			((u_char*) &(pcd->ip))[0], ((u_char*) &(pcd->ip))[1],
-			((u_char*) &(pcd->ip))[2], ((u_char*) &(pcd->ip))[3]);
-#endif
+			((u_char*) &(ip))[0], ((u_char*) &(ip))[1],
+			((u_char*) &(ip))[2], ((u_char*) &(ip))[3]);
 
 	sprintf_mac(ac.ComputerMac,mac);
 
 	strcpy(ac.ServType, type);
-
-	snprintf(ac.ComputerIp, sizeof(ac.ComputerIp), "%03d.%03d.%03d.%03d",
-			((u_char*) &(ip))[0], ((u_char*) &(ip))[1],
-			((u_char*) &(ip))[2], ((u_char*) &(ip))[3]);
 
 	strncpy(ac.Key1, data, 60);
 	strncpy(ac.Key2, passwd, sizeof(ac.Key2));
@@ -212,35 +208,36 @@ void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const char ma
 
 	kpolice_send_command(COMMAND_ACCOUNT, (char *) &ac, sizeof(ac));
 
-#ifndef ENABLE_HOTEL
-//
-//	g_string_printf(strSQL,SQL_template, pcd->Build,pcd->Floor,atoi(pcd->RoomNum),
-//			pcd->ip_addr,			pcd->mac_addr, pcd->CustomerIDType,
-//			pcd->CustomerID, pcd->CustomerName, na->strType,
-//			na->data.c_str(), strTime);
-#else
 	char strmac[32];
-	in_addr in_addr_ip={0};
 
-	in_addr_ip.s_addr = na->ip;
+	struct in_addr in_addr_ip={0};
+
+	in_addr_ip.s_addr = ip;
 
 	formatMAC(mac,strmac);
 
-	g_string_printf(strSQL,
-			"insert into t_netlog (MachineIP,MachineMac,nLogType,strLogInfo,nTime) values   ('%s','%s','%s','%s','%s')",
-			inet_ntoa(in_addr_ip),
-			strmac, na->strType,
-			na->data.c_str(), strTime->str);
+	static const char	SQL_template[]=
+		"insert into t_netlog (RoomNum,MachineIP,MachineMac,CustomerIDType,CustomerIDNum, "
+			"CustomerName,nLogType,strLogInfo,nTime) values   ('%s','%s','%s','%s','%s','%s','%s','%s','%s')";
 
-#endif
-//	ksql_run_query_async(strSQL->str);
-//
 
-//
+	if (client)
+	{
+		ksql_vquery_async(SQL_template, client->room,ip, strmac,client->idtype,
+				client->id,client->name,type, data, strtime);
 
-//
-//	g_string_free(strTime,1);
-//	g_string_free(strSQL,1);
+	}
+	else
+	{
+		ksql_vquery_async(
+				"insert into t_netlog (MachineIP,MachineMac,nLogType,strLogInfo,nTime) values   ('%s','%s','%s','%s','%s')",
+				inet_ntoa(in_addr_ip), strmac, type, data, strtime);
+	}
+
+	g_free(strtime);
+
+	if(client)
+		g_object_unref(client);
 }
 
 int utf8_gbk(char *outbuf, size_t outlen, const char *inbuf, size_t inlen)

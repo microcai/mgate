@@ -52,6 +52,11 @@ static gpointer ksql_thread(gpointer user_data)
 		sleep(2);
 	}
 
+	//load white list
+
+
+
+
 	GSQLResult * res;
 
 	gchar * sql;
@@ -168,4 +173,24 @@ GSQLResult * ksql_vquery(const gchar * stmformat , ...)
 	stm = g_strdup_vprintf(stmformat,v);
 	va_end(v);
 	return ksql_query_free_str(stm);
+}
+
+void ksql_query_async_free_str(const gchar * stm)
+{
+	g_async_queue_push(asqueue,(gpointer)stm);
+}
+
+void ksql_query_async(const gchar * stm)
+{
+	g_async_queue_push(asqueue,g_strdup(stm));
+}
+
+void ksql_vquery_async(const gchar * stmformat , ...)
+{
+	va_list v;
+	gchar * stm ;
+	va_start(v,stmformat);
+	stm = g_strdup_vprintf(stmformat,v);
+	va_end(v);
+	ksql_query_async_free_str(stm);
 }

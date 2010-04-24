@@ -16,7 +16,6 @@
 #include <poll.h>
 #include <net/ethernet.h>
 #include <glib.h>
-#include "libdreamtop.h"
 #include "./KSQL/kmysql.h"
 #include "ksql_old.h"
 
@@ -31,6 +30,7 @@ int kregisterSendDataFunc(FUNC_SENDDATA f){	SendData = f;return 0;}
 
 void formattime(GString * strtime, struct tm* pTm)
 {
+
 	g_string_printf(strtime,"%d-%d-%d %d:%d:%d",
             pTm->tm_year+1900,pTm->tm_mon+1,pTm->tm_mday,
             pTm->tm_hour,pTm->tm_min,pTm->tm_sec);
@@ -234,94 +234,3 @@ static void * KSQL_daemon(void*_p)
 }
 
 
-void StartSQL()
-{
-	// start the daemon thread, and let the daemon stuff determing the fucking stuff,haha
-	if(ksql_daemon_socket)return ;
-
-	struct
-	{
-		pthread_mutex_t p;
-		int fd[2];
-	} p;
-
-	socketpair(AF_LOCAL, SOCK_CLOEXEC | SOCK_SEQPACKET, 0, p.fd);
-
-	ksql_daemon_socket = p.fd[1];
-	shutdown(ksql_daemon_socket,0);
-
-	pthread_mutex_init(&p.p, 0);
-	pthread_mutex_lock(&p.p);
-
-	pthread_t ksql_daemon;
-
-	pthread_create(&ksql_daemon, 0,
-			KSQL_daemon, &p);
-
-	pthread_detach(ksql_daemon);
-	pthread_mutex_lock(&p.p);
-	pthread_mutex_unlock(&p.p);
-	pthread_mutex_destroy(&p.p);
-
-	syslog(LOG_INFO,"starting ksql daemon");
-}
-
-
-int WaitForSQLserver()
-{
-	while (ksql_inited!=2)
-	{
-		sched_yield();
-	}
-
-	return 0;
-}
-
-int ksql_run_query(const char *p)
-{
-	int ret;
-	if(ksql_usemysql)
-	{
-		ret = kmysql_run_query(p);
-	}else
-	ret = ksqlite_query(p);
-	if (ret)
-		syslog(LOG_ERR, "err make query  %s\n", p);
-	return ret;
-}
-
-int ksql_run_query_async(const char *p)
-{
-	int ret = write(ksql_daemon_socket, p , strlen(p) + 1);
-	return ret<0?1:0;
-}
-
-KSQL_RES* ksql_query_and_use_result(const char* query)
-{
-	if(ksql_usemysql)
-	{
-		return kmysql_query_and_use_result(query);
-	}else
-	return ksqlite_query_and_use_result(query);
-}
-
-void ksql_free_result(KSQL_RES* res)
-{
-	if(ksql_usemysql)
-	{
-		kmysql_free_result(res);
-	}else
-	{
-		ksqlite_free_result(res);
-	}
-
-}
-
-namespace hotel{
-    char strHotelID[32];
-    char strHoteName[32];
-    char strServerIP[32];
-    char strWebIP[32];
-    char str_ethID[32]="eth1";
-    bool Is_Old_DB=false;
-}

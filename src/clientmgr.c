@@ -14,28 +14,23 @@
 #include <net/ethernet.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
-#include <pcap.h>
-#include <stdio.h>
-#include <string.h>
-#include <pthread.h>
-#include <pcap/pcap.h>
-#include <syslog.h>
+#include <arpa/inet.h>
 #include <string.h>
 #include <glib.h>
 
 #include "i18n.h"
-
 #include "clientmgr.h"
 #include "utils.h"
 
 enum{
 	CLIENT_NAME = 3, //名字
 	CLIENT_ID, //身份证
+	CLIENT_ID_TYPE , // 证件类型
 	CLIENT_IP, // ip 地址
+	CLIENT_IP_STR, // ip 地址, str类型
 	CLIENT_MAC,
-	CLIENT_ENABLE
-
-
+	CLIENT_ENABLE,
+	CLIENT_ROOM
 };
 
 static void client_set_property(GObject *object, guint property_id,const GValue *value, GParamSpec *pspec);
@@ -52,9 +47,15 @@ static void client_class_init(ClientClass * klass)
 	gobjclass->finalize = client_finalize;
 
 	g_object_class_install_property(gobjclass,CLIENT_NAME,
-			g_param_spec_string("name","name","name","",G_PARAM_CONSTRUCT_ONLY|G_PARAM_READABLE));
+			g_param_spec_string("name","name","name","",G_PARAM_CONSTRUCT_ONLY|G_PARAM_READWRITE));
 	g_object_class_install_property(gobjclass,CLIENT_ID,
-			g_param_spec_string("id","id","id","N/A",G_PARAM_CONSTRUCT_ONLY|G_PARAM_READABLE));
+			g_param_spec_string("id","id","id","N/A",G_PARAM_CONSTRUCT_ONLY|G_PARAM_READWRITE));
+	g_object_class_install_property(gobjclass,CLIENT_ID_TYPE,
+			g_param_spec_string("idtype","idtype","idtype","096",G_PARAM_CONSTRUCT_ONLY|G_PARAM_READWRITE));
+	g_object_class_install_property(gobjclass,CLIENT_ROOM,
+			g_param_spec_string("room","room","room","0000",G_PARAM_READWRITE));
+	g_object_class_install_property(gobjclass,CLIENT_IP_STR,
+			g_param_spec_string("ipstr","ipstr","ipstr","0.0.0.0",G_PARAM_READWRITE));
 	g_object_class_install_property(gobjclass,CLIENT_IP,
 			g_param_spec_int("ip","ip","ip",INADDR_ANY,INADDR_NONE,INADDR_NONE,G_PARAM_CONSTRUCT|G_PARAM_READWRITE));
 	g_object_class_install_property(gobjclass,CLIENT_NAME,
@@ -65,15 +66,13 @@ G_DEFINE_TYPE(Client,client,G_TYPE_OBJECT);
 
 void client_init(Client * obj)
 {
-	obj->name = g_string_new("");
-	obj->id = g_string_new("");
 }
 
 void client_finalize(GObject * gobj)
 {
 	Client * obj = (typeof(obj))gobj;
-	g_string_free(obj->id,TRUE);
-	g_string_free(obj->name,TRUE);
+	g_free((gpointer)(obj->id));
+	g_free((gpointer)(obj->name));
 	G_OBJECT_CLASS(client_parent_class)->finalize(gobj);
 }
 
@@ -84,11 +83,19 @@ static void client_set_property(GObject *object, guint property_id,const GValue 
 	switch (property_id)
 	{
 	case CLIENT_NAME:
-		obj->name = g_string_assign(obj->name,g_value_get_string(value));
-
+		obj->name = g_value_dup_string(value);
 		break;
 	case CLIENT_ID:
-		obj->id = g_string_assign(obj->id,g_value_get_string(value));
+		obj->id = g_value_dup_string(value);
+		break;
+	case CLIENT_ID_TYPE:
+		obj->idtype = g_value_dup_string(value);
+		break;
+	case CLIENT_IP_STR:
+		obj->ip = inet_addr(g_value_get_string(value));
+		break;
+	case CLIENT_ROOM:
+		obj->room = g_value_dup_string(value);
 		break;
 	case CLIENT_IP:
 		obj->ip = g_value_get_int(value);
@@ -100,19 +107,33 @@ static void client_set_property(GObject *object, guint property_id,const GValue 
 		g_warn_if_reached();
 		break;
 	}
-
 }
 
 static void client_get_property(GObject *object, guint property_id,GValue *value, GParamSpec *pspec)
 {
 	Client * obj;
+	gchar * ip_str;
 	switch (property_id)
 	{
 	case CLIENT_NAME:
-		g_value_set_string(value,obj->name->str);
+		g_value_set_string(value,obj->name);
 		break;
 	case CLIENT_ID:
-		g_value_set_string(value,obj->id->str);
+		g_value_set_string(value,obj->id);
+		break;
+	case CLIENT_ID_TYPE:
+		g_value_set_string(value,obj->idtype);
+		break;
+	case CLIENT_IP_STR:
+		ip_str = g_strdup_printf("%03d.%03d.%03d.%03d",
+				((guchar*)&(obj->ip))[0],
+				((guchar*)&(obj->ip))[1],
+				((guchar*)&(obj->ip))[2],
+				((guchar*)&(obj->ip))[3]);
+		g_value_take_string(value,ip_str);
+		break;
+	case CLIENT_ROOM:
+		g_value_set_string(value,obj->room);
 		break;
 	case CLIENT_IP:
 		g_value_set_int(value,obj->ip);
@@ -126,9 +147,9 @@ static void client_get_property(GObject *object, guint property_id,GValue *value
 	}
 }
 
-Client * client_new(const gchar * name, const gchar * id)
+Client * client_new(const gchar * name, const gchar * id,const gchar * idtype)
 {
-	return g_object_new(G_TYPE_CLIENT,"name",name,"id",id,NULL);
+	return g_object_new(G_TYPE_CLIENT,"name",name,"id",id,"idtype",idtype,NULL);
 }
 
 //================================================================================================================
@@ -175,31 +196,26 @@ void clientmgr_init()
 	client_tree = g_tree_new_full(g_tree_compare_func,0,g_free,g_object_unref);
 }
 
-static gboolean g_tree_travel_findval_func(gpointer key,gpointer val, gpointer user_data)
-{
-	Client * pval = * (Client **)user_data;
-	in_addr_t ip = GPOINTER_TO_INT(pval);
-
-	if(((Client*)val)->ip == ip)
-	{
-		*((Client **)user_data) = val ;
-		return TRUE;
-	}
-	return FALSE;
-}
-
 Client * clientmgr_get_client_by_ip(in_addr_t ip)
 {
-	gpointer p_ip = GINT_TO_POINTER(ip);
-	Client * ret = (Client*) p_ip;
+	Client * ret = NULL;
+
+	gboolean findval_func(gpointer key,gpointer val, gpointer user_data)
+	{
+		if(((Client*)val)->ip == ip)
+		{
+			ret = val ;
+			return TRUE;
+		}
+		return FALSE;
+	}
 
 	spin_read_write_rlock();
 
-	g_tree_foreach(client_tree,g_tree_travel_findval_func,&ret);
+	g_tree_foreach(client_tree,findval_func,&ret);
+
 	spin_read_write_runlock();
 
-	if( ret == p_ip)
-		return NULL;
 	return ret;
 }
 
