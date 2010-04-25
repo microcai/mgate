@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([monitor], [1.2.0], [BUG-REPORT-ADDRESS])
+AC_INIT([monitor], [1.9.0], [BUG-REPORT-ADDRESS])
 
 AC_CONFIG_MACRO_DIR([m4])
 
