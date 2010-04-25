@@ -43,6 +43,7 @@ static u_int8_t httphead_t[] =
 "url=%s\">\n\t</head>\n</html>\n";
 
 static in_addr_t redirector_ip;
+static GList*	 whiteip;
 static __thread	 libnet_t * libnet = NULL;
 
 static void http_redirector_init(const gchar * desturl)
@@ -95,6 +96,11 @@ static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * conten
 
 	if(ip_head->daddr == redirector_ip)
 		return TRUE;
+
+	//如果是在 white list ....
+
+	if(whiteip && g_list_find(whiteip,GINT_TO_POINTER(ip_head->daddr)))
+		return FALSE;
 
 	//	g_debug(_("thread %p is doing the redirect stuff"),g_thread_self());
 
@@ -205,6 +211,66 @@ G_MODULE_EXPORT gchar * g_module_check_init(GModule *module)
 	}
 
 	http_redirector_init(url);
+
+	gchar *  ips = g_key_file_get_string(gkeyfile,GROUP_NAME,"whitelist",&err);
+
+
+	if(err)
+	{
+		g_error_free(err);
+	}else
+	{
+		GResolver * dns =  g_resolver_get_default();
+
+		void resove_host_by_dns(GObject *source_object, GAsyncResult *res,gpointer user_data)
+		{
+			GList * hosts = g_resolver_lookup_by_name_finish(G_RESOLVER(source_object),res,NULL);
+
+			if(hosts)
+			{
+				GList * it = g_list_first(hosts);
+
+				do
+				{
+					GInetAddress * addr = (GInetAddress*)(it->data);
+					if(g_inet_address_get_native_size(addr)==4)
+					{
+						in_addr_t ip;
+						memcpy(&ip,g_inet_address_to_bytes(addr),4);
+						whiteip = g_list_prepend(whiteip,GUINT_TO_POINTER(ip));
+						g_message(_("%s's DNS result : %s"),(char*)user_data,g_inet_address_to_string(addr));
+					}
+				}while( it = g_list_next(it));
+				g_resolver_free_addresses(hosts);
+			}
+			g_object_unref(source_object);
+			g_free(user_data);
+		}
+		gchar *ptr;
+
+		gchar * one_host =strtok_r(ips," \t",&ptr);
+
+
+		while( one_host )
+		{
+			in_addr_t ip = inet_addr(one_host);
+			if (ip == INADDR_NONE)
+			{
+				g_object_ref(dns);
+
+				g_debug(_("host %s is not an ipv4 address, will do async dns lookup"),one_host);
+
+				g_resolver_lookup_by_name_async(dns,one_host,NULL,resove_host_by_dns,g_strdup(one_host));
+			}else
+			{
+				whiteip = g_list_prepend(whiteip,GUINT_TO_POINTER(ip));
+			}
+			one_host = strtok_r(NULL," \t",&ptr);
+		}
+		g_object_unref(dns);
+	}
+
+
 
 	g_module_make_resident(module);
 
