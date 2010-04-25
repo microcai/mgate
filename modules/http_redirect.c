@@ -107,8 +107,10 @@ static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * conten
 	//Retrive the tcp header
 	tcp_head = (struct tcphdr*) ((char*) ip_head + ip_head->ihl * 4);
 
+#ifndef DEBUG_ONLY_HTTP_PORT
 	if (tcp_head->dest != HTTP_PORT)
 		return TRUE;
+#endif
 
 	//初始化libnet，每个线程一个 libnet ;)
 	init_thread_libnet();
