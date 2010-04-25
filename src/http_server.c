@@ -123,7 +123,7 @@ void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path
 	{
 		soup_message_set_status(msg, SOUP_STATUS_OK);
 
-		soup_message_headers_set_content_type(msg->response_headers, "text/html",
+		soup_message_headers_set_content_type(msg->response_headers, "text/html; charset=UTF-8",
 				NULL);
 		soup_message_headers_set_encoding(msg->response_headers,
 				SOUP_ENCODING_CHUNKED);
@@ -207,7 +207,7 @@ static void SoupServer_path_index(SoupServer *server, SoupMessage *msg,
 {
 	soup_message_set_status(msg, SOUP_STATUS_OK);
 
-	soup_message_headers_set_content_type(msg->response_headers, "text/html",
+	soup_message_headers_set_content_type(msg->response_headers, "text/html; charset=UTF-8",
 			NULL);
 	soup_message_headers_set_encoding(msg->response_headers,
 			SOUP_ENCODING_CHUNKED);
@@ -263,7 +263,7 @@ static void SoupServer_path_root(SoupServer *server, SoupMessage *msg,
 	}
 	soup_message_set_status(msg, SOUP_STATUS_OK);
 
-	soup_message_headers_set_content_type(msg->response_headers, "text/html",
+	soup_message_headers_set_content_type(msg->response_headers, "text/html; charset=UTF-8",
 			NULL);
 	soup_message_headers_set_encoding(msg->response_headers,
 			SOUP_ENCODING_CHUNKED);
