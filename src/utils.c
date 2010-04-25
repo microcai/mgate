@@ -26,10 +26,35 @@
 #include "global.h"
 #include "clientmgr.h"
 
-guint64	mac2uint64( guchar mac[6])
+
+static inline char hex2char(const char str[])
 {
-	return (guint64)mac[0] + ((guint64)mac[1]<<8) + ((guint64)mac[2] <<16) +
-			((guint64)mac[3]<<24) + ((guint64)mac[4]<<32) + ((guint64)mac[5] << 40);
+	u_char byte1, byte2;
+	if (str[0] >= 'a')
+		byte1 = str[0] - 'a' + 10;
+	else if (str[0] >= 'A')
+		byte1 = str[0] - 'A' + 10;
+	else
+		byte1 = str[0] - '0';
+
+	if (str[1] >= 'a')
+		byte2 = str[1] - 'a' + 10;
+	else if (str[1] >= 'A')
+		byte2 = str[1] - 'A' + 10;
+	else
+		byte2 = str[1] - '0';
+	u_char ret = byte1 << 4 | byte2;
+
+	return *(char*) (&ret);
+}
+
+void  convertMAC(char mac[6],const char * strmac)
+{
+	int i;
+	for (i = 0; i < 6; ++i)
+	{
+		mac[i] = hex2char(& strmac[i * 3] );
+	}
 }
 
 void formatMAC(const u_char * MAC_ADDR,char * strmac)
@@ -37,6 +62,13 @@ void formatMAC(const u_char * MAC_ADDR,char * strmac)
 	sprintf(strmac, "%02x:%02x:%02x:%02x:%02x:%02x",
 			MAC_ADDR[0], MAC_ADDR[1], MAC_ADDR[2], MAC_ADDR[3], MAC_ADDR[4], MAC_ADDR[5]);
 
+}
+
+
+guint64	mac2uint64( guchar mac[6])
+{
+	return (guint64)mac[0] + ((guint64)mac[1]<<8) + ((guint64)mac[2] <<16) +
+			((guint64)mac[3]<<24) + ((guint64)mac[4]<<32) + ((guint64)mac[5] << 40);
 }
 
 struct tm * GetCurrentTime()

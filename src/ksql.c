@@ -27,12 +27,15 @@
 #include <glib.h>
 
 
-
+#include "utils.h"
 #include "i18n.h"
 #include "global.h"
 #include "ksql.h"
 #include "gsqlconnect.h"
 #include "gsqlconnect_mysql.h"
+#include "gsqlresult.h"
+#include "clientmgr.h"
+
 
 static GAsyncQueue * asqueue;
 static GSQLConnect * connector;
@@ -41,8 +44,11 @@ static gpointer ksql_thread(gpointer user_data)
 {
 //	g_sql_connect_thread_init();
 	//	mysql_commit()
+	GSQLResult * res;
 	GError * err = NULL;
 	GSQLConnect * connector = (typeof(connector)) user_data;
+
+	//TODO : 首先是在 monitor.cfg 指示的 白名单 :)
 
 	while(!g_sql_connect_real_connect(connector,&err))
 	{
@@ -53,11 +59,26 @@ static gpointer ksql_thread(gpointer user_data)
 	}
 
 	//load white list
+	//TODO : 然后是 mysql 数据库内的白名单
+	res = ksql_query("select MAC_ADDR from whitelist LIMIT 0,1000");
+	while(g_sql_result_fetch_row(res))
+	{
+		const gchar * mac = g_sql_result_colum_by_name(res,"MAC_ADDR");
 
+		u_char mac_addr[6];
 
+		convertMAC(mac_addr,mac);
 
+		//将 mac 加入许可范围 :)
 
-	GSQLResult * res;
+		Client * dummyclient = client_new("","","");
+
+		dummyclient->enable = TRUE;
+
+		clientmgr_insert_client_by_mac(mac_addr,dummyclient);
+	}
+
+	//还有呢！预先加载一些,目前是不需要了 :D
 
 	gchar * sql;
 	for (;;)

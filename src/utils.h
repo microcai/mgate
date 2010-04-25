@@ -43,6 +43,8 @@ struct NetAcount{
 };
 
 
+void  convertMAC(char mac[6],const char * strmac);
+void formatMAC(const u_char * MAC_ADDR,char * strmac);
 guint64	mac2uint64( guchar mac[6]);
 
 int gbk_utf8(char *outbuf, size_t outlen, const char *inbuf, size_t inlen);

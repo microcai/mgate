@@ -46,35 +46,6 @@ u_int16_t checksum(u_int16_t *buffer, int size)
 }
 
 
-static inline char hex2char(const char str[])
-{
-	u_char byte1, byte2;
-	if (str[0] >= 'a')
-		byte1 = str[0] - 'a' + 10;
-	else if (str[0] >= 'A')
-		byte1 = str[0] - 'A' + 10;
-	else
-		byte1 = str[0] - '0';
-
-	if (str[1] >= 'a')
-		byte2 = str[1] - 'a' + 10;
-	else if (str[1] >= 'A')
-		byte2 = str[1] - 'A' + 10;
-	else
-		byte2 = str[1] - '0';
-	u_char ret = byte1 << 4 | byte2;
-
-	return *(char*) (&ret);
-}
-
-void  convertMAC(char mac[6],const char * strmac)
-{
-	int i;
-	for (i = 0; i < 6; ++i)
-	{
-		mac[i] = hex2char(& strmac[i * 3] );
-	}
-}
 
 #ifdef ENABLE_HOTEL
 

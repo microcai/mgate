@@ -107,11 +107,13 @@ GStrv	g_sql_result_get_row(GSQLResult * obj)
 
 gboolean g_sql_result_fetch_row(GSQLResult * obj)
 {
+	g_return_val_if_fail(IS_G_SQL_RESULT(obj),FALSE);
 	return obj->nextrow(obj);
 }
 
 gboolean g_sql_result_seek_row(GSQLResult * obj,guint	rowtoseek)
 {
+	g_return_val_if_fail(IS_G_SQL_RESULT(obj),FALSE);
 	return obj->seekrow(obj,rowtoseek);
 }
 
