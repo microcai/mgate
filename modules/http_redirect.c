@@ -1,5 +1,5 @@
 //
-// C++ Interface: redirect_to_local_http
+// redirect_to_local_http
 //
 // Description:
 //
@@ -107,7 +107,7 @@ static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * conten
 	//Retrive the tcp header
 	tcp_head = (struct tcphdr*) ((char*) ip_head + ip_head->ihl * 4);
 
-#ifndef DEBUG_ONLY_HTTP_PORT
+#ifdef DEBUG_ONLY_HTTP_PORT
 	if (tcp_head->dest != HTTP_PORT)
 		return TRUE;
 #endif
