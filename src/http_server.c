@@ -281,6 +281,8 @@ static void SoupServer_path_root(SoupServer *server, SoupMessage *msg,
 
 	htmlnode_new_text(p, bodytxt);
 
+	g_free(bodytxt);
+
 
 	htmlnode_to_plane_text_and_free(node,(htmlnode_appender)soup_message_body_appender,msg->response_body);
 
