@@ -23,6 +23,11 @@ monitor-*.spec
 stamp-h1
 monitor/monitor
 monitor
-
+*.make
 monitor.spec
 src/monitord
+docs/*.tasmp
+docs/*
+!docs/monitor-docs.sgml
+!docs/Makefile.am
+docs/*/

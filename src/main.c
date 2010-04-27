@@ -255,5 +255,3 @@ gboolean do_daemon(gpointer user_data)
 	check_pid(TRUE);
 	return FALSE;
 }
-
-GKeyFile * gkeyfile;

@@ -1,7 +1,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = src modules po
+SUBDIRS = src modules po docs
 dist_doc_DATA = README 
 EXTRA_DIST = @PACKAGE_NAME@.spec.in monitor.cfg httpd.conf.patch
 

@@ -27,6 +27,9 @@ AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Define to the read-only 
 AM_GNU_GETTEXT([external])
 AM_GNU_GETTEXT_VERSION(0.16.1)
 
+GTK_DOC_CHECK([1.11],[--flavour no-tmpl])
+
+
 AC_ARG_WITH(mysql,[AC_HELP_STRING([--without-mysql],[disable support for mysql])],
 		[ with_mysql=$withval ],[with_mysql=check])
 
@@ -109,13 +112,14 @@ AC_CHECK_HEADERS([arpa/inet.h memory.h netinet/in.h stdlib.h string.h sys/ioctl.
 AC_CHECK_DECL(_SC_NPROCESSORS_ONLN,[],[AC_MSG_FAILURE(_SC_NPROCESSORS_ONLN not found,1)])
 
 #AC_CONFIG_FILES([modules/Makefile])
-AC_CONFIG_FILES( [
-					Makefile
+AC_CONFIG_FILES( [					
+					monitor.spec
 					src/Makefile
 					src/monitord
 					modules/Makefile
 					po/Makefile.in
-					monitor.spec
+					docs/Makefile					
+					Makefile
 		])
 
 AS_IF([test "$prefix" = "NONE"],[prefix="/usr/local"])
