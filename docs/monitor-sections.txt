@@ -59,11 +59,6 @@ module_enable
 </SECTION>
 
 <SECTION>
-<FILE>pcap_thread</FILE>
-pcap_thread_func
-</SECTION>
-
-<SECTION>
 <FILE>utils</FILE>
 NetAcountType
 convertMAC

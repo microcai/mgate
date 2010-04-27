@@ -5,6 +5,17 @@
  *      Author: cai
  */
 
+/**
+ * SECTION:clientmgr
+ * @short_description: Client 管理
+ * @title:ClientManager
+ * @stability: Stable
+ *
+ * #Client 用来描述一个上网客户
+ * clientmgr_* 系列函数用来管理系统上存在的上网客户
+ */
+
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
