@@ -312,3 +312,4 @@ int gbk_utf8(char *outbuf, size_t outlen, const char *inbuf, size_t inlen)
 	return 0;
 }
 
+GKeyFile * gkeyfile;

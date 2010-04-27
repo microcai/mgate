@@ -6,6 +6,17 @@
  */
 
 
+/**
+ * SECTION:gsqlconnect_mysql
+ * @short_description: GSQLConnectMysql 实现 mysql 数据库连接
+ * @title:数据库连接后端
+ * @see_also: #GSQLConnect
+ * @stability: Stable
+ * @include: monitor/gsqlconnect_mysql.h
+ *
+ * #GSQLConnectMysql 是 #GSQLConnect 的一个实现，用来连接到 mysql 数据库
+ */
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif

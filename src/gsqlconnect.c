@@ -5,6 +5,17 @@
  *      Author: cai
  */
 
+/**
+ * SECTION:gsqlconnect
+ * @short_description: GSQLConnect 实现通用的数据库连接
+ * @title:数据库连接后端
+ * @see_also: #GSQLConnect
+ * @stability: Stable
+ * @include: monitor/gsqlconnect.h
+ *
+ * #GSQLConnect 是 一个通用的 SQL 数据库 glib 绑定库，通过插件可以支持很多后端
+ * 目前只实现了mysql 后端  #GSQLConnectMysql
+ */
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -39,6 +50,14 @@ static void g_sql_connect_init(GSQLConnect * klass)
 
 G_DEFINE_TYPE(GSQLConnect,g_sql_connect,G_TYPE_OBJECT);
 
+/**
+ * g_sql_connect_check_config:
+ * @obj : 连接
+ * Returns : TRUE 成功，FALSE 失败
+ * g_sql_connect_real_connect() 被后端重载，给后端一个机会在连接前检查配置
+ * 用户应该在调用 g_sql_connect_real_connect() 前调用 g_sql_connect_real_connect()
+ * 以确认数据库连接配置的正确性
+ */
 gboolean g_sql_connect_check_config(GSQLConnect* obj)
 {
 	g_return_val_if_fail(IS_G_SQL_CONNECT(obj),FALSE);
@@ -52,6 +71,14 @@ gboolean g_sql_connect_check_config(GSQLConnect* obj)
 	return FALSE;
 }
 
+/**
+ * g_sql_connect_real_connect:
+ * @obj :
+ * @err :
+ * Returns : TRUE 成功，FALSE 失败, 具体错误可以查看 @err
+ *
+ * 连接到数据库。数据库在正确使用前必须连接。
+ */
 gboolean g_sql_connect_real_connect(GSQLConnect* obj,GError ** err)
 {
 	g_return_val_if_fail(IS_G_SQL_CONNECT(obj),FALSE);
@@ -149,4 +176,3 @@ void g_marshal_VOID__INT_STRING(GClosure *closure, GValue *return_value G_GNUC_U
 	callback(data1, g_value_get_int(param_values + 1),
 			g_value_get_string(param_values + 2), data2);
 }
-GKeyFile * gkeyfile;

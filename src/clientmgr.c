@@ -46,18 +46,57 @@ static void client_class_init(ClientClass * klass)
 	gobjclass->get_property = client_get_property;
 	gobjclass->finalize = client_finalize;
 
+	/**
+	 * Client:name:
+	 *
+	 * 客户的名字
+	 */
 	g_object_class_install_property(gobjclass,CLIENT_NAME,
 			g_param_spec_string("name","name","name","",G_PARAM_CONSTRUCT_ONLY|G_PARAM_READWRITE));
+
+	/**
+	 * Client:id:
+	 *
+	 * 证件号码
+	 */
 	g_object_class_install_property(gobjclass,CLIENT_ID,
 			g_param_spec_string("id","id","id","N/A",G_PARAM_CONSTRUCT_ONLY|G_PARAM_READWRITE));
+
+	/**
+	 * Client:idtype:
+	 *
+	 * 证件类型
+	 */
 	g_object_class_install_property(gobjclass,CLIENT_ID_TYPE,
 			g_param_spec_string("idtype","idtype","idtype","096",G_PARAM_CONSTRUCT_ONLY|G_PARAM_READWRITE));
+	/**
+	 * Client:room:
+	 *
+	 * 客户住的房间号
+	 */
 	g_object_class_install_property(gobjclass,CLIENT_ROOM,
 			g_param_spec_string("room","room","room","0000",G_PARAM_READWRITE));
+	/**
+	 * Client:ipstr:
+	 *
+	 * 字符串版本的当前客户使用的 ip
+	 * 如果没有 ip 则为 NULL
+	 */
 	g_object_class_install_property(gobjclass,CLIENT_IP_STR,
 			g_param_spec_string("ipstr","ipstr","ipstr","0.0.0.0",G_PARAM_READWRITE));
+	/**
+	 * Client:ip:
+	 *
+	 * in_addr_t 类型客户 ip
+	 */
 	g_object_class_install_property(gobjclass,CLIENT_IP,
 			g_param_spec_int("ip","ip","ip",INADDR_ANY,INADDR_NONE,INADDR_NONE,G_PARAM_CONSTRUCT|G_PARAM_READWRITE));
+
+	/**
+	 * Client:enable:
+	 *
+	 * 是否允许上网
+	 */
 	g_object_class_install_property(gobjclass,CLIENT_NAME,
 			g_param_spec_boolean("enable","enable","enable",TRUE,G_PARAM_CONSTRUCT|G_PARAM_READWRITE));
 }
@@ -189,13 +228,23 @@ static inline void spin_read_write_wunlock()
 	g_atomic_int_add(&have_writer,-1);
 }
 
-
+/**
+ * clientmgr_init:
+ *
+ * 初始化 clientmgr, 分配管理结构。使用前一定要初始化。由 main() 调用
+ */
 void clientmgr_init()
 {
 	g_type_init();
 	client_tree = g_tree_new_full(g_tree_compare_func,0,g_free,g_object_unref);
 }
 
+/**
+ * clientmgr_get_client_by_ip:
+ * @ip : 客户的ip地址
+ * Returns: #Client , NULL 没有找到
+ * 通过给定的 @ip 地址寻找拥有此@ip地址的客户
+ */
 Client * clientmgr_get_client_by_ip(in_addr_t ip)
 {
 	Client * ret = NULL;
@@ -219,6 +268,13 @@ Client * clientmgr_get_client_by_ip(in_addr_t ip)
 	return ret;
 }
 
+/**
+ * clientmgr_get_client_by_mac:
+ * @mac : mac 地址，6 个字节
+ * Returns: #Client, NULL not found
+ *
+ * 通过 @mac 地址寻找特定的客户
+ */
 Client * clientmgr_get_client_by_mac(const guchar * mac)
 {
 	spin_read_write_rlock();
@@ -230,6 +286,14 @@ Client * clientmgr_get_client_by_mac(const guchar * mac)
 	return ptr;
 }
 
+/**
+ * clientmgr_insert_client_by_mac:
+ * @mac : mac 地址
+ * @client : #Client 客户
+ *
+ * 加入一个客户到管理列队。此后将能通过 clientmgr_get_client_by_ip()
+ * clientmgr_get_client_by_mac() 找到他
+ */
 void clientmgr_insert_client_by_mac(guchar * mac, Client * client)
 {
 	spin_read_write_wlock();

@@ -5,6 +5,20 @@
  *      Author: cai
  */
 
+/**
+ * SECTION:gsqlresult
+ * @short_description: #GSQLResult 表征了一个查询结果集
+ * @title:数据库查询结果
+ * @see_also: #GSQLConnect
+ * @stability: Stable
+ * @include: monitor/gsqlconnect.h
+ *
+ * #GSQLConnect 是 一个通用的 SQL 数据库 glib 绑定库，通过插件可以支持很多后端
+ * 目前只实现了mysql 后端  #GSQLConnectMysql
+ *
+ * #GSQLResult 表征了一个查询结果集，所有 #GSQLConnect 后端查询结果都使用 #GSQLResult
+ * 返回， #GSQLResult 提供了对结果的优雅的使用
+ */
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>

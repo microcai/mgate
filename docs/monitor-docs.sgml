@@ -10,29 +10,34 @@
     <releaseinfo>
       for monitor 2.0
       The latest version of this documentation can be found on-line at
-      <ulink role="online-location" url="http://caivps.gsalex.net/monitor/index.html">http://caivps.gsalex.net/monitor/</ulink>.
+      <ulink role="online-location" url="http://caiVPS.gsalex.net/monitor/index.html">http://caiVPS.gsalex.net/monitor/</ulink>.
     </releaseinfo>
   </bookinfo>
-
+ 
   <chapter>
-      <title>Overview</title>
-      <para>这个手册带您进入 monitor 内部机制，了解它，您就可以开发出新的协议分析插件了 :) enjoy yourself
-	    </para>
-  
-    <title>monitor API</title>
-        <xi:include href="xml/gsqlconnect_mysql.xml"/>
-    <xi:include href="xml/clientmgr.xml"/>
-    <xi:include href="xml/global.xml"/>
+  	 <title>Over View</title>
+  	 <para>这个手册带您进入 monitor 内部机制，了解它，您就可以开发出新的协议分析插件了 :) enjoy yourself
+  	 </para>
+  	 
+    <title>[Insert title here]</title>
+    <xi:include href="xml/gsqlconnect.xml"/>
+    <xi:include href="xml/gsqlconnect_mysql.xml"/>
+    <xi:include href="xml/gsqlresult.xml"/>
+   
+       <xi:include href="xml/clientmgr.xml"/>
+    
+   <xi:include href="xml/htmlnode.xml"/>  
+   
     <xi:include href="xml/kpolice.xml"/>
     <xi:include href="xml/module.xml"/>
+ 
     <xi:include href="xml/utils.xml"/>
     <xi:include href="xml/ksql.xml"/>
-    <xi:include href="xml/gsqlresult.xml"/>
+ 
     <xi:include href="xml/http_server.xml"/>
     <xi:include href="xml/pcap_hander.xml"/>
-    <xi:include href="xml/htmlnode.xml"/>
-    <xi:include href="xml/gsqlconnect.xml"/>
-    <xi:include href="xml/kmysql.xml"/>
+    
+<xi:include href="xml/global.xml"/>
 
   </chapter>
   <chapter id="object-tree">
