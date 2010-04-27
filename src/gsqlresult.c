@@ -93,6 +93,14 @@ void g_sql_result_init(GSQLResult * obj)
 	obj->colum = g_ptr_array_new_with_free_func(g_free);
 }
 
+/**
+ * g_sql_result_set_result_array:
+ * @obj: An  #GSQLResult
+ * @... : 字段列表
+ *
+ * g_sql_result_set_result_array() 用来设置字段先后循序，这样后续使用的时候就能直接用字段名
+ * 来引用字段。这是提供给 #GSQLConnect 的实现使用的
+ */
 void	g_sql_result_set_result_array(GSQLResult * obj, ...)
 {
 
@@ -107,35 +115,80 @@ void	g_sql_result_set_result_array(GSQLResult * obj, ...)
 	}
 	va_end(v);
 }
-
+/**
+ * g_sql_result_append_result_array:
+ * @obj: An  #GSQLResult
+ * @field: 字段名
+ *
+ * 将字段名加入列表，这样后续使用的时候就能直接用字段名来引用字段。这是提供给 #GSQLConnect 的实现使用的
+ */
 void	g_sql_result_append_result_array(GSQLResult * obj, const char * field)
 {
 	gchar * pstr = strdup(field);
 	g_ptr_array_add(obj->colum,pstr);
 }
 
+/**
+ * g_sql_result_get_row:
+ * @obj : An  #GSQLResult
+ *
+ * 得到当前行。使用 g_sql_result_fetch_row() 来获取下一行
+ */
 GStrv	g_sql_result_get_row(GSQLResult * obj)
 {
 	return obj->currow;
 }
 
+/**
+ * g_sql_result_fetch_row:
+ * @obj : An  #GSQLResult
+ *
+ * 抽取下一行。g_sql_result_fetch_row() 必须在使用任何结果前调用
+ * 如果米有更多结果了，g_sql_result_fetch_row 返回 FALSE
+ *
+ * Returns: FALSE 如果没有更多结果了
+ */
 gboolean g_sql_result_fetch_row(GSQLResult * obj)
 {
 	g_return_val_if_fail(IS_G_SQL_RESULT(obj),FALSE);
 	return obj->nextrow(obj);
 }
 
+/**
+ * g_sql_result_seek_row:
+ * @obj:An  #GSQLResult
+ * @rowtoseek: 跳过的行数
+ *
+ * 跳过一定的行不处理
+ *
+ * Returns: FALSE 如果失败
+ */
 gboolean g_sql_result_seek_row(GSQLResult * obj,guint	rowtoseek)
 {
 	g_return_val_if_fail(IS_G_SQL_RESULT(obj),FALSE);
 	return obj->seekrow(obj,rowtoseek);
 }
 
+/**
+ * g_sql_result_colum:
+ * @obj:
+ * @index: 第几列
+ *
+ *
+ * Returns: 当前行指定列的字符串，不必释放
+ */
 const gchar* g_sql_result_colum(GSQLResult * obj,const guint index)
 {
 	return obj->currow[index];
 }
 
+/**
+ * g_sql_result_colum_by_name:
+ * @obj:
+ * @columname: 列名字
+ *
+ * Returns: 当前行指定列的字符串，不必释放
+ */
 const gchar* g_sql_result_colum_by_name(GSQLResult * obj,const gchar * columname)
 {
 	int i;

@@ -42,10 +42,13 @@ typedef struct _GSQLResultClass{
 GType	g_sql_result_get_type() G_GNUC_CONST;
 
 /* Don't free the returned results!*/
-GStrv	g_sql_result_get_row(GSQLResult * );
+GStrv	g_sql_result_get_row(GSQLResult * obj);
 
-gboolean	g_sql_result_fetch_row(GSQLResult * );
-void	g_sql_result_set_result_array(GSQLResult * , ...  /* const gchar * first , ...*/ );
+gboolean	g_sql_result_fetch_row(GSQLResult * obj);
+
+gboolean g_sql_result_seek_row(GSQLResult * obj,guint	rowtoseek);
+
+void	g_sql_result_set_result_array(GSQLResult * obj , ...  /* const gchar * first , ...*/ );
 void	g_sql_result_append_result_array(GSQLResult * obj, const char * field);
 const gchar* g_sql_result_colum_by_name(GSQLResult * obj,const gchar * columname);
 const gchar* g_sql_result_colum(GSQLResult * obj,const guint index);

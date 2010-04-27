@@ -35,14 +35,21 @@ typedef struct _GSQLConnectClass{
 GType g_sql_connect_get_type() G_GNUC_CONST;
 
 gboolean g_sql_connect_check_config(GSQLConnect*obj);
-gboolean g_sql_connect_real_connect(GSQLConnect* obj,GError **);
-gboolean g_sql_connect_run_query(GSQLConnect * obj,const gchar * sqlstatement,gsize size);
+
+gboolean g_sql_connect_real_connect(GSQLConnect* obj,
+									GError ** err);
+
+gboolean g_sql_connect_run_query(GSQLConnect * obj,
+								 const gchar * sqlstatement,
+								 gsize size);
+
 GSQLResult* g_sql_connect_use_result(GSQLConnect * obj);
+
 gboolean g_sql_connect_ping(GSQLConnect * obj,GError ** err);
 
 extern void (*g_sql_connect_thread_init)();
-extern void (*g_sql_connect_thread_end)();
 
+extern void (*g_sql_connect_thread_end)();
 
 
 #endif /* GSQLCONNECT_H_ */

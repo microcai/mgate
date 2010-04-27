@@ -134,7 +134,7 @@ gboolean	g_sql_connect_mysql_real_query(GSQLConnect*obj,const char * sql_stmt,gs
 
 	if (mysql_query(mobj->mysql, sql_stmt))
 	{
-		g_signal_emit_by_name(obj, "query_err",mysql_errno(mobj->mysql), mysql_error(mobj->mysql));
+		g_signal_emit_by_name(obj, "query-err",mysql_errno(mobj->mysql), mysql_error(mobj->mysql));
 		return FALSE;
 	}
 

@@ -39,7 +39,17 @@ static void g_sql_connect_result_weak_notify(gpointer data,GObject *where_the_ob
 
 static void g_sql_connect_class_init(GSQLConnectClass * klass)
 {
-	g_signal_new("query_err",G_TYPE_FROM_CLASS(klass),G_SIGNAL_RUN_LAST,0,NULL,NULL,g_cclosure_marshal_VOID__STRING,G_TYPE_NONE,2,G_TYPE_INT,G_TYPE_STRING);
+	/**
+	 * GSQLConnect::query-err:
+	 * @gsqlconnect: 接收信号的 #GSQLConnect 物体
+	 * @errcode:	错误代号
+	 * @errstr:	具体的错误描述
+	 *
+	 * 如果查询结果出错，::query-err 信号将会发出
+	 */
+	g_signal_new("query-err",G_TYPE_FROM_CLASS(klass),G_SIGNAL_RUN_LAST,0,NULL,NULL,
+			g_cclosure_marshal_VOID__STRING,
+			G_TYPE_NONE,2,G_TYPE_INT,G_TYPE_STRING,NULL);
 }
 
 static void g_sql_connect_init(GSQLConnect * klass)
@@ -92,6 +102,15 @@ gboolean g_sql_connect_real_connect(GSQLConnect* obj,GError ** err)
 	return FALSE;
 }
 
+/**
+ * g_sql_connect_run_query:
+ * @obj :
+ * @sqlstatement : SQL 语句 NULL 结尾
+ * @size : SQL 语句长度
+ * Returns : TRUE 成功，FALSE 失败.
+ *
+ * 执行一个 SQL 语句。
+ */
 gboolean g_sql_connect_run_query(GSQLConnect * obj,const gchar * sqlstatement,gsize size)
 {
 	g_return_val_if_fail(IS_G_SQL_CONNECT(obj),FALSE);
@@ -119,12 +138,27 @@ gboolean g_sql_connect_run_query(GSQLConnect * obj,const gchar * sqlstatement,gs
 	return ret;
 }
 
+/**
+ * g_sql_connect_use_result:
+ * @obj:
+ * Returns : #GSQLResult
+ *
+ * 取得最近的一次查询的结果。
+ */
 GSQLResult* g_sql_connect_use_result(GSQLConnect * obj)
 {
 	g_return_val_if_fail(IS_G_SQL_CONNECT(obj),NULL);
 	return G_SQL_RESULT(obj->lastresult);
 }
 
+/**
+ * g_sql_connect_ping:
+ * @obj : #GSQLConnect
+ * @err : 使用 #GError * err = NULL ; &err 传入
+ * Returns : TRUE 成功，FALSE 失败.
+ *
+ * 测试连接是否失效，如果失效，立即重连
+ */
 gboolean g_sql_connect_ping(GSQLConnect * obj,GError ** err)
 {
 	g_return_val_if_fail(IS_G_SQL_CONNECT(obj),FALSE);

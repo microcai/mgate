@@ -18,16 +18,16 @@
   	 <title>Over View</title>
   	 <para>这个手册带您进入 monitor 内部机制，了解它，您就可以开发出新的协议分析插件了 :) enjoy yourself
   	 </para>
-  	 
+
     <title>[Insert title here]</title>
     <xi:include href="xml/gsqlconnect.xml"/>
     <xi:include href="xml/gsqlconnect_mysql.xml"/>
     <xi:include href="xml/gsqlresult.xml"/>
    
-       <xi:include href="xml/clientmgr.xml"/>
-    
-   <xi:include href="xml/htmlnode.xml"/>  
-   
+    <xi:include href="xml/clientmgr.xml"/>
+
+    <xi:include href="xml/htmlnode.xml"/>  
+
     <xi:include href="xml/kpolice.xml"/>
     <xi:include href="xml/module.xml"/>
  

@@ -90,7 +90,7 @@ static void client_class_init(ClientClass * klass)
 	 * in_addr_t 类型客户 ip
 	 */
 	g_object_class_install_property(gobjclass,CLIENT_IP,
-			g_param_spec_int("ip","ip","ip",INADDR_ANY,INADDR_NONE,INADDR_NONE,G_PARAM_CONSTRUCT|G_PARAM_READWRITE));
+			g_param_spec_uint("ip","ip","ip",INADDR_ANY,INADDR_NONE,INADDR_ANY,G_PARAM_CONSTRUCT|G_PARAM_READWRITE));
 
 	/**
 	 * Client:enable:
