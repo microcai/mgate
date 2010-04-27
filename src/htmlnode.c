@@ -20,6 +20,11 @@
  * 然后用已经存在的节点为父节点不断通过调用 html_node_new() 来嵌套 html 标记
  * 当然，已有的无父 html 节点可以通过 htmlnode_append_child() 被加入到一个
  * html节点/标记 中
+ *
+ * 构造好html页面后，就可以通过调用 htmlnode_to_plane_text() 来开始传化为 html 页面了
+ * htmlnode_to_plane_text() 一次只转化一小部分，每次完成一小部分后都会调用 @appender 参数
+ * 制定的类型为 #htmlnode_appender 的回调函数，并以转化出的字符串为参数。
+ *
  */
 
 #include <string.h>

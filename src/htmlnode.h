@@ -15,26 +15,27 @@
 
 /**
  * HtmlNode:
- * @parent: 父节点
- * @children: 子节点链表
- * @tag: html 标记， 不带  < > 比如 <table> </table> 标记对在 tag 上保存为 table
- * @plane: 如果不是 html 标记，而是平坦文字，则此处为文字指针
- * @attr: html 标记的各种熟悉，比如 <table align="center" /> 则 attr 就是 align="center"
+ * @parent: 父节点 #HtmlNode*
+ * @children: 子节点链表 #GList*
+ * @tag: html 标记, 不带尖括号
+ * @plane: 如果不是 html 标记，而是平坦文字，则此处为文字指针 #gchar#
+ * @attr: html 标记的各种熟悉，比如align="center"  则 attr 就是 align="center"
  * 		  一个属性是一个字符串，@attr 是个字符串链表
  *
  * html 页面的标记被由 一个 HtmlNode 表示
  */
 typedef struct _HtmlNode{
-	struct _HtmlNode * parent; //parent
-	GList * children; //children
-    const char		*	tag; // < > </> the tag
-    const char		* 	plane; // not a tag ,but plane text
-    GList* attr; // attrs
+	/*< public >*/
+	struct _HtmlNode * parent;
+	GList * children;
+    const char		*	tag;
+    const char		* 	plane;
+    GList* attr;
 }HtmlNode;
 
 /**
  * htmlnode_appender:
- * @thunk: 一小段字符串
+ * @thunk: 一小段字符串,不需要用户释放
  * @data: 用户参数
  *
  * #htmlnode_appender 用来提供回调，htmlnode_to_plane_text() 每次解析出一块 html 文字，就会
@@ -61,7 +62,7 @@ HtmlNode * htmlnode_new_iframe(HtmlNode * parent,const char * src ,const char * 
 //释放一棵树
 void htmlnode_free(HtmlNode * rootnode);
 
-gboolean htmlnode_to_plane_text(HtmlNode * rootnode, htmlnode_appender , gpointer user_data );
+gboolean htmlnode_to_plane_text(HtmlNode * rootnode, htmlnode_appender appender, gpointer user_data );
 
 //同时 free
 gboolean htmlnode_to_plane_text_and_free(HtmlNode * rootnode, htmlnode_appender appender , gpointer user_data );
