@@ -5,6 +5,23 @@
  *      Author: cai
  */
 
+/**
+ * SECTION:htmlnode
+ * @short_description: html 标记转化
+ * @title:HtmlNode
+ * @stability: Stable
+ * @include: htmlnode.h
+ *
+ * htmlnode 表达了 html 页面的一个标签。 标签可以嵌套，htmlnode 通过连接子节点组织树形结
+ * 构来描述 html 页面。
+ *
+ * htmlnode 提供了对 html 输出的优雅的无错误的方式。
+ * 首先通过 html_node_new(NULL,"html",NULL) 构造 html 总页面
+ * 然后用已经存在的节点为父节点不断通过调用 html_node_new() 来嵌套 html 标记
+ * 当然，已有的无父 html 节点可以通过 htmlnode_append_child() 被加入到一个
+ * html节点/标记 中
+ */
+
 #include <string.h>
 #include <glib.h>
 #include "htmlnode.h"
@@ -154,7 +171,7 @@ HtmlNode * htmlnode_append_attr_take(HtmlNode * node, char * attr)
 	return node;
 }
 
-gboolean htmlnode_to_plane_text_internal(HtmlNode * rootnode, htmlnode_appender appender, gpointer user_data , int depth,gboolean freenode)
+static gboolean htmlnode_to_plane_text_internal(HtmlNode * rootnode, htmlnode_appender appender, gpointer user_data , int depth,gboolean freenode)
 {
 	if (rootnode->tag)
 	{
@@ -224,18 +241,42 @@ gboolean htmlnode_to_plane_text_internal(HtmlNode * rootnode, htmlnode_appender 
 	if(freenode)
 		htmlnode_free(rootnode);
 }
-
+/**
+ * htmlnode_to_plane_text:
+ * @rootnode : 根 html 节点
+ * @appender : 回调函数，参见 #htmlnode_appender
+ * @user_data : 传递给 @appender 的参数
+ *
+ * 用这个把 HTML 树展开，:)
+ *
+ * Returns: TRUE 成功， FALSE 失败
+ */
 gboolean htmlnode_to_plane_text(HtmlNode * rootnode, htmlnode_appender appender, gpointer user_data )
 {
 	return htmlnode_to_plane_text_internal(rootnode,appender,user_data,0,FALSE);
 }
 
+/**
+ * htmlnode_to_plane_text_and_free:
+ * @rootnode : 根 html 节点
+ * @appender : 回调函数，参见 #htmlnode_appender
+ * @user_data : 传递给 @appender 的参数
+ *
+ * 用这个把 HTML 树展开，:)，同时释放html树
+ *
+ * Returns: TRUE 成功， FALSE 失败
+ */
 gboolean htmlnode_to_plane_text_and_free(HtmlNode * rootnode, htmlnode_appender appender , gpointer user_data )
 {
 	return htmlnode_to_plane_text_internal(rootnode,appender,user_data,0,TRUE);
 }
 
-
+/**
+ * htmlnode_free:
+ * @rootnode: html 根节点
+ *
+ * 释放 html 树
+ */
 void htmlnode_free(HtmlNode * rootnode)
 {
 	GList * children = rootnode->children;
