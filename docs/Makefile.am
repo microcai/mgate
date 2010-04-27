@@ -101,7 +101,7 @@ DISTCLEANFILES =
 
 $(DOC_MAIN_SGML_FILE):
 
-tmpl-build.stamp: trim-build.stamp  $(DOC_MODULE)-decl.txt $(SCANOBJ_FILES) $(DOC_MODULE)-overrides.txt
+tmpl-build.stamp: $(DOC_MODULE)-decl.txt $(SCANOBJ_FILES) $(DOC_MODULE)-overrides.txt
 
 # clean-local:
 # 	rm -rf tmpl ${DOC_MODULE)
