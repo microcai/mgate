@@ -24,6 +24,7 @@ monitor_SOURCES += utils.c utils.h
 monitor_SOURCES += module.c module.h
 monitor_SOURCES += $(md5_SOURCE)
 monitor_SOURCES += kpolice.c kpolice.h
+monitor_SOURCES += g_socket_client_proxy.c g_socket_client_proxy.h
 monitor_SOURCES += gsqlconnect.c  gsqlconnect.h
 monitor_SOURCES += gsqlresult.c gsqlresult.h
 
