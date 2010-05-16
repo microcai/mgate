@@ -288,7 +288,13 @@ void g_socket_proxy_connect_to_host_async(GSocketClientProxy* client,
 
 	AsyncProxyTag * tag = g_new0(AsyncProxyTag,1);
 	tag->dest_host = g_strdup(host_and_port);
-	tag->dest_host_port = default_port;
+	tag->dest_host = strtok(tag->dest_host,":");
+	char * port = strtok(NULL,"");
+	if(port)
+		tag->dest_host_port = atoi(port);
+	else
+		tag->dest_host_port = default_port;
+
 	g_simple_async_result_set_op_res_gpointer(res,tag,(GDestroyNotify)async_proxy_tag_free);
 	g_socket_client_connect_to_host_async(G_SOCKET_CLIENT(client),proxy_address_andport,0,cancellable,(GAsyncReadyCallback)g_socket_proxy_connected,res);
 }
