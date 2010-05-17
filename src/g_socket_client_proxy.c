@@ -61,7 +61,7 @@ static void g_socket_client_proxy_get_property(GObject *object,
 static void g_socket_add_watch(GSocket * sock,GIOCondition con, gpointer callback, gpointer user_data, gpointer des_notify);
 
 
-G_DEFINE_TYPE(GSocketClientProxy,g_socket_client_proxy,G_TYPE_SOCKET_CLIENT)
+G_DEFINE_TYPE(GSocketClientProxy,g_socket_client_proxy,G_TYPE_SOCKET_CLIENT);
 
 static void g_socket_client_proxy_class_init(GSocketClientProxyClass*klass)
 {
@@ -260,17 +260,12 @@ static void g_socket_proxy_connected(GSocketClientProxy* client,GAsyncResult * r
 	}
 	AsyncProxyTag * tag = g_simple_async_result_get_op_res_gpointer(simple_res);
 
-
-	g_debug("tag %s",tag->dest_host);
-
 	tag->connection = connection;
 
 	//开始和代理服务器交互
-
-	//等待代理服务器能发送
-
 	GSocket * sock = g_socket_connection_get_socket(connection);
 
+	//等待代理服务器能发送
 	g_socket_add_watch(sock,G_IO_OUT,proxy_send_hello,simple_res,0);
 }
 
