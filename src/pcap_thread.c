@@ -53,7 +53,7 @@ typedef struct _pcap_process_thread_param
 	const u_char*packet_contents;
 } pcap_process_thread_param;
 
-static void pcap_process_thread_func(gpointer _thread_data, gpointer user_data)
+static void pcap_process_thread_func(gpointer _thread_data, Kpolice* police)
 {
 
 	struct in_addr ip;
@@ -84,7 +84,7 @@ static void pcap_process_thread_func(gpointer _thread_data, gpointer user_data)
 	//then we call these handler one by one
 	for(j=0;j<i;j++)
 	{
-		if(handers[j].func(&(thread_data->pcaphdr),packet_content,handers[j].user_data))
+		if(handers[j].func(&(thread_data->pcaphdr),packet_content,handers[j].user_data,police))
 			break;
 	}
 	g_free((void*)(thread_data->packet_contents));
@@ -179,7 +179,7 @@ void *pcap_thread_func(void * thread_param)
 
 
 
-	GThreadPool * threadpool = g_thread_pool_new(pcap_process_thread_func, NULL, num_threads, TRUE, NULL);
+	GThreadPool * threadpool = g_thread_pool_new((GFunc)pcap_process_thread_func, thread_param, num_threads, TRUE, NULL);
 
 	pcap_process_thread_param * thread_data;
 

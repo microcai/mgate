@@ -190,7 +190,7 @@ static void sprintf_mac(char mac_addr[PROLEN_COMPUTERMAC],const char mac[6])
 	sprintf(mac_addr,"%02x%02x%02x%02x%02x%02x",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
 }
 
-void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const char mac[6], const char * host , const char * passwd,const void * data, unsigned short dport)
+void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const char mac[6], const char * host , const char * passwd,const void * data, unsigned short dport,Kpolice * police)
 {
 
 	Client * client;
@@ -238,7 +238,7 @@ void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const char ma
 			((u_char*) &(destip))[0], ((u_char*) &(destip))[1],
 			((u_char*) &(destip))[2], ((u_char*) &(destip))[3]);
 
-	kpolice_send_command(COMMAND_ACCOUNT, (char *) &ac, sizeof(ac));
+	kpolice_send_command(police,COMMAND_ACCOUNT, (char *) &ac, sizeof(ac));
 
 	char strmac[32];
 

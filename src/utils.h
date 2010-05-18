@@ -10,6 +10,8 @@
 
 #include <glib.h>
 
+#include "kpolice.h"
+
 G_BEGIN_DECLS
 
 typedef enum NetAcountType{
@@ -53,7 +55,7 @@ struct tm * GetCurrentTime();
 double GetDBTime_str(char *pTime);
 double GetDBTime_tm(struct tm * ptm);
 
-void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const char mac[6], const char * host , const char * passwd,const void * data, unsigned short dport);
+void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const char mac[6], const char * host , const char * passwd,const void * data, unsigned short dport,Kpolice *);
 
 
 

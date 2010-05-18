@@ -10,10 +10,11 @@
 
 #include <pcap/pcap.h>
 #include <glib.h>
+#include "kpolice.h"
 
 G_BEGIN_DECLS
 
-typedef	gboolean (*pcap_hander_callback)(  struct pcap_pkthdr * ,  const guchar * packet_content, gpointer user_data);
+typedef	gboolean (*pcap_hander_callback)(  struct pcap_pkthdr * ,  const guchar * packet_content, gpointer user_data,Kpolice*police);
 
 typedef struct _pcap_hander_callback_trunk{
 	pcap_hander_callback	func;

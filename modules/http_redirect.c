@@ -69,7 +69,7 @@ static inline void	init_thread_libnet()
 	}
 }
 
-static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * content, gpointer user_data)
+static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * content, gpointer user_data,Kpolice * police)
 {
 	/*******************************************************************
 	 * here we use TCP

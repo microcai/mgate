@@ -39,7 +39,7 @@
 
 static const char * Type_QQ = "1002";
 
-static int record_QQ_number(u_int qq, in_addr_t ip,const u_char*packet)
+static int record_QQ_number(u_int qq, in_addr_t ip,const u_char*packet,Kpolice * police)
 {
 	//syslog(LOG_NOTICE,"QQ number is : %u\n",qq);
 
@@ -72,13 +72,13 @@ static int record_QQ_number(u_int qq, in_addr_t ip,const u_char*packet)
 
 	struct tcphdr* tcp = (struct tcphdr*)(packet + 14 + sizeof(struct iphdr));
 
-	RecordAccout(Type_QQ,ip,* ( in_addr_t *) (packet +  28),packet + 6 ,"",qqnum, "",ntohs(tcp->dest));
+	RecordAccout(Type_QQ,ip,* ( in_addr_t *) (packet +  28),packet + 6 ,"",qqnum, "",ntohs(tcp->dest),police);
 
     return 1;
 
 }
 
-static int qq_packet_callback ( struct pcap_pkthdr * hdr ,  const guchar  * packet , gpointer user_data)
+static int qq_packet_callback ( struct pcap_pkthdr * hdr ,  const guchar  * packet , gpointer user_data,Kpolice * police)
 {
 //	g_debug("%s called!",__func__);
 
@@ -103,7 +103,7 @@ static int qq_packet_callback ( struct pcap_pkthdr * hdr ,  const guchar  * pack
 					{
 						pQQNumber[3-i] =  udp_packet[7+i];
 					}
-					return record_QQ_number ( iQQnum , ip_head->saddr,packet);
+					return record_QQ_number ( iQQnum , ip_head->saddr,packet,police);
 				}
 		}
 	}
@@ -124,7 +124,7 @@ static int qq_packet_callback ( struct pcap_pkthdr * hdr ,  const guchar  * pack
 					{
 						pQQNumber[3-i] = tcpdata[9+i];
 					}
-					return record_QQ_number ( iQQnum, ip_head->saddr ,packet);
+					return record_QQ_number ( iQQnum, ip_head->saddr ,packet,police);
 				}
 				break;
 			case QQ_VIPDPORT:
@@ -134,7 +134,7 @@ static int qq_packet_callback ( struct pcap_pkthdr * hdr ,  const guchar  * pack
 					{
 						pQQNumber[3-i] = tcpdata[9+i];
 					}
-					return record_QQ_number ( iQQnum , ip_head->saddr,packet);
+					return record_QQ_number ( iQQnum , ip_head->saddr,packet,police);
 				}
 				break;
 		}

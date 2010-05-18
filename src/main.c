@@ -140,11 +140,15 @@ int main(int argc, char*argv[], char*env[])
 	//初始化人员管理
 	clientmgr_init();
 
-	kpolice_init();
+
+	Kpolice	* police = kpolice_new();
+
+	if(kpolice_check_config(police))
+		kpolice_start(police);
 
 	module_enable(module_dir);
 
-	g_thread_create((GThreadFunc)pcap_thread_func,NULL,FALSE,NULL);
+	g_thread_create((GThreadFunc)pcap_thread_func,police,FALSE,NULL);
 
 	signal(15,exit);
 	signal(2,exit);
