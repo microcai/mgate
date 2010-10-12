@@ -66,10 +66,9 @@ static int RecordMSNAccount(std::string msn,in_addr_t ip,in_addr_t dst_ip,const 
 
     return 1;
 }
-static int	FunctionInUse=0;
+
 static int msn_packet_callback(struct pcap_pkthdr *,const  u_char * packet , gpointer user_data,Kpolice * police)
 {
-	__sync_add_and_fetch(&FunctionInUse,1);
     /**************************************************
      *IP数据包通常就在以太网数据头的后面。以太网头的大小为14字节*
      **************************************************/
@@ -117,7 +116,7 @@ static int msn_packet_callback(struct pcap_pkthdr *,const  u_char * packet , gpo
             return RecordMSNAccount(strMSN,ip_head->saddr,ip_head->daddr,(const char*)packet,police);
         }
     }
-    return __sync_sub_and_fetch(&FunctionInUse,1);
+    return 0;
 }
 static void * protocol_handler;
 
