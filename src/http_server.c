@@ -22,6 +22,9 @@
 #include "monitor_icon.h"
 #include "htmlnode.h"
 
+static void SoupServer_path_root_icon(SoupServer *server, SoupMessage *msg,
+		const char *path, GHashTable *query, SoupClientContext *client,
+		gpointer user_data);
 static void SoupServer_path_info(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
 		gpointer user_data);
@@ -93,16 +96,6 @@ int start_server()
 	soup_server_add_handler(server,"/info",SoupServer_path_info,NULL,NULL);
 
 	soup_server_add_handler(server,"/getsmscode.asp",SoupServer_path_getsmscode,NULL,NULL);
-
-	void SoupServer_path_root_icon(SoupServer *server, SoupMessage *msg,
-			const char *path, GHashTable *query, SoupClientContext *client,
-			gpointer user_data)
-	{
-		soup_message_set_status(msg, SOUP_STATUS_OK);
-		soup_message_set_response(msg,"image/x-icon",SOUP_MEMORY_STATIC,
-				(gpointer)monitor_icon,sizeof(monitor_icon));
-	}
-
 	soup_server_add_handler(server,"/favicon.ico",SoupServer_path_root_icon,NULL,NULL);
 
 	soup_server_run_async(server);
@@ -119,6 +112,16 @@ int start_server()
 
 	return soup_server_get_port(server);
 }
+
+void SoupServer_path_root_icon(SoupServer *server, SoupMessage *msg,
+		const char *path, GHashTable *query, SoupClientContext *client,
+		gpointer user_data)
+{
+	soup_message_set_status(msg, SOUP_STATUS_OK);
+	soup_message_set_response(msg, "image/x-icon", SOUP_MEMORY_STATIC,
+			(gpointer) _binary_favicon_ico_start, (long)_binary_favicon_ico_size);
+}
+
 
 void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path,
 		GHashTable *query, SoupClientContext *client,gpointer user_data)
@@ -219,7 +222,11 @@ static void SoupServer_path_index(SoupServer *server, SoupMessage *msg,
 
 	HtmlNode * html = htmlnode_new(NULL,"html",NULL);
 
-	htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录以使用网络");
+	HtmlNode * head = htmlnode_new_head(html, NULL);
+
+	htmlnode_new(head,"link","rel=\"shortcut icon\"","href=\"/favicon.ico\"","type=\"image/x-icon\"",NULL);
+
+	htmlnode_new_text(htmlnode_new(head,"title",NULL),"登录以使用网络");
 
 	HtmlNode * body = htmlnode_new_body(html,NULL);
 
@@ -301,8 +308,12 @@ static void SoupServer_path_root(SoupServer *server, SoupMessage *msg,
 
 	HtmlNode * node = htmlnode_new(NULL, "html", NULL);
 
-	htmlnode_new_text(htmlnode_new(htmlnode_new(node, "head", NULL), "title",
-			NULL), "你好");
+	HtmlNode * head = htmlnode_new_head(node, NULL);
+
+	htmlnode_new(head,"link","rel=\"shortcut icon\"","href=\"/favicon.ico\"","type=\"image/x-icon\"",NULL);
+
+	htmlnode_new_text(htmlnode_new(head, "title",NULL), "你好");
+
 
 	HtmlNode * p = htmlnode_new(htmlnode_new(node, "body", NULL),"p",NULL);
 

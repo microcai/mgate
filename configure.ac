@@ -20,6 +20,7 @@ AC_GNU_SOURCE
 AC_PROG_CC_C99
 AC_PROG_CXX
 AC_CANONICAL_TARGET
+AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall -Werror])
 
 # define GETTEXT_* variables
@@ -122,6 +123,19 @@ AC_CHECK_HEADERS([mysql/mysql.h],[],[AM_CONDITIONAL([WITH_MYSQL],[false])])
 
 AC_SUBST(MYSQL_CFLAGS)
 AC_SUBST(MYSQL_LIBS)
+
+AC_CHECK_TARGET_TOOL(OBJCOPY,objcopy,[],[])
+
+case "$target" in
+i386-* | i686-* )
+AC_SUBST(obj_format,elf32-i386)
+AC_SUBST(obj_machine,i386)
+;;
+x86_64-*)
+AC_SUBST(obj_format,elf64-x86-64) 
+AC_SUBST(obj_machine,i386:x86-64)
+;;
+esac
 
 
 AC_CHECK_FUNCS([inet_ntoa memset munmap setenv socket strerror strstr])

@@ -4,7 +4,9 @@ AM_CPPFLAGS = @NEED_ALL_CFLAGS@ @MYSQL_CFLAGS@
 
 LIBS += @NEED_ALL_LIBS@ @MYSQL_LIBS@
 
-DISTCLEANFILES = monitord 
+DISTCLEANFILES = monitord
+
+OBJCOPY=@OBJCOPY@ 
 
 sbindir=/etc/init.d/
 
@@ -31,6 +33,15 @@ monitor_SOURCES += gsqlresult.c gsqlresult.h
 monitor_SOURCES += ksql.h ksql.c
 monitor_SOURCES += http_server.c http_server.h
 monitor_SOURCES += htmlnode.c htmlnode.h
+
+monitor_LDADD =  favicon.o
+monitor_DEPENDENCES = favicon.ico
+
+favicon.o: favicon.ico
+	$(OBJCOPY)	-I binary -B @obj_machine@ -O @obj_format@ $< $@
+
+## SMS
+monitor_SOURCES += sms/at_modem.c
 
 		 
 if WITH_MYSQL
