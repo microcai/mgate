@@ -39,4 +39,11 @@ typedef struct _GSQLConnectMysqlClass{
 
 
 GType g_sql_connect_mysql_get_type() G_GNUC_CONST;
+
+#ifndef __HAVE_MYSQL
+GType g_sql_connect_mysql_get_type(){
+	return 0;
+}
+#endif
+
 #endif /* GSQLCONNECT_MYSQL_H_ */

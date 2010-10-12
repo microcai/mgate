@@ -36,10 +36,11 @@ monitor_SOURCES += htmlnode.c htmlnode.h
 
 monitor_LDADD =  favicon.o
 monitor_DEPENDENCES = favicon.ico
+EXTRA_monitor_SOURCES = favicon.ico
 
 favicon.o: favicon.ico
 	$(OBJCOPY)	-I binary -B @obj_machine@ -O @obj_format@ $< $@
-
+	
 ## SMS
 monitor_SOURCES += sms/at_modem.h sms/at_modem.c
 monitor_SOURCES += sms/smsapi.c sms/smsapi.h
@@ -48,4 +49,5 @@ monitor_SOURCES += sms/sms.c sms/sms.h
 if WITH_MYSQL
   monitor_SOURCES += gsqlconnect_mysql.c	 gsqlconnect_mysql.h
   monitor_SOURCES += ksql_static_template.h
+  AM_CPPFLAGS += -D__HAVE_MYSQL
 endif
