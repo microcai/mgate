@@ -6,13 +6,12 @@ AM_CPPFLAGS = @GLIB2_CFLAGS@ -I$(top_srcdir)/src -fpic
 
 LIBS += @GLIB2_LIBS@ -shared
 
-
+EXTRA_PROGRAMS= libkqq.so libkurl.so libkmsn.so libredirect.so 
 
 libexec_PROGRAMS = $(NULL)
 
 if WITH_KQQ
 libexec_PROGRAMS += libkqq.so
-#  libkmsn.so
 endif
 
 if WITH_KURL
