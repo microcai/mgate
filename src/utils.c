@@ -314,4 +314,30 @@ int gbk_utf8(char *outbuf, size_t outlen, const char *inbuf, size_t inlen)
 	return 0;
 }
 
+gboolean verify_id(char * idnum)
+{
+	static const char W[] =
+	{ 7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2, 1 };
+	static const char ex[] =
+	{ '1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2' };
+
+	int i;
+	unsigned long long s ;
+	int idlen ;
+
+	idlen = strlen(idnum);
+
+	g_return_val_if_fail(idlen==18||idlen==15,FALSE);
+
+	if(idlen == 15)
+		return TRUE;
+
+	for(s = 0,i=0;i<17;i++)
+	{
+		s +=(idnum[i]-'0' )*W[i];
+	}
+
+	return ex[s % 11] == idnum[17] & 0x5F;
+}
+
 GKeyFile * gkeyfile;
