@@ -222,7 +222,7 @@ static void SoupServer_path_index(SoupServer *server, SoupMessage *msg,
 	soup_message_headers_set_content_type(msg->response_headers, "text/html; charset=UTF-8",
 			NULL);
 	soup_message_headers_set_encoding(msg->response_headers,
-			SOUP_ENCODING_CHUNKED);
+			SOUP_ENCODING_CONTENT_LENGTH);
 
 	HtmlNode * html = htmlnode_new(NULL,"html",NULL);
 
