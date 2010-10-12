@@ -128,6 +128,8 @@ AC_CHECK_FUNCS([inet_ntoa memset munmap setenv socket strerror strstr])
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h memory.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h unistd.h])
 
+AC_CHECK_HEADERS([net/ethernet.h netinet/ip.h netinet/tcp.h netinet/udp.h ],[],[AC_MSG_FAILURE(missing header files, see config.log)])
+
 AC_CHECK_DECL(_SC_NPROCESSORS_ONLN,[],[AC_MSG_FAILURE(_SC_NPROCESSORS_ONLN not found,1)])
 
 #AC_CONFIG_FILES([modules/Makefile])
