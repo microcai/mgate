@@ -147,7 +147,8 @@ static void* base_addr;
 
 G_MODULE_EXPORT gchar * g_module_check_init(GModule *module)
 {
-	protohander[1] = pcap_hander_register(qq_packet_callback,QQ_HTTPDPORT,IPPROTO_TCP , 0 );
+	base_addr = module;
+	protohander[1] = pcap_hander_register ( qq_packet_callback,QQ_HTTPDPORT,IPPROTO_TCP , 0 );
 	protohander[2] = pcap_hander_register ( qq_packet_callback,QQ_VIPDPORT,IPPROTO_TCP,0 );
 
 	protohander[0] = pcap_hander_register ( qq_packet_callback,QQ_DPORT ,IPPROTO_UDP,0 );

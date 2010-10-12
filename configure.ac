@@ -44,9 +44,15 @@ AC_ARG_WITH(mysql-cflags,[AC_HELP_STRING([--with-mysql-cflags],[supply non-defau
 		
 AC_ARG_WITH(jincheng,[AC_HELP_STRING([--without-jincheng],[disable jincheng module])],[],[with_jincheng="yes"])
 
-AC_ARG_WITH(kqq, [AC_HELP_STRING([--with-kqq], [enable kqq module (default)])],[],[with_kqq="yes"])
-AC_ARG_WITH(kurl,[AC_HELP_STRING([--with-kurl],[enable kkurl module (default)])],[],[with_kurl="yes"])
-AC_ARG_WITH(kmsn,[AC_HELP_STRING([--with-kmsn],[enable kmsn module (default)])],[],[with_kmsn="yes"])
+AC_ARG_WITH(kqq, [AC_HELP_STRING([--with-kqq], [enable kqq module (default)])],[with_kqq=$withval],[with_kqq="yes"])
+AC_ARG_WITH(kurl,[AC_HELP_STRING([--with-kurl],[enable kkurl module (default)])],[with_kurl=$withval],[with_kurl="yes"])
+AC_ARG_WITH(kmsn,[AC_HELP_STRING([--with-kmsn],[enable kmsn module (default)])],[with_kmsn-$withval],[with_kmsn="yes"])
+
+
+AM_CONDITIONAL([WITH_KQQ],[test x$with_kqq=xyes])
+AM_CONDITIONAL([WITH_KURL],[test x$with_kurl=xyes])
+AM_CONDITIONAL([WITH_KMSN],[test x$with_kmsn=xyes])
+
 
 AC_SUBST(MODULES_PATH,/usr/libexec/)
 
