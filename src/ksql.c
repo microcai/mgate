@@ -52,7 +52,13 @@ static gpointer ksql_thread(gpointer user_data)
 
 	while(!g_sql_connect_real_connect(connector,&err))
 	{
-		g_warning(_("unable to connect to database server (%d): %s"),err->code,err->message);
+		if(err)
+			g_warning(_("unable to connect to database server (%d): %s"),err->code,err->message);
+		else
+		{
+			g_warning(_("sqlite backend not implemented, exiting!"));
+			g_thread_exit(-1);
+		}
 		g_error_free(err);
 		err = NULL;
 		sleep(2);
@@ -95,8 +101,7 @@ static gpointer ksql_thread(gpointer user_data)
 
 static gboolean ksql_ping(gpointer user_data)
 {
-	g_sql_connect_ping(G_SQL_CONNECT(user_data),NULL);
-	return TRUE;
+	return g_sql_connect_ping(G_SQL_CONNECT(user_data),NULL);
 }
 
 GType	ksql_get_backend()

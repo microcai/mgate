@@ -10,7 +10,10 @@ AC_ARG_ENABLE(debug,
                 [AC_HELP_STRING([--enable-debug],
                 	[Enable DEBUG output. This feature which should be only enabled by developers])
                 ],
-                [ CXXFLAGS="-g2 -DDEBUG -Wall -O0"]
+               [
+               CXXFLAGS="-g2 -DDEBUG -Wall -O0"
+               CFLAGS="-g2 -DDEBUG -Wall -O0"
+                 ]
               )
 # Checks for programs.
 AC_GNU_SOURCE
@@ -62,7 +65,29 @@ AC_CHECK_LIB([pthread], [main])
 AC_CHECK_LIB([pcap], [main],[],[AC_MSG_ERROR(need libpcap)])
 AC_CHECK_LIB([pcap], [main],[AC_CHECK_HEADER(pcap.h)],[AC_MSG_ERROR(need libpcap)])
 
-AS_IF( [ test "x$enable_hotel" != xno ],[AC_CHECK_LIB([net], [main],[ AC_CHECK_HEADER( libnet.h) ],[AC_MSG_ERROR(need libnet)])])
+
+AC_ARG_ENABLE(hotel,[AC_HELP_STRING([--enable-hotel],[enabel build of hotel specific feature, need libnet])],[enable_hotel=$withval],[enable_hotel=no])
+
+AS_IF( [ test "x$enable_hotel" != xno ],
+	[
+		AC_CHECK_LIB([net], [main],[ AC_CHECK_HEADER( libnet.h) ],[AC_MSG_ERROR(need libnet)])
+		
+		# Checks for library functions.
+		AC_CHECK_HEADER([libnet/libnet.h],[],[])
+		AC_CHECK_LIB(net,libnet_init,[have_libnet=yes],[])		
+	],
+	[
+		have_libnet=no
+	])
+
+AS_IF([test "x${have_libnet}" = "xyes" ],
+	[
+		AM_CONDITIONAL(HAVE_LIBNET,[true])
+	],
+	[
+		AM_CONDITIONAL(HAVE_LIBNET,[false])
+	]
+)
 
 AS_IF(	[ test -n "${MYSQL_LIBS}" || test -n "${MYSQL_CFLAGS}"] ,[
 		AM_CONDITIONAL([WITH_MYSQL],[true])
@@ -92,18 +117,6 @@ AC_CHECK_HEADERS([mysql/mysql.h],[],[AM_CONDITIONAL([WITH_MYSQL],[false])])
 AC_SUBST(MYSQL_CFLAGS)
 AC_SUBST(MYSQL_LIBS)
 
-# Checks for library functions.
-AC_CHECK_HEADER([libnet/libnet.h],[],[])
-AC_CHECK_LIB(net,libnet_init,[have_libnet=yes],[])
-
-AS_IF([test "x${have_libnet}" = "xyes" ],
-	[
-		AM_CONDITIONAL(HAVE_LIBNET,[true])
-	],
-	[
-		AM_CONDITIONAL(HAVE_LIBNET,[false])
-	]
-)
 
 AC_CHECK_FUNCS([inet_ntoa memset munmap setenv socket strerror strstr])
 # Checks for header files.
