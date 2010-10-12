@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <sys/resource.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <glib.h>
 #include <libsoup/soup.h>
@@ -41,6 +42,9 @@ static void SoupServer_path_login(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
 		gpointer user_data);
 static void soup_message_body_appender(const gchar * txt, SoupMessageBody * body);
+
+//生成新的随机校验码
+static gchar * genarate_new_code(const gchar * phonenumber);
 
 static SoupServer * server;
 
@@ -244,17 +248,8 @@ static void SoupServer_path_index(SoupServer *server, SoupMessage *msg,
 
 	if (smsurl)
 	{
-		HtmlNode * form = htmlnode_new_form(body,"GET",smsurl,"targe=\"smsframe\"",NULL);
-
-		HtmlNode * tr = htmlnode_new(htmlnode_new_table(form,"border=\"0\"","align=\"center\"",NULL),"tr",NULL);
-
-
-		htmlnode_new(htmlnode_new(tr,"td",NULL),"input","type=\"submit\"","value=\"获取验证码\"",NULL);
-
 		htmlnode_new_iframe(body,smsurl,"height=\"80%\"","width=\"100%\"","name=\"smsframe\"",NULL);
-
 		g_free(smsurl);
-
 	}
 	htmlnode_to_plane_text_and_free(html,(htmlnode_appender)soup_message_body_appender,msg->response_body);
 
@@ -266,8 +261,9 @@ void SoupServer_path_getsmscode(SoupServer *_server, SoupMessage *msg,
 		gpointer user_data)
 {
 	HtmlNode	* html;
+	gchar phonenumber[17]={0};
 
-	char * genarated_code = NULL;//"124";
+	char * genarated_code;
 
 	soup_message_set_status(msg, SOUP_STATUS_OK);
 	soup_message_headers_set_content_type(msg->response_headers, "text/html; charset=UTF-8",NULL);
@@ -277,13 +273,36 @@ void SoupServer_path_getsmscode(SoupServer *_server, SoupMessage *msg,
 
 	htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"获取短信验证码");
 	HtmlNode * body = htmlnode_new_body(html,NULL);
-	if(genarated_code)
+
+	if(g_strcasecmp(msg->method,"POST"))
 	{
-		htmlnode_new_text(htmlnode_new(htmlnode_new(htmlnode_new_table(body,"align=\"center\"",NULL),"tr",NULL),"td",NULL),genarated_code);
-	}else //报告系统忙
+		//显示获取验证码表单
+
+		HtmlNode * table = htmlnode_new_table(htmlnode_new_form(body,"POST","/getsmscode.asp",NULL),"border=\"0\"","align=\"center\"",NULL);
+		htmlnode_new_text(htmlnode_new(htmlnode_new(table,"tr",NULL),"td",NULL),"输入手机号码:");
+		htmlnode_new(htmlnode_new(htmlnode_new(table,"tr",NULL),"td",NULL),"input","type=\"text\"","name=\"phone\"",0);
+		htmlnode_new(htmlnode_new(htmlnode_new(table,"tr",NULL),"td",NULL),"input","type=\"submit\"","value=\"获取验证码\"","name=\"Submit\"",NULL);
+
+	}else
 	{
-		htmlnode_new_text(htmlnode_new(htmlnode_new(htmlnode_new_table(body,"align=\"center\"",NULL),"tr",NULL),"td",NULL),_("System busy, try later!"));
+		sscanf(msg->request_body->data,"phone=%16[+0123456789]",phonenumber);
+		phonenumber[16]=0;
+
+		genarated_code = genarate_new_code(phonenumber);
+
+		htmlnode_new_text(htmlnode_new(htmlnode_new(htmlnode_new_table(body,"align=\"center\"",NULL),"tr",NULL),"td",NULL),msg->request_body->data);
+
+		if(genarated_code)
+		{
+			htmlnode_new_text(htmlnode_new(htmlnode_new(htmlnode_new_table(body,"align=\"center\"",NULL),"tr",NULL),"td",NULL),"一份包含有验证码的短信已发送，请注意查收");
+		}else //报告系统忙
+		{
+			htmlnode_new_text(htmlnode_new(htmlnode_new(htmlnode_new_table(body,"align=\"center\"",NULL),"tr",NULL),"td",NULL),_("System busy, try later!"));
+		}
+
+		g_free(genarated_code);
 	}
+
 	htmlnode_to_plane_text_and_free(html,(htmlnode_appender)soup_message_body_appender,msg->response_body);
 	soup_message_body_complete(msg->response_body);
 }
@@ -314,7 +333,6 @@ static void SoupServer_path_root(SoupServer *server, SoupMessage *msg,
 
 	htmlnode_new_text(htmlnode_new(head, "title",NULL), "你好");
 
-
 	HtmlNode * p = htmlnode_new(htmlnode_new(node, "body", NULL),"p",NULL);
 
 	char * bodytxt = g_strdup_printf(
@@ -334,4 +352,22 @@ static void SoupServer_path_root(SoupServer *server, SoupMessage *msg,
 static void soup_message_body_appender(const gchar * txt, SoupMessageBody * body)
 {
 	soup_message_body_append(body,SOUP_MEMORY_COPY,txt,strlen(txt));
+}
+
+static gchar * genarate_new_code(const gchar * phonenumber)
+{
+	gchar * msgcode = NULL;
+
+	if(strlen(phonenumber)>10)
+	{
+		int code = lrand48() % 99999;
+
+		msgcode = g_strdup_printf("%06" G_GINT32_MODIFIER "d" ,code);
+
+	//	SendMessage(phonenumber,msgcode);
+//		sms_sendmessage();
+
+		g_debug("phone %s\'s code is %s",phonenumber,msgcode);
+
+	}return msgcode;
 }
