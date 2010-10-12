@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
-"POT-Creation-Date: 2010-10-12 09:59+0800\n"
+"POT-Creation-Date: 2010-10-12 20:33+0800\n"
 "PO-Revision-Date: 2010-04-11 16:57+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
@@ -153,31 +153,39 @@ msgstr "[monitor]:[threads] 未设置，默认使用2倍 CPU 个数 (%d) "
 msgid "Too many thread will exclude the resource limite, reduce to %d"
 msgstr "设置的线程数目太多，超过系统限制，减少到 %d"
 
-#: src/http_server.c:72
+#: src/http_server.c:82
 #, c-format
 msgid "using port %d as default duto the missing [http]:[port] settings"
 msgstr "使用端口 %d 作为默认端口，因为没有设置 [http]:[port]"
 
-#: src/http_server.c:79
+#: src/http_server.c:89
 #, c-format
 msgid "server failt to start at port %d, will use random port!"
 msgstr "从端口%d 启动失败，将使用随机端口！"
 
-#: src/http_server.c:83
+#: src/http_server.c:93
 #, c-format
 msgid "server started at port %u"
 msgstr "服务器在端口%u启动"
 
-#: src/ksql.c:55 src/ksql.c:164
+#: src/http_server.c:300
+msgid "System busy, try later!"
+msgstr ""
+
+#: src/ksql.c:56 src/ksql.c:169
 #, c-format
 msgid "unable to connect to database server (%d): %s"
 msgstr "无法连接到数据库 (%d) : %s"
 
-#: src/ksql.c:135
+#: src/ksql.c:59
+msgid "sqlite backend not implemented, exiting!"
+msgstr ""
+
+#: src/ksql.c:140
 msgid "[database]:[backend] not set or invalid, default to mysql"
 msgstr "[database]:[backend]未设置，将使用 mysql"
 
-#: src/ksql.c:138
+#: src/ksql.c:143
 msgid "[database]:[backend] not set or invalid, default to sqlite"
 msgstr "[database]:[backend]未设置，将使用 sqlite"
 
