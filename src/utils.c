@@ -195,11 +195,13 @@ void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const char ma
 
 	Client * client;
 
-	client = clientmgr_get_client_by_mac(mac);
+	client = clientmgr_get_client_by_mac((u_char*)mac);
 
-	AccountInfo ac ={0};
+	AccountInfo ac;
 
 	GTimeVal time;
+
+	memset(&ac,0,sizeof(ac));
 
 	g_get_current_time(&time);
 
@@ -246,7 +248,7 @@ void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const char ma
 
 	in_addr_ip.s_addr = ip;
 
-	formatMAC(mac,strmac);
+	formatMAC((u_char*)mac,strmac);
 
 	static const char	SQL_template[]=
 		"insert into t_netlog (RoomNum,MachineIP,MachineMac,CustomerIDType,CustomerIDNum, "

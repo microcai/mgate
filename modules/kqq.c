@@ -41,14 +41,12 @@ static const char * Type_QQ = "1002";
 
 static int record_QQ_number(u_int qq, in_addr_t ip,const u_char*packet,Kpolice * police)
 {
-	//syslog(LOG_NOTICE,"QQ number is : %u\n",qq);
-
-	static pthread_mutex_t lock=PTHREAD_MUTEX_INITIALIZER;
-
 	char qqnum[80];
 	sprintf(qqnum, "%u", qq);
 
 #if 0
+	static pthread_mutex_t lock=PTHREAD_MUTEX_INITIALIZER;
+
 	time_t tmNow = time(NULL);
 	pthread_mutex_lock(&lock);
 	std::map<std::string, time_t>::iterator it = qq_time_map.begin();
@@ -72,7 +70,7 @@ static int record_QQ_number(u_int qq, in_addr_t ip,const u_char*packet,Kpolice *
 
 	struct tcphdr* tcp = (struct tcphdr*)(packet + 14 + sizeof(struct iphdr));
 
-	RecordAccout(Type_QQ,ip,* ( in_addr_t *) (packet +  28),packet + 6 ,"",qqnum, "",ntohs(tcp->dest),police);
+	RecordAccout(Type_QQ,ip,* ( in_addr_t *) (packet +  28),(char*)packet + 6 ,"",qqnum, "",ntohs(tcp->dest),police);
 
     return 1;
 
