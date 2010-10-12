@@ -26,7 +26,7 @@
  * 制定的类型为 #htmlnode_appender 的回调函数，并以转化出的字符串为参数。
  *
  */
-
+#include <stdarg.h>
 #include <string.h>
 #include <glib.h>
 #include "htmlnode.h"
@@ -57,9 +57,13 @@ HtmlNode * htmlnode_new(HtmlNode * parent, const char * tag , ...)
 	return node;
 }
 
-HtmlNode * htmlnode_newv(HtmlNode * parent, const char * tag, va_list v)
+HtmlNode * htmlnode_newv(HtmlNode * parent, const char * tag, const char * attrlist, va_list v)
 {
+
 	HtmlNode * node = g_new0(HtmlNode,1);
+
+
+//	va_copy(v,*vv);
 
 	node->parent = parent;
 
@@ -69,8 +73,10 @@ HtmlNode * htmlnode_newv(HtmlNode * parent, const char * tag, va_list v)
 	if(tag)
 	{
 		node->tag = g_strdup(tag);
-		if (v)
+		if (attrlist)
 		{
+			htmlnode_append_attr(node, attrlist);
+
 			while ((tag = va_arg(v,char*)))
 			{
 				htmlnode_append_attr(node, tag);
@@ -95,21 +101,21 @@ HtmlNode * htmlnode_new_head(HtmlNode * parent, const char * attrlist, ...)
 {
 	va_list v;
 	va_start(v,attrlist);
-	return htmlnode_newv(parent,"head",attrlist?v:NULL);
+	return htmlnode_newv(parent,"head",attrlist,v);
 }
 
 HtmlNode * htmlnode_new_body(HtmlNode * parent, const char * attrlist, ...)
 {
 	va_list v;
 	va_start(v,attrlist);
-	return htmlnode_newv(parent,"body",attrlist?v:NULL);
+	return htmlnode_newv(parent,"body",attrlist,v);
 }
 
 HtmlNode * htmlnode_new_table(HtmlNode * parent,const char * attrlist, ...)
 {
 	va_list v;
 	va_start(v,attrlist);
-	return htmlnode_newv(parent,"table",attrlist?v:NULL);
+	return htmlnode_newv(parent,"table",attrlist,v);
 }
 
 HtmlNode * htmlnode_new_form(HtmlNode * parent,const char * method , const char * action ,const char * attrlist, ...)
@@ -245,6 +251,7 @@ static gboolean htmlnode_to_plane_text_internal(HtmlNode * rootnode, htmlnode_ap
 
 	if(freenode)
 		htmlnode_free(rootnode);
+	return TRUE;
 }
 /**
  * htmlnode_to_plane_text:

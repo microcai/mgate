@@ -31,6 +31,9 @@ static void SoupServer_path_index(SoupServer *server, SoupMessage *msg,
 static void SoupServer_path_root(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
 		gpointer user_data);
+static void SoupServer_path_getsmscode(SoupServer *_server, SoupMessage *msg,
+		const char *path, GHashTable *query, SoupClientContext *client,
+		gpointer user_data);
 static void SoupServer_path_login(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
 		gpointer user_data);
@@ -89,13 +92,15 @@ int start_server()
 	soup_server_add_handler(server,"/index.htm",SoupServer_path_index,NULL,NULL);
 	soup_server_add_handler(server,"/info",SoupServer_path_info,NULL,NULL);
 
+	soup_server_add_handler(server,"/getsmscode.asp",SoupServer_path_getsmscode,NULL,NULL);
+
 	void SoupServer_path_root_icon(SoupServer *server, SoupMessage *msg,
 			const char *path, GHashTable *query, SoupClientContext *client,
 			gpointer user_data)
 	{
 		soup_message_set_status(msg, SOUP_STATUS_OK);
 		soup_message_set_response(msg,"image/x-icon",SOUP_MEMORY_STATIC,
-				monitor_icon,sizeof(monitor_icon));
+				(gpointer)monitor_icon,sizeof(monitor_icon));
 	}
 
 	soup_server_add_handler(server,"/favicon.ico",SoupServer_path_root_icon,NULL,NULL);
@@ -249,6 +254,32 @@ static void SoupServer_path_index(SoupServer *server, SoupMessage *msg,
 	soup_message_body_complete(msg->response_body);
 }
 
+void SoupServer_path_getsmscode(SoupServer *_server, SoupMessage *msg,
+		const char *path, GHashTable *query, SoupClientContext *client,
+		gpointer user_data)
+{
+	HtmlNode	* html;
+
+	char * genarated_code = NULL;//"124";
+
+	soup_message_set_status(msg, SOUP_STATUS_OK);
+	soup_message_headers_set_content_type(msg->response_headers, "text/html; charset=UTF-8",NULL);
+	soup_message_headers_set_encoding(msg->response_headers,SOUP_ENCODING_CONTENT_LENGTH);
+
+	html = htmlnode_new(NULL, "html", NULL);
+
+	htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"获取短信验证码");
+	HtmlNode * body = htmlnode_new_body(html,NULL);
+	if(genarated_code)
+	{
+		htmlnode_new_text(htmlnode_new(htmlnode_new(htmlnode_new_table(body,"align=\"center\"",NULL),"tr",NULL),"td",NULL),genarated_code);
+	}else //报告系统忙
+	{
+		htmlnode_new_text(htmlnode_new(htmlnode_new(htmlnode_new_table(body,"align=\"center\"",NULL),"tr",NULL),"td",NULL),_("System busy, try later!"));
+	}
+	htmlnode_to_plane_text_and_free(html,(htmlnode_appender)soup_message_body_appender,msg->response_body);
+	soup_message_body_complete(msg->response_body);
+}
 
 static void SoupServer_path_root(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
