@@ -33,6 +33,10 @@
 #include "sms.h"
 #include "smsapi.h"
 
+typedef struct _sms_item{
+	int pdulen;
+	char pdudata[];
+}sms_item;
 
 static gboolean modem_readed(GIOChannel * modem,GIOCondition cond,gpointer user_data)
 {
@@ -42,16 +46,31 @@ static gboolean modem_readed(GIOChannel * modem,GIOCondition cond,gpointer user_
 	return TRUE;
 }
 
+static gpointer sms_send_thread(gpointer data)
+{
+
+
+}
+
 static GIOChannel * modem;
+static GAsyncQueue	* sendqueue;
+
 gboolean sms_init()
 {
-	modem = modem_open();
+	//act as barrier
+	g_atomic_pointer_set(&modem,modem_open());
 
 	if(!modem)
 		return FALSE;
 	//开始读取
-
 	g_io_add_watch(modem,G_IO_IN,modem_readed,NULL);
+
+	//建立异步列队
+	//act as barrier
+	g_atomic_pointer_set(&sendqueue,g_async_queue_new_full(g_free));
+
+	//开始发送线程
+	g_thread_create(sms_send_thread,modem,FALSE,0);
 
 	return TRUE;
 }
@@ -75,9 +94,10 @@ gboolean sms_sendmessage(const gchar * phone,const char * message)
 
 	gsize len = g_utf8_strlen(message,300);
 
-	const gchar * strSmsc = g_key_file_get_string(gkeyfile,"sms","smsc",NULL);
+	gchar * strSmsc = g_key_file_get_string(gkeyfile,"sms","smsc",NULL);
 
-	if(len < 160 && strSmsc )
+	//不能超过70个字
+	if(len < 70 && strSmsc )
 	{
 		//进行编码
 		SM_PARAM * sm = g_new(SM_PARAM,1);
@@ -92,6 +112,10 @@ gboolean sms_sendmessage(const gchar * phone,const char * message)
 		char * pDst = g_malloc0(1000);
 
 		int pdulen = gsmEncodePdu(sm,pDst);
+
+		//挂入发送列队
+
+		//g_async_queue_push(queue,)
 
 	}
 	g_free(strSmsc);

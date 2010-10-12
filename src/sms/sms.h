@@ -22,6 +22,8 @@ typedef struct _SM_PARAM{
 	char index;				// 短消息序号，在读取时用到
 } SM_PARAM;
 
+// PDU编码，用于编制、发送短消息
+// 返回: 目标PDU串长度
 int gsmEncodePdu(const SM_PARAM* pSrc, char* pDst);
 
 

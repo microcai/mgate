@@ -127,7 +127,7 @@ int gsmBytes2String(const unsigned char* pSrc, char* pDst, int nSrcLength)
 // pDst: 目标字符串指针
 // nSrcLength: 源字符串长度
 // 返回: 目标字符串长度
-int gsmInvertNumbers(const char* pSrc, char* pDst, int nSrcLength)
+static int gsmInvertNumbers(const char* pSrc, char* pDst, int nSrcLength)
 {
 	int nDstLength;		// 目标字符串长度
 	char ch;			// 用于保存一个字符
@@ -157,8 +157,6 @@ int gsmInvertNumbers(const char* pSrc, char* pDst, int nSrcLength)
 	return nDstLength;
 }
 
-// PDU编码，用于编制、发送短消息
-// 返回: 目标PDU串长度
 int gsmEncodePdu(const SM_PARAM* pSrc, char* pDst)
 {
 	int nLength;			// 内部用的串长度
