@@ -41,7 +41,8 @@ favicon.o: favicon.ico
 	$(OBJCOPY)	-I binary -B @obj_machine@ -O @obj_format@ $< $@
 
 ## SMS
-monitor_SOURCES += sms/at_modem.c
+monitor_SOURCES += sms/at_modem.h sms/at_modem.c
+monitor_SOURCES += sms/smsapi.c
 
 		 
 if WITH_MYSQL
