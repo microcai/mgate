@@ -10,17 +10,26 @@
 // Copyright: See COPYING file that comes with this distribution
 //
 //
-#include <net/ethernet.h>
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
+#include <net/ethernet.h>
 #include <stdio.h>
-#include <iostream>
 #include <string.h>
+#include <glib.h>
 #include <gmodule.h>
-
+#include <pthread.h>
+#include "i18n.h"
 #include "pcap_hander.h"
-#include "libdreamtop.h"
+#include "utils.h"
+
+#include <string>
 
 #define MSN_PORT  0x4707  //1863
 
@@ -48,22 +57,17 @@ static char * MemStr(char *p1, const char *p2, int nCount)
     return NULL;
 }
 
-static int RecordMSNAccount(std::string msn,in_addr_t ip,in_addr_t dst_ip,const u_char*packet)
+static int RecordMSNAccount(std::string msn,in_addr_t ip,in_addr_t dst_ip,const char*packet,Kpolice * police)
 {
-    std::cout << msn << std::endl;
-    struct NetAcount na(NetAcountType_MSN,packet);
-    struct tcphdr* tcp = (tcphdr*)(packet + 14 + sizeof(iphdr));
+	g_debug("[msn]:%s",msn.c_str());
 
-    strcpy(na.strType,Type_MSN.c_str());
-    na.data = msn;
-    na.ip = ip;
-    na.dstip = dst_ip;
-    na.dport = ntohs(tcp->dest);
-    RecordAccout(&na);
+    struct tcphdr* tcp = (tcphdr*)(packet + 14 + sizeof(iphdr));
+    RecordAccout(Type_MSN.c_str(),ip,dst_ip,packet + 6,"","",msn.c_str(),ntohs(tcp->dest),police);
+
     return 1;
 }
 static int	FunctionInUse=0;
-static int msn_packet_callback(struct pcap_pkthdr *,const  u_char * packet , gpointer user_data)
+static int msn_packet_callback(struct pcap_pkthdr *,const  u_char * packet , gpointer user_data,Kpolice * police)
 {
 	__sync_add_and_fetch(&FunctionInUse,1);
     /**************************************************
@@ -110,7 +114,7 @@ static int msn_packet_callback(struct pcap_pkthdr *,const  u_char * packet , gpo
         if (strstr(strMSN, "@"))
         {
             //记录
-            return RecordMSNAccount(strMSN,ip_head->saddr,ip_head->daddr,packet);
+            return RecordMSNAccount(strMSN,ip_head->saddr,ip_head->daddr,(const char*)packet,police);
         }
     }
     return __sync_sub_and_fetch(&FunctionInUse,1);
