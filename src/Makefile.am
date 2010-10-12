@@ -42,8 +42,8 @@ favicon.o: favicon.ico
 
 ## SMS
 monitor_SOURCES += sms/at_modem.h sms/at_modem.c
-monitor_SOURCES += sms/smsapi.c
-
+monitor_SOURCES += sms/smsapi.c sms/smsapi.h
+monitor_SOURCES += sms/sms.c sms/sms.h
 		 
 if WITH_MYSQL
   monitor_SOURCES += gsqlconnect_mysql.c	 gsqlconnect_mysql.h
