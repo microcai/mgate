@@ -111,6 +111,10 @@ GIOChannel* modem_open()
 		{
 			com_io_channel = g_io_channel_unix_new(comfd);
 			g_io_channel_set_encoding(com_io_channel,NULL,NULL);
+
+			//COM 端口需要立即发送
+			g_io_channel_set_buffered(com_io_channel,FALSE);
+
 		}
 	}
 	return com_io_channel;
