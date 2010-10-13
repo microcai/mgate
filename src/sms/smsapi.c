@@ -32,48 +32,9 @@
 #include "at_modem.h"
 #include "sms.h"
 #include "smsapi.h"
+#include "smsthread.h"
 
-typedef struct _sms_item{
-	int pdulen;
-	char pdudata[];
-}sms_item;
-
-static gboolean modem_readed(GIOChannel * modem,GIOCondition cond,gpointer user_data)
-{
-	char buf[2000];
-	gsize readed;
-	g_io_channel_read(modem,buf,sizeof(buf),&readed);
-	return TRUE;
-}
-
-static gpointer sms_send_thread(gpointer data)
-{
-
-
-}
-
-static GIOChannel * modem;
 static GAsyncQueue	* sendqueue;
-
-gboolean sms_init()
-{
-	//act as barrier
-	g_atomic_pointer_set(&modem,modem_open());
-
-	if(!modem)
-		return FALSE;
-	//开始读取
-	g_io_add_watch(modem,G_IO_IN,modem_readed,NULL);
-
-	//建立异步列队
-	//act as barrier
-	g_atomic_pointer_set(&sendqueue,g_async_queue_new_full(g_free));
-
-	//开始发送线程
-	g_thread_create(sms_send_thread,modem,FALSE,0);
-
-	return TRUE;
-}
 
 gboolean sms_sendmessage(const gchar * phone,const char * message)
 {
@@ -109,14 +70,14 @@ gboolean sms_sendmessage(const gchar * phone,const char * message)
 		sm->TP_PID = 0;
 		sm->TP_DCS = GSM_UCS2;
 
-		char * pDst = g_malloc0(1000);
+		sms_item * item = g_malloc0(sizeof(sms_item)+1000);
 
-		int pdulen = gsmEncodePdu(sm,pDst);
+		char * pDst = item->pdudata;
+
+		item->pdulen = gsmEncodePdu(sm,pDst);
 
 		//挂入发送列队
-
-		//g_async_queue_push(queue,)
-
+		g_async_queue_push(sendqueue,item);
 	}
 	g_free(strSmsc);
 	g_free(normalizedphone);

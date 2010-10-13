@@ -6,7 +6,9 @@
 
 #include <glib.h>
 
-gboolean sms_init();
+G_BEGIN_DECLS
+
 gboolean sms_sendmessage(const gchar * phone,const char * message);
 
+G_END_DECLS
 #endif

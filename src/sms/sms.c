@@ -99,13 +99,41 @@ static int gsmEncodeUcs2(const char* pSrc, unsigned char* pDst, int nSrcLength)
 	return nDstLength * 2;
 }
 
-// 字节数据转换为可打印字符串
-// 如：{0xC8, 0x32, 0x9B, 0xFD, 0x0E, 0x01} --> "C8329BFD0E01"
-// pSrc: 源数据指针
-// pDst: 目标字符串指针
-// nSrcLength: 源数据长度
-// 返回: 目标字符串长度
-static int gsmBytes2String(const unsigned char* pSrc, char* pDst, int nSrcLength)
+int gsmString2Bytes(const char* pSrc, unsigned char* pDst, int nSrcLength)
+{
+	for(int i=0; i<nSrcLength; i+=2)
+	{
+		// 输出高4位
+		if(*pSrc>='0' && *pSrc<='9')
+		{
+			*pDst = (*pSrc - '0') << 4;
+		}
+		else
+		{
+			*pDst = (*pSrc - 'A' + 10) << 4;
+		}
+
+		pSrc++;
+
+		// 输出低4位
+		if(*pSrc>='0' && *pSrc<='9')
+		{
+			*pDst |= *pSrc - '0';
+		}
+		else
+		{
+			*pDst |= *pSrc - 'A' + 10;
+		}
+
+		pSrc++;
+		pDst++;
+	}
+
+	// 返回目标数据长度
+	return nSrcLength / 2;
+}
+
+int gsmBytes2String(const unsigned char* pSrc, char* pDst, int nSrcLength)
 {
 	const char tab[]="0123456789ABCDEF";	// 0x0-0xf的字符查找表
 	for(int i=0; i<nSrcLength; i++)
