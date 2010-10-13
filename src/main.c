@@ -28,7 +28,8 @@
 
 #include <unistd.h>
 #include <sys/signal.h>
-#include <pcap.h>
+#include <sys/stat.h>
+#include <pcap/pcap.h>
 #include <errno.h>
 #include <glib.h>
 #include <fcntl.h>
@@ -59,6 +60,7 @@ int main(int argc, char*argv[], char*env[])
 	gboolean run_daemon = FALSE;
 	gchar *  domain_dir = NULL;
 	gchar *	 device = NULL;
+	gchar *  pcapfile = NULL;
 	gint	httpport = 0;
 
 	const gchar * module_dir = "/usr/lib/monitor/modules" ;
@@ -76,14 +78,16 @@ int main(int argc, char*argv[], char*env[])
 
 	GOptionEntry args[] =
 	{
-			{"daemon",'D',0,G_OPTION_ARG_NONE,&run_daemon,_("run as daemon")},
-			{"flushdb",'f',0,G_OPTION_ARG_NONE,&flush_db,_("flash the db")},
-			{"createdb",'c',0,G_OPTION_ARG_NONE,&createdb,_("Create database")},
-			{"locale",'\0',0,G_OPTION_ARG_STRING,&domain_dir,_("set domain dir root"),N_("dir")},
-			{"config",'f',0,G_OPTION_ARG_STRING,&config_file_name,_("set alternative config file"),N_("filename")},
-			{"module_dir",'f',0,G_OPTION_ARG_STRING,&module_dir,_("set alternative module dir"),N_("dir")},
-			{"device",'d',0,G_OPTION_ARG_STRING,&device,_("override config, make monitor capturing on that interface"),N_("nic")},
-			{"http-port",0,0,G_OPTION_ARG_INT,&httpport,_("override config, make monitor listen on that port"),N_("port")},
+			{"daemon",'D',0,G_OPTION_ARG_NONE,&run_daemon,N_("run as daemon")},
+			{"flushdb",'f',0,G_OPTION_ARG_NONE,&flush_db,N_("flash the db")},
+			{"createdb",'c',0,G_OPTION_ARG_NONE,&createdb,N_("Create database")},
+			{"locale",'\0',0,G_OPTION_ARG_STRING,&domain_dir,N_("set domain dir root"),N_("dir")},
+			{"config",'f',0,G_OPTION_ARG_STRING,&config_file_name,N_("set alternative config file"),N_("filename")},
+			{"module_dir",'f',0,G_OPTION_ARG_STRING,&module_dir,N_("set alternative module dir"),N_("dir")},
+			{"device",'d',0,G_OPTION_ARG_STRING,&device,N_("override config, make monitor capturing on that interface"),N_("nic")},
+			{"http-port",0,0,G_OPTION_ARG_INT,&httpport,N_("override config, make monitor listen on that port"),N_("port")},
+			//使用离线的抓包文件而不是在线抓包。调式的时候非常有用
+			{"pcapfile",0,0,G_OPTION_ARG_FILENAME,&pcapfile,N_("using dumped file other that live capture. - for stdin"),N_("pcapsavefile")},
 			{0}
 	};
 
@@ -148,6 +152,10 @@ int main(int argc, char*argv[], char*env[])
 
 	module_enable(module_dir);
 
+	if(pcapfile)
+	{
+		g_key_file_set_string(gkeyfile,"pcap","pcap",pcapfile);
+	}
 	g_thread_create((GThreadFunc)pcap_thread_func,police,FALSE,NULL);
 
 	signal(15,exit);
