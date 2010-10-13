@@ -99,6 +99,7 @@ void *pcap_thread_func(void * thread_param)
 	GError * err = NULL;
 	bpf_u_int32 ip, mask;
 	struct rlimit	limit;
+	int		pcap_next_ex_ret;
 
 	char errbuf[PCAP_ERRBUF_SIZE];
 	struct bpf_program bpf_filter =
@@ -181,7 +182,6 @@ void *pcap_thread_func(void * thread_param)
 
 	if(err)
 	{
-
 		num_threads = sysconf(_SC_NPROCESSORS_ONLN) * 2;
 		g_message(_("[monitor]:[threads] not set, using 2x cpu (%d) threads"),num_threads);
 		g_error_free(err);
@@ -203,11 +203,10 @@ void *pcap_thread_func(void * thread_param)
 
 	for (;;)
 	{
-
-		int r;
-		if( (r=pcap_next_ex(pcap_handle, &pcaphdr, &packet_contents))<0)
+		if( (pcap_next_ex_ret=pcap_next_ex(pcap_handle, &pcaphdr, &packet_contents))<0)
 		{
-			g_warn_if_reached();
+			if(pcap_next_ex_ret==-1)
+				g_warn_if_reached();
 			break;
 		}
 
@@ -236,6 +235,8 @@ void *pcap_thread_func(void * thread_param)
 
 		thread_data->packet_contents = g_malloc(pcaphdr->len);
 
+		thread_data->ip = ip;
+
 		memcpy((void*)(thread_data->packet_contents), packet_contents, pcaphdr->len);
 
 		g_thread_pool_push(threadpool, thread_data, NULL);
@@ -244,6 +245,7 @@ void *pcap_thread_func(void * thread_param)
 	//	int fno = pcap_fileno(pcap_handle);
 
 	pcap_close(pcap_handle);
+	g_thread_pool_free(threadpool,FALSE,TRUE);
 
 	if(pcapfile)
 		exit(0);
