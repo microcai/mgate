@@ -16,8 +16,10 @@
 #endif
 
 #include <unistd.h>
+#include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/fcntl.h>
+#include <sys/socket.h>
 #include <signal.h>
 #include <errno.h>
 #include <memory.h>
@@ -34,7 +36,40 @@
 #include "smsapi.h"
 #include "smsthread.h"
 
-static GAsyncQueue	* sendqueue;
+static GIOChannel* sendqueue;
+
+gboolean sms_init()
+{
+	//act as barrier
+
+	GIOChannel * modem=modem_open();
+
+	if(!modem)
+		return FALSE;
+	int fds[2];
+
+	//建立通信管道
+	socketpair(AF_UNIX,SOCK_DGRAM,0,fds);
+	fcntl(fds[0],F_SETFD,fcntl(fds[0],F_GETFD)|FD_CLOEXEC);
+	fcntl(fds[1],F_SETFD,fcntl(fds[1],F_GETFD)|FD_CLOEXEC);
+
+
+	fcntl(fds[0],F_SETFL,fcntl(fds[0],F_GETFL)|O_NONBLOCK);
+	fcntl(fds[1],F_SETFL,fcntl(fds[1],F_GETFL)|O_NONBLOCK);
+
+	sendqueue = g_io_channel_unix_new(fds[0]);
+
+	thread_param * param  = g_new(thread_param,1);
+
+	param->modem = modem;
+	param->queue = g_io_channel_unix_new(fds[1]);
+
+	//开始发送线程
+	g_thread_create(sms_send_thread,param,FALSE,0);
+
+	return TRUE;
+}
+
 
 gboolean sms_sendmessage(const gchar * phone,const char * message)
 {
