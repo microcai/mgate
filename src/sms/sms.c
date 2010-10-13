@@ -15,7 +15,7 @@
 // pDst: 目标编码串指针
 // nSrcLength: 源字符串长度
 // 返回: 目标编码串长度
-int gsmEncode7bit(const char* pSrc, unsigned char* pDst, int nSrcLength)
+static int gsmEncode7bit(const char* pSrc, unsigned char* pDst, int nSrcLength)
 {
 	int nSrc; // 源字符串的计数值
 	int nDst; // 目标编码串的计数值
@@ -67,7 +67,7 @@ int gsmEncode7bit(const char* pSrc, unsigned char* pDst, int nSrcLength)
 // pDst: 目标编码串指针
 // nSrcLength: 源字符串长度
 // 返回: 目标编码串长度
-int gsmEncode8bit(const char* pSrc, unsigned char* pDst, int nSrcLength)
+static int gsmEncode8bit(const char* pSrc, unsigned char* pDst, int nSrcLength)
 {	// 简单复制
 	memcpy(pDst, pSrc, nSrcLength);
 	return nSrcLength;
@@ -79,7 +79,7 @@ int gsmEncode8bit(const char* pSrc, unsigned char* pDst, int nSrcLength)
 // pDst: 目标编码串指针
 // nSrcLength: 源字符串长度
 // 返回: 目标编码串长度
-int gsmEncodeUcs2(const char* pSrc, unsigned char* pDst, int nSrcLength)
+static int gsmEncodeUcs2(const char* pSrc, unsigned char* pDst, int nSrcLength)
 {
 	gunichar2 * wchar;	// UNICODE串
 	glong read,nDstLength; // UNICODE宽字符数目
@@ -105,7 +105,7 @@ int gsmEncodeUcs2(const char* pSrc, unsigned char* pDst, int nSrcLength)
 // pDst: 目标字符串指针
 // nSrcLength: 源数据长度
 // 返回: 目标字符串长度
-int gsmBytes2String(const unsigned char* pSrc, char* pDst, int nSrcLength)
+static int gsmBytes2String(const unsigned char* pSrc, char* pDst, int nSrcLength)
 {
 	const char tab[]="0123456789ABCDEF";	// 0x0-0xf的字符查找表
 	for(int i=0; i<nSrcLength; i++)
