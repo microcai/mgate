@@ -30,12 +30,11 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
-#include <pcap.h>
+#include <pcap/pcap.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include <pcap/pcap.h>
-#include <string.h>
 #include <glib.h>
 #include <sys/resource.h>
 
@@ -62,6 +61,8 @@ static void pcap_process_thread_func(gpointer _thread_data, Kpolice* police)
 	int i,j;
 	pcap_process_thread_param * thread_data = _thread_data;
 	//		recv(fno,packet_content,ETHER_MAX_LEN,0);
+
+	ip.s_addr = thread_data->ip;
 
 	const guchar * packet_content = thread_data->packet_contents;
 
@@ -93,7 +94,8 @@ static void pcap_process_thread_func(gpointer _thread_data, Kpolice* police)
 
 void *pcap_thread_func(void * thread_param)
 {
-	struct ifreq rif={0};
+	pcap_t * pcap_handle;
+	struct ifreq rif;
 	GError * err = NULL;
 	bpf_u_int32 ip, mask;
 	struct rlimit	limit;
@@ -104,57 +106,75 @@ void *pcap_thread_func(void * thread_param)
 
 	g_assert(gkeyfile);
 
-	getrlimit(RLIMIT_NOFILE,&limit);
+	gchar * pcapfile = g_key_file_get_string(gkeyfile,"pcap","pcap",NULL);
 
-	gchar * nic = g_key_file_get_string(gkeyfile,"monitor","nic",NULL);
-	if(nic)
-		g_strchomp(g_strchug(nic));
-	else
+	if(pcapfile)
 	{
-		nic = g_strdup("eth0");
-		g_warning(_("using %s as capturing interface"),nic);
-	}
+		pcap_handle = pcap_open_offline(pcapfile,errbuf);
 
-	strcpy(rif.ifr_name,nic);
-	pcap_t * pcap_handle = pcap_open_live(nic, 65536, 0, 0, errbuf);
+		ip = 0;
+		mask = 0;
 
-	if (!pcap_handle)
+		if(!pcap_handle)
+		{
+			g_warning("%s",errbuf);
+			g_free(pcapfile);
+			return 0;
+		}
+
+	}else
 	{
-		g_warning( _("ERROR:can not open %s for capturing!\n"), nic);
+		gchar * nic = g_key_file_get_string(gkeyfile,"monitor","nic",NULL);
+		if(nic)
+			g_strchomp(g_strchug(nic));
+		else
+		{
+			nic = g_strdup("eth0");
+			g_warning(_("using %s as capturing interface"),nic);
+		}
+
+		memset(&rif,0,sizeof(rif));
+		strcpy(rif.ifr_name,nic);
+
+		pcap_handle = pcap_open_live(nic, 65536, 0, 0, errbuf);
+
+		if (!pcap_handle)
+		{
+			g_warning( _("ERROR:can not open %s for capturing!\n"), nic);
+			g_free(nic);
+			return 0;
+		}
+
+		if (pcap_datalink(pcap_handle) != DLT_EN10MB)
+		{
+			g_warning(_("ERROR:%s is not an ethernet adapter\n"), nic);
+			g_free(nic);
+			return 0;
+		}
 		g_free(nic);
-		return 0;
+
+		char * net_interface = pcap_lookupdev(errbuf);
+
+		pcap_lookupnet(net_interface, &ip, &mask, errbuf);
+
+		int sock = socket(AF_INET, SOCK_DGRAM, 0);
+		if (!ioctl(sock, SIOCGIFADDR, &rif))
+		{
+			struct sockaddr_in * in_address;
+			in_address = (struct sockaddr_in*)&(rif.ifr_addr);
+			ip = in_address->sin_addr.s_addr;
+		}
+		close(sock);
+
+		pcap_compile(pcap_handle, &bpf_filter, "tcp or udp", 1, 0);
+		pcap_setfilter(pcap_handle, &bpf_filter);
+		pcap_freecode(&bpf_filter);
 	}
-
-	if (pcap_datalink(pcap_handle) != DLT_EN10MB)
-	{
-		g_warning(_("ERROR:%s is not an ethernet adapter\n"), nic);
-		g_free(nic);
-		return 0;
-	}
-
-	g_free(nic);
-
-	char * net_interface = pcap_lookupdev(errbuf);
-
-	pcap_lookupnet(net_interface, &ip, &mask, errbuf);
-
-	int sock = socket(AF_INET, SOCK_DGRAM, 0);
-	if (!ioctl(sock, SIOCGIFADDR, &rif))
-	{
-		struct sockaddr_in * in_address;
-		in_address = (struct sockaddr_in*)&(rif.ifr_addr);
-		ip = in_address->sin_addr.s_addr;
-	}
-	close(sock);
-
-	pcap_compile(pcap_handle, &bpf_filter, "tcp or udp", 1, 0);
-
-	pcap_setfilter(pcap_handle, &bpf_filter);
-
-	pcap_freecode(&bpf_filter);
 
 	struct pcap_pkthdr *pcaphdr;
 	const u_char*packet_contents;
+
+	getrlimit(RLIMIT_NOFILE,&limit);
 
 	//解析出参数来
 	gint num_threads = g_key_file_get_integer(gkeyfile,"monitor","threads",&err);
@@ -177,8 +197,6 @@ void *pcap_thread_func(void * thread_param)
 
 	}
 
-
-
 	GThreadPool * threadpool = g_thread_pool_new((GFunc)pcap_process_thread_func, thread_param, num_threads, TRUE, NULL);
 
 	pcap_process_thread_param * thread_data;
@@ -186,10 +204,14 @@ void *pcap_thread_func(void * thread_param)
 	for (;;)
 	{
 
-		pcap_next_ex(pcap_handle, &pcaphdr, &packet_contents);
+		int r;
+		if( (r=pcap_next_ex(pcap_handle, &pcaphdr, &packet_contents))<0)
+		{
+			g_warn_if_reached();
+			break;
+		}
 
 		struct iphdr * ip_head = (typeof(ip_head))(packet_contents + ETH_HLEN);
-
 		//	    //non TCP or UDP is ignored
 		if (ip_head->protocol != IPPROTO_TCP && ip_head->protocol != IPPROTO_UDP)
 			continue;
@@ -222,5 +244,8 @@ void *pcap_thread_func(void * thread_param)
 	//	int fno = pcap_fileno(pcap_handle);
 
 	pcap_close(pcap_handle);
+
+	if(pcapfile)
+		exit(0);
 	return 0;
 }
