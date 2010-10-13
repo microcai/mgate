@@ -71,7 +71,7 @@ static gboolean module_real_load(gpointer user_data)
 
 void module_enable(const gchar * module_dir)
 {
-	g_idle_add(module_real_load,(gpointer)module_dir);
+	module_real_load((gpointer)module_dir);
 }
 
 
