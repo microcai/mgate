@@ -59,7 +59,7 @@ static int selectfd( GIOChannel * modem, GIOChannel * sendqueue)
 
 gpointer sms_send_thread(gpointer data)
 {
-
+	GIOStatus readstatus;
 	gsize	written;
 	sms_item * item;
 
@@ -87,12 +87,15 @@ gpointer sms_send_thread(gpointer data)
 		//选择 COM 口数据还是 线程发来的数据
 		switch (selectfd(modem, sendqueue))
 		{
-			case 1:
-				break;
+			case 1: //没发送命令就有数据过来，一定是有短信来了
+			{
+				//TODO:读取短信
+
+			}
+			break;
 			case 2:
 			{
 				item = getoneitem(sendqueue);
-				GIOStatus readstatus;
 				gchar *cmd;		// 命令串
 				unsigned char nSmscLength;	// SMSC串长度
 				gsize ans_len;		// 串口收到的数据长度
@@ -136,12 +139,3 @@ gpointer sms_send_thread(gpointer data)
 	g_io_channel_shutdown(modem,TRUE,0);
 	return NULL;
 }
-
-static gboolean modem_readed(GIOChannel * modem,GIOCondition cond,gpointer user_data)
-{
-	char buf[2000];
-	gsize readed;
-	g_io_channel_read(modem,buf,sizeof(buf),&readed);
-	return TRUE;
-}
-
