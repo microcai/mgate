@@ -9,7 +9,10 @@
 #include "config.h"
 #endif
 
+#include <unistd.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <net/if_arp.h>
 #include <net/ethernet.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
@@ -18,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <glib.h>
 #include "i18n.h"
 #include "utils.h"
@@ -337,7 +341,47 @@ gboolean verify_id(char * idnum)
 		s +=(idnum[i]-'0' )*W[i];
 	}
 
-	return ex[s % 11] == idnum[17] & 0x5F;
+	return ex[s % 11] == (idnum[17] & 0x5F);
+}
+
+gboolean arp_ip2mac(in_addr_t ip,guchar mac[6])
+{
+	//向内核发送发起ARP查询
+	int s = socket(PF_INET, SOCK_DGRAM, 0);
+
+	//遍历所有以太网卡
+
+	int n = 0;
+	do
+	{
+		struct arpreq arpr ;
+
+		memset(&arpr,0,sizeof(arpr));
+
+		arpr.arp_flags = ATF_MAGIC;
+		arpr.arp_pa.sa_family = AF_INET;
+		((struct sockaddr_in*) (&(arpr.arp_pa)))->sin_addr.s_addr = ip;
+
+		sprintf(arpr.arp_dev, "eth%d", n);
+		n++;
+		//通过ioctl获得arp
+		int ret = ioctl(s, SIOCGARP, &arpr);
+		if (ret == 0)
+		{
+			close(s);
+			//获得MAC地址;
+			memcpy(mac,arpr.arp_ha.sa_data,6);
+//			if(MAC_ADDR)
+//				sprintf(MAC_ADDR, "%02x:%02x:%02x:%02x:%02x:%02x", d[0], d[1], d[2], d[3], d[4], d[5]);
+			return TRUE;
+		}
+		if (errno == ENXIO)
+			continue;
+		close (s);
+		return FALSE;
+	} while(errno != ENODEV);
+	close(s);
+	return FALSE;
 }
 
 GKeyFile * gkeyfile;

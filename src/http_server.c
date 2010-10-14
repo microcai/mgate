@@ -17,6 +17,8 @@
 #include <string.h>
 #include <glib.h>
 #include <libsoup/soup.h>
+#include "clientmgr.h"
+#include "utils.h"
 #include "http_server.h"
 #include "i18n.h"
 #include "global.h"
@@ -82,13 +84,12 @@ static gboolean remove_outdated_phone_code_map(gpointer data)
 	{
 		if (g_timer_elapsed(data->timer, NULL) > GPOINTER_TO_INT(user_data))
 		{
-			g_debug("delete one\n");
+			g_timer_destroy(data->timer);
 			phomecodemap = g_list_remove(phomecodemap,data);
+			g_free(data);
 		}
 	}
 	g_list_foreach(phomecodemap,(GFunc)remove_out_date,data);
-
-//	g_list_last(phomecodemap);
 	return TRUE;
 }
 
@@ -146,7 +147,6 @@ void SoupServer_path_root_icon(SoupServer *server, SoupMessage *msg,
 			(gpointer) _binary_favicon_ico_start, (long)_binary_favicon_ico_size);
 }
 
-
 void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path,
 		GHashTable *query, SoupClientContext *client,gpointer user_data)
 {
@@ -165,17 +165,43 @@ void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path
 		char id[32] =
 		{ 0 };
 
-		sscanf(msg->request_body->data, "id=%32[^&]", id);
-
-		htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录失败!");
+		sscanf(msg->request_body->data, "id=%31[0123456789]", id);
 
 		HtmlNode * body = htmlnode_new_body(html,NULL);
 
 		HtmlNode * p = htmlnode_new(body,"p",NULL);
 
-		htmlnode_new_text(p,"登录识别，识别啊!你的 ID 是 ");
-		htmlnode_new_text(p,id);
+		gboolean	find_same_id(phonetocode* data , gchar * code)
+		{
+			return strcasecmp(data->code,code);
+		}
 
+		GList * founded = g_list_find_custom(phomecodemap,id,(GCompareFunc)find_same_id);
+
+		if(!founded)
+		{
+			htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录失败!");
+
+			htmlnode_new_text(p,"登录失败，失败啊!你的 ID 是 ");
+			htmlnode_new_text(p,id);
+		}else
+		{
+			guchar mac[6];
+
+			const gchar * ip = soup_client_context_get_host(client);
+
+			Client * client = client_new(((phonetocode*)founded->data)->phone,((phonetocode*)founded->data)->phone,"990");
+
+			arp_ip2mac(inet_addr(ip),mac);
+
+			clientmgr_insert_client_by_mac(mac,client);
+
+			htmlnode_new_text(p,"手机号:");
+			htmlnode_new_text(p,((phonetocode*)founded->data)->phone);
+			htmlnode_new_text(p,"登录成功，你现在起可以自由访问网络了:)");
+			htmlnode_new_text(htmlnode_new(body,"p",NULL),"如果您长时间没有网络连接，只需要重新认证就可以了，就这么简单:)");
+			htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录成功!");
+		}
 		htmlnode_to_plane_text_and_free(html,(htmlnode_appender)soup_message_body_appender,msg->response_body);
 		soup_message_body_complete(msg->response_body);
 	}
@@ -309,9 +335,9 @@ void SoupServer_path_getsmscode(SoupServer *_server, SoupMessage *msg,
 		phonenumber[16]=0;
 
 		genarated_code = genarate_new_code(phonenumber);
-
+#ifdef DEBUG
 		htmlnode_new_text(htmlnode_new(htmlnode_new(htmlnode_new_table(body,"align=\"center\"",NULL),"tr",NULL),"td",NULL),msg->request_body->data);
-
+#endif
 		if(genarated_code)
 		{
 			htmlnode_new_text(htmlnode_new(htmlnode_new(htmlnode_new_table(body,"align=\"center\"",NULL),"tr",NULL),"td",NULL),"一份包含有验证码的短信已发送，请注意查收");
@@ -319,7 +345,6 @@ void SoupServer_path_getsmscode(SoupServer *_server, SoupMessage *msg,
 		{
 			htmlnode_new_text(htmlnode_new(htmlnode_new(htmlnode_new_table(body,"align=\"center\"",NULL),"tr",NULL),"td",NULL),_("System busy, try later!"));
 		}
-
 		g_free(genarated_code);
 	}
 

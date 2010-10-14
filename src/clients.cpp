@@ -19,8 +19,6 @@
 #include <netinet/in.h>
 #include <stdio.h>
 
-#include "libdreamtop.h"
-
 using namespace __gnu_cxx;
 
 static void inet_ntoa(std::string & ret, in_addr_t ip)

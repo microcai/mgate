@@ -128,7 +128,7 @@ void client_finalize(GObject * gobj)
 
 static void client_set_property(GObject *object, guint property_id,const GValue *value, GParamSpec *pspec)
 {
-	Client * obj;
+	Client * obj = CLIENT(object);
 
 	switch (property_id)
 	{
@@ -161,7 +161,7 @@ static void client_set_property(GObject *object, guint property_id,const GValue 
 
 static void client_get_property(GObject *object, guint property_id,GValue *value, GParamSpec *pspec)
 {
-	Client * obj;
+	Client * obj = CLIENT(object);
 	gchar * ip_str;
 	switch (property_id)
 	{
@@ -308,7 +308,7 @@ Client * clientmgr_get_client_by_mac(const guchar * mac)
 void clientmgr_insert_client_by_mac(guchar * mac, Client * client)
 {
 	spin_read_write_wlock();
-	guchar * mac_ = g_strdup(mac);
+	guchar * mac_ = g_memdup(mac,6);
 	g_tree_insert(client_tree, mac_, client);
 	spin_read_write_wunlock();
 }

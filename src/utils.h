@@ -57,6 +57,7 @@ double GetDBTime_tm(struct tm * ptm);
 
 void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const char mac[6], const char * host , const char * passwd,const void * data, unsigned short dport,Kpolice *);
 
+gboolean arp_ip2mac(in_addr_t ip, guchar mac[6]);
 
 //判断身份证号码有效性
 gboolean verify_id(char * idnum);
