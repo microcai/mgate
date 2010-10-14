@@ -67,6 +67,7 @@ int main(int argc, char*argv[], char*env[])
 
 	setlocale(LC_ALL,"");
 	textdomain(GETTEXT_PACKAGE);
+	bindtextdomain(GETTEXT_PACKAGE,GETTEXT_LOCALE_PATH);
 #ifdef DEBUG
 	bindtextdomain(GETTEXT_PACKAGE,"/tmp/share/locale");
 #endif

@@ -161,5 +161,6 @@ AS_IF([test "$prefix" = "NONE"],[prefix="/usr/local"])
 
 AC_DEFINE_UNQUOTED(MODULES_PATH,"$prefix/libexec/monitor/modules/",[the path of the loadable module])
 AC_DEFINE_UNQUOTED(EXCUTE_PATH,"$prefix/bin/",[the path of the excutable])
+AC_DEFINE_UNQUOTED(GETTEXT_LOCALE_PATH,"$prefix/share/locale",[the path of the locale])
 
 AC_OUTPUT
