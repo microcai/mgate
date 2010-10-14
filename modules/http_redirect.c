@@ -69,7 +69,7 @@ static inline void	init_thread_libnet()
 	}
 }
 
-static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * content, gpointer user_data,Kpolice * police)
+static gboolean http_redirector( pcap_process_thread_param * param, gpointer user_data,Kpolice * police)
 {
 	/*******************************************************************
 	 * here we use TCP
@@ -86,13 +86,13 @@ static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * conten
 	struct tcphdr * tcp_head;
 	Client * client;
 //	libnet_t * libnet = (libnet_t * ) user_data;
-	if((client =  clientmgr_get_client_by_mac(content)) && client->enable )
+	if((client =  clientmgr_get_client_by_mac(param->packet_linklayer_hdr)) && client->enable )
 	{
 		//继续交给后续代码处理
 		return FALSE ;
 	}
 	//非 enable 的客户端，现在要开始这般处理了,重定向到 ... 嘿嘿
-	struct iphdr * ip_head = (typeof(ip_head))(content + LIBNET_ETH_H);
+	struct iphdr * ip_head = (typeof(ip_head))(param->packet_ip_contents);
 
 	if(ip_head->daddr == redirector_ip)
 		return TRUE;
@@ -132,13 +132,6 @@ static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * conten
 		libnet_build_ipv4(40, 0, 0, 0x4000, 63/*ttl*/, IPPROTO_TCP, 0,
 				ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
 
-		libnet_build_ethernet(
-				((struct libnet_ethernet_hdr *) content)->ether_shost,
-				((struct libnet_ethernet_hdr *) content)->ether_dhost,
-				ETHERTYPE_IP, 0, 0, libnet, 0);
-
-		libnet_write(libnet);
-		libnet_clear_packet(libnet);
 	}else if (tcp_flags == (TH_PUSH | TH_ACK))
 	{
 		/*********************************************
@@ -153,15 +146,6 @@ static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * conten
 
 		libnet_build_ipv4(40 + SIZEHTTPHEAD, 0, 0, 0x4000, 63/*ttl*/,
 				IPPROTO_TCP, 0, ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
-
-		libnet_build_ethernet(
-				((struct libnet_ethernet_hdr*) content)->ether_shost,
-				((struct libnet_ethernet_hdr*) content)->ether_dhost,
-				ETHERTYPE_IP, 0, 0, libnet, 0);
-
-		libnet_write(libnet);
-
-		libnet_clear_packet(libnet);
 	}
 	else if (tcp_flags & TH_FIN)
 	{
@@ -174,13 +158,14 @@ static gboolean http_redirector( struct pcap_pkthdr * pkt, const guchar * conten
 		libnet_build_ipv4(40, 0, 0, 0x4000, 63/*ttl*/, IPPROTO_TCP, 0,
 				ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
 
-		libnet_build_ethernet(
-				((struct libnet_ethernet_hdr*) content)->ether_shost,
-				((struct libnet_ethernet_hdr*) content)->ether_dhost,
-				ETHERTYPE_IP, 0, 0, libnet, 0);
-		libnet_write(libnet);
-		libnet_clear_packet(libnet);
 	}
+	if(param->linklayer_len == 14)
+		libnet_build_ethernet(
+			((struct libnet_ethernet_hdr *) param->packet_linklayer_hdr)->ether_shost,
+			((struct libnet_ethernet_hdr *) param->packet_linklayer_hdr)->ether_dhost,
+			ETHERTYPE_IP, 0, 0, libnet, 0);
+	libnet_write(libnet);
+	libnet_clear_packet(libnet);
 	return TRUE;
 }
 

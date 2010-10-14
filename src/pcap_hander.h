@@ -12,9 +12,18 @@
 #include <glib.h>
 #include "kpolice.h"
 
+typedef struct _pcap_process_thread_param
+{
+	in_addr_t	ip;
+	gsize		linklayer_len;
+	const u_char*packet_linklayer_hdr;
+	const u_char*packet_ip_contents;
+	struct pcap_pkthdr pcaphdr;
+} pcap_process_thread_param;
+
 G_BEGIN_DECLS
 
-typedef	gboolean (*pcap_hander_callback)(  struct pcap_pkthdr * ,  const guchar * packet_content, gpointer user_data,Kpolice*police);
+typedef	gboolean (*pcap_hander_callback)(  pcap_process_thread_param * param ,gpointer user_data,Kpolice*police);
 
 typedef struct _pcap_hander_callback_trunk{
 	pcap_hander_callback	func;

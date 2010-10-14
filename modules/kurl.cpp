@@ -214,35 +214,34 @@ bool ParseTcpPkt(std::string strIndex, const char* tcpdata, size_t tcpdata_len, 
 }
 
 
-static int RecordPOST(const char *user, const char*pswd, const char*host, const u_char*packet,in_addr_t sip,in_addr_t dip,Kpolice * police)
+static int RecordPOST(const char *user, const char*pswd, const char*host, pcap_process_thread_param * param,in_addr_t sip,in_addr_t dip,Kpolice * police)
 {
-	struct tcphdr* tcp = (tcphdr*)(packet + 14 + sizeof(iphdr));
+	struct tcphdr* tcp = (tcphdr*)(param->packet_ip_contents + sizeof(iphdr));
 
 	char key2[80];
 	snprintf(key2,80,"%s:%s",user,pswd);
-	RecordAccout("0006",sip,dip,(char*)packet+6,host,key2,host,ntohs(tcp->dest),police);
+	RecordAccout("0006",sip,dip,(char*)param->packet_linklayer_hdr,host,key2,host,ntohs(tcp->dest),police);
 	return 1;
 }
 
-static int RecordUrl(char *url,const u_char*packet,in_addr_t sip,in_addr_t dip,Kpolice * police)
+static int RecordUrl(char *url,pcap_process_thread_param * param,in_addr_t sip,in_addr_t dip,Kpolice * police)
 {
 	g_debug("got url  %s",url);
-	struct tcphdr* tcp = (tcphdr*)(packet + 14 + sizeof(iphdr));
-	RecordAccout("0001",sip,dip,(char*)packet+6,"","",url,ntohs(tcp->dest),police);
+	struct tcphdr* tcp = (tcphdr*)(param->packet_ip_contents + sizeof(iphdr));
+	RecordAccout("0001",sip,dip,(char*)param->packet_linklayer_hdr+6,"","",url,ntohs(tcp->dest),police);
     return 1;
 }
 
-static int GetHttpPost(struct pcap_pkthdr * dhr, const u_char*packet,gpointer user_data,Kpolice * police)
+static int GetHttpPost( pcap_process_thread_param * param,gpointer user_data,Kpolice * police)
 {
 	/**************************************************
 	 *IP数据包通常就在以太网数据头的后面。以太网头的大小为14字节*
 	 **************************************************/
-	struct iphdr * ip_head = (struct iphdr*) (packet + ETH_HLEN);
+	struct iphdr * ip_head = (struct iphdr*) (param->packet_ip_contents);
 	/**************************************************
 	 *TCP头也就在IP头的后面。IP头的大小为20字节，不过最好从头里读取
 	 **************************************************/
-	struct tcphdr * tcp_head = (struct tcphdr*) (packet + ETH_HLEN
-			+ ip_head->ihl * 4);
+	struct tcphdr * tcp_head = (struct tcphdr*) (param->packet_ip_contents + ip_head->ihl * 4);
 	/**************************************************
 	 *TCP数据现对于tcp头的偏移由doff给出。这个也是tcp头的大小**
 	 **************************************************/
@@ -270,7 +269,7 @@ static int GetHttpPost(struct pcap_pkthdr * dhr, const u_char*packet,gpointer us
 
 		if(ParseTcpPkt(strIndex, (const char*)tcpdata, tcpdatelen, url, usr, pwd))
 		{
-			int nret =  RecordPOST(usr.c_str(), pwd.c_str(), url.c_str(), packet,ip_head->saddr, ip_head->daddr,police);
+			int nret =  RecordPOST(usr.c_str(), pwd.c_str(), url.c_str(), param,ip_head->saddr, ip_head->daddr,police);
 			//pthread_mutex_unlock(&lock);
 			return nret;
 		}
@@ -284,16 +283,16 @@ static int GetHttpPost(struct pcap_pkthdr * dhr, const u_char*packet,gpointer us
 	return 0;
 }
 
-static int url_packet_callback(struct pcap_pkthdr * dhr, const u_char * packet,gpointer use_data,Kpolice * police)
+static int url_packet_callback(pcap_process_thread_param  * param ,gpointer use_data,Kpolice * police)
 {
     /**************************************************
      *IP数据包通常就在以太网数据头的后面。以太网头的大小为14字节*
      **************************************************/
-    struct iphdr * ip_head = (struct iphdr*) (packet + ETH_HLEN);
+    struct iphdr * ip_head = (struct iphdr*) (param->packet_ip_contents);
     /**************************************************
      *TCP头也就在IP头的后面。IP头的大小为20字节，不过最好从头里读取
      **************************************************/
-    struct tcphdr * tcp_head = (struct tcphdr*) (packet + ETH_HLEN + ip_head->ihl * 4);
+    struct tcphdr * tcp_head = (struct tcphdr*) (param->packet_ip_contents + ip_head->ihl * 4);
     /**************************************************
      *TCP数据现对于tcp头的偏移由doff给出。这个也是tcp头的大小**
      **************************************************/
@@ -345,7 +344,7 @@ static int url_packet_callback(struct pcap_pkthdr * dhr, const u_char * packet,g
 
 			try
 			{
-				int nret = RecordUrl(pUrl,packet,ip_head->saddr ,ip_head->daddr,police);
+				int nret = RecordUrl(pUrl,param,ip_head->saddr ,ip_head->daddr,police);
 
 				return nret;
 			}

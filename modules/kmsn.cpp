@@ -57,26 +57,26 @@ static char * MemStr(char *p1, const char *p2, int nCount)
     return NULL;
 }
 
-static int RecordMSNAccount(std::string msn,in_addr_t ip,in_addr_t dst_ip,const char*packet,Kpolice * police)
+static int RecordMSNAccount(std::string msn,in_addr_t ip,in_addr_t dst_ip,pcap_process_thread_param * param,Kpolice * police)
 {
 	g_debug("[msn]:%s",msn.c_str());
 
-    struct tcphdr* tcp = (tcphdr*)(packet + 14 + sizeof(iphdr));
-    RecordAccout(Type_MSN.c_str(),ip,dst_ip,packet + 6,"","",msn.c_str(),ntohs(tcp->dest),police);
+    struct tcphdr* tcp = (tcphdr*)(param->packet_ip_contents + sizeof(iphdr));
+    RecordAccout(Type_MSN.c_str(),ip,dst_ip,(char*)param->packet_linklayer_hdr,"","",msn.c_str(),ntohs(tcp->dest),police);
 
     return 1;
 }
 
-static int msn_packet_callback(struct pcap_pkthdr *,const  u_char * packet , gpointer user_data,Kpolice * police)
+static int msn_packet_callback(pcap_process_thread_param * param, gpointer user_data,Kpolice * police)
 {
     /**************************************************
      *IP数据包通常就在以太网数据头的后面。以太网头的大小为14字节*
      **************************************************/
-    struct iphdr * ip_head = (struct iphdr*) (packet + ETH_HLEN);
+    struct iphdr * ip_head = (struct iphdr*) (param->packet_ip_contents);
     /**************************************************
      *TCP头也就在IP头的后面。IP头的大小为20字节，不过最好从头里读取
      **************************************************/
-    struct tcphdr * tcp_head = (struct tcphdr*) (packet + 14 + ip_head->ihl * 4);
+    struct tcphdr * tcp_head = (struct tcphdr*) (param->packet_ip_contents + ip_head->ihl * 4);
     /**************************************************
      *TCP数据现对于tcp头的偏移由doff给出。这个也是tcp头的大小**
      **************************************************/
@@ -113,7 +113,7 @@ static int msn_packet_callback(struct pcap_pkthdr *,const  u_char * packet , gpo
         if (strstr(strMSN, "@"))
         {
             //记录
-            return RecordMSNAccount(strMSN,ip_head->saddr,ip_head->daddr,(const char*)packet,police);
+            return RecordMSNAccount(strMSN,ip_head->saddr,ip_head->daddr,param,police);
         }
     }
     return 0;

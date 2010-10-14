@@ -31,6 +31,7 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <pcap/pcap.h>
+#include <pcap/sll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,13 +46,6 @@
 #include "clientmgr.h"
 #include "global.h"
 
-typedef struct _pcap_process_thread_param
-{
-	in_addr_t	ip;
-	struct pcap_pkthdr pcaphdr;
-	const u_char*packet_contents;
-} pcap_process_thread_param;
-
 static void pcap_process_thread_func(gpointer _thread_data, Kpolice* police)
 {
 
@@ -60,20 +54,19 @@ static void pcap_process_thread_func(gpointer _thread_data, Kpolice* police)
 	u_int16_t port;
 	int i,j;
 	pcap_process_thread_param * thread_data = _thread_data;
-	//		recv(fno,packet_content,ETHER_MAX_LEN,0);
 
 	ip.s_addr = thread_data->ip;
 
-	const guchar * packet_content = thread_data->packet_contents;
+	const guchar * packet_content = thread_data->packet_ip_contents;
 
-	struct iphdr * ip_head = (typeof(ip_head))(packet_content + ETH_HLEN);
+	struct iphdr * ip_head = (typeof(ip_head))thread_data->packet_ip_contents ; //(typeof(ip_head))(packet_content + thread_data->offset_skip_linklayer);
 
 	/*********************************************************************
 	 * for both UDP and TCP protocols ,source and destination port is
 	 * just behind the IP header, and destination port is just behind
 	 * the source port
 	 *********************************************************************/
-	port = *((u_int16_t*) (packet_content + ETH_HLEN + ip_head->ihl * 4 + 2));
+	port = *((u_int16_t*) (packet_content + ip_head->ihl * 4 + 2));
 
 	pcap_hander_callback_trunk	handers[1024];
 
@@ -85,10 +78,10 @@ static void pcap_process_thread_func(gpointer _thread_data, Kpolice* police)
 	//then we call these handler one by one
 	for(j=0;j<i;j++)
 	{
-		if(handers[j].func(&(thread_data->pcaphdr),packet_content,handers[j].user_data,police))
+		if(handers[j].func(thread_data,handers[j].user_data,police))
 			break;
 	}
-	g_free((void*)(thread_data->packet_contents));
+	g_free((void*)(thread_data->packet_linklayer_hdr));
 	g_free(thread_data);
 }
 
@@ -100,6 +93,8 @@ void *pcap_thread_func(void * thread_param)
 	bpf_u_int32 ip, mask;
 	struct rlimit	limit;
 	int		pcap_next_ex_ret;
+
+	gsize offset_skip_linklayer = ETH_HLEN;
 
 	char errbuf[PCAP_ERRBUF_SIZE];
 	struct bpf_program bpf_filter =
@@ -146,10 +141,17 @@ void *pcap_thread_func(void * thread_param)
 			return 0;
 		}
 
-		if (pcap_datalink(pcap_handle) != DLT_EN10MB)
+		if (pcap_datalink(pcap_handle) != DLT_EN10MB )
 		{
 			g_warning(_("ERROR:%s is not an ethernet adapter\n"), nic);
 			g_free(nic);
+
+			if (pcap_datalink(pcap_handle) == DLT_LINUX_SLL)
+			{
+				g_warning("Using Linux cooked sockets");
+				offset_skip_linklayer = SLL_HDR_LEN;
+			}
+
 			return 0;
 		}
 		g_free(nic);
@@ -229,15 +231,18 @@ void *pcap_thread_func(void * thread_param)
 			continue;
 #endif
 
+//		ETH_HLEN
+
+		thread_data->linklayer_len = offset_skip_linklayer;
+
 		thread_data = g_new(pcap_process_thread_param,1);
 
 		thread_data->pcaphdr = *pcaphdr;
 
-		thread_data->packet_contents = g_malloc(pcaphdr->len);
+		thread_data->packet_linklayer_hdr = g_memdup(packet_contents,pcaphdr->len);
+		thread_data->packet_ip_contents = thread_data->packet_linklayer_hdr +  offset_skip_linklayer;
 
 		thread_data->ip = ip;
-
-		memcpy((void*)(thread_data->packet_contents), packet_contents, pcaphdr->len);
 
 		g_thread_pool_push(threadpool, thread_data, NULL);
 
