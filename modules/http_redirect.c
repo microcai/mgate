@@ -158,7 +158,10 @@ static gboolean http_redirector( pcap_process_thread_param * param, gpointer use
 		libnet_build_ipv4(40, 0, 0, 0x4000, 63/*ttl*/, IPPROTO_TCP, 0,
 				ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
 
+	}else{
+		return TRUE;
 	}
+
 	if(param->linklayer_len == 14)
 		libnet_build_ethernet(
 			((struct libnet_ethernet_hdr *) param->packet_linklayer_hdr)->ether_shost,

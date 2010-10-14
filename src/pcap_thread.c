@@ -233,9 +233,9 @@ void *pcap_thread_func(void * thread_param)
 
 //		ETH_HLEN
 
-		thread_data->linklayer_len = offset_skip_linklayer;
-
 		thread_data = g_new(pcap_process_thread_param,1);
+
+		thread_data->linklayer_len = offset_skip_linklayer;
 
 		thread_data->pcaphdr = *pcaphdr;
 
