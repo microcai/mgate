@@ -37,8 +37,8 @@ GIOChannel* modem_open()
 	struct termios tcattr[1];
 
 	struct bitrate{
-		int	tcsrateflag;
 		int	rate;
+		int	tcsrateflag;
 	}bitrates[]={
 		{50,0000001},
 		{75,0000002},

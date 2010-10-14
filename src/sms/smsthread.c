@@ -48,11 +48,15 @@ static int selectfd( GIOChannel * modem, GIOChannel * sendqueue)
 	fd[0].fd = g_io_channel_unix_get_fd(modem);
 	fd[1].fd = g_io_channel_unix_get_fd(sendqueue);
 
+	fd[0].events = fd[1].events = POLL_IN;
+
+
 	poll(fd,2,-1);
 
-
-
-
+	if(fd[0].revents & POLL_IN)
+		return 1;
+	if(fd[1].revents & POLL_IN)
+		return 2;
 	return 0;
 }
 
@@ -62,6 +66,8 @@ gpointer sms_send_thread(gpointer data)
 	GIOStatus readstatus;
 	gsize	written;
 	sms_item * item;
+	char ans[129];		// 应答串
+	ans[128]=0;
 
 	gchar * ATcommands[]={
 			"AT+CGSN\r",
@@ -73,6 +79,11 @@ gpointer sms_send_thread(gpointer data)
 
 	g_free(data);
 
+	struct pollfd pfd[1];
+
+	pfd[0].events = POLLIN;
+	pfd[0].fd = g_io_channel_unix_get_fd(modem);
+
 	g_io_channel_write_chars(modem,ATcommands[0],strlen(ATcommands[0]),&written,NULL);
 
 	g_usleep(250);
@@ -81,6 +92,15 @@ gpointer sms_send_thread(gpointer data)
 
 	if(written != sizeof("AT+CMGF=0\r"))
 		return FALSE;
+
+	if (poll(pfd, 1, 300) < 1)
+	{
+		//me 确信猫有问题
+		return FALSE;
+	}
+
+	//丢弃返回结果吧
+	g_io_channel_read_chars(modem,ans,sizeof(ans),NULL,NULL);
 
 	while(TRUE)
 	{
@@ -95,13 +115,12 @@ gpointer sms_send_thread(gpointer data)
 			break;
 			case 2:
 			{
+				ans[128]=0;
+
 				item = getoneitem(sendqueue);
 				gchar *cmd;		// 命令串
 				unsigned char nSmscLength;	// SMSC串长度
 				gsize ans_len;		// 串口收到的数据长度
-
-				char ans[129];		// 应答串
-				ans[128]=0;
 
 				strcat(item->pdudata, "\x01a");		// 以Ctrl-Z结束
 
@@ -115,8 +134,15 @@ gpointer sms_send_thread(gpointer data)
 				g_io_channel_write(modem,cmd,strlen(cmd),&written);
 				g_free(cmd);
 
-				//等待读取ready
-				g_usleep(80);
+				//等待读取ready , 使用 poll 比较好吧, 最多等一秒
+				if (poll(pfd, 1, 1000) < 1)
+				{
+					//接受有错误吧，呵呵
+					g_warning("读取modem发生错误");
+					g_free(item);
+					//出现错误
+					break;
+				}
 
 				readstatus = g_io_channel_read_chars(modem,ans,sizeof(ans)-1,&ans_len,NULL);
 

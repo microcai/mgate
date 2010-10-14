@@ -64,6 +64,12 @@ gboolean sms_init()
 	param->modem = modem;
 	param->queue = g_io_channel_unix_new(fds[1]);
 
+	g_io_channel_set_encoding(sendqueue,NULL,0);
+	g_io_channel_set_encoding((GIOChannel*)param->queue,NULL,0);
+
+	g_io_channel_set_buffered(sendqueue,0);
+	g_io_channel_set_buffered((GIOChannel*)param->queue,0);
+
 	//开始发送线程
 	g_thread_create(sms_send_thread,param,FALSE,0);
 
@@ -112,7 +118,7 @@ gboolean sms_sendmessage(const gchar * phone,const char * message)
 		item->pdulen = gsmEncodePdu(sm,pDst);
 
 		//挂入发送列队
-		g_async_queue_push(sendqueue,item);
+		g_io_channel_write_chars(sendqueue,(gchar*)&item,sizeof(item),NULL,NULL);
 	}
 	g_free(strSmsc);
 	g_free(normalizedphone);

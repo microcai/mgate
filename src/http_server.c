@@ -22,6 +22,13 @@
 #include "global.h"
 #include "monitor_icon.h"
 #include "htmlnode.h"
+#include "smsapi.h"
+
+typedef struct{
+	GTimer*timer;
+	gchar phone[20];
+	gchar code[10];
+}phonetocode;
 
 static void SoupServer_path_root_icon(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
@@ -49,6 +56,7 @@ static gchar * genarate_new_code(const gchar * phonenumber);
 static SoupServer * server;
 
 static int cpu_usage;
+static GList * phomecodemap;
 
 static gboolean celect_usage(gpointer msg)
 {
@@ -65,6 +73,22 @@ static gboolean celect_usage(gpointer msg)
 
 	usage = cur_usage;
 
+	return TRUE;
+}
+
+static gboolean remove_outdated_phone_code_map(gpointer data)
+{
+	void remove_out_date(phonetocode* data, gpointer user_data)
+	{
+		if (g_timer_elapsed(data->timer, NULL) > GPOINTER_TO_INT(user_data))
+		{
+			g_debug("delete one\n");
+			phomecodemap = g_list_remove(phomecodemap,data);
+		}
+	}
+	g_list_foreach(phomecodemap,(GFunc)remove_out_date,data);
+
+//	g_list_last(phomecodemap);
 	return TRUE;
 }
 
@@ -104,15 +128,11 @@ int start_server()
 
 	soup_server_run_async(server);
 
+	sms_init();
+
 	g_timeout_add_seconds(10,celect_usage,NULL);
-//
-//	gboolean id(gpointer a)
-//	{
-//		return TRUE;
-//
-//	}
-//
-//	g_timeout_add(1,id,NULL);
+
+	g_timeout_add_seconds(1,remove_outdated_phone_code_map,GINT_TO_POINTER(g_key_file_get_integer(gkeyfile,"sms","validtime",0)));
 
 	return soup_server_get_port(server);
 }
@@ -354,6 +374,34 @@ static void soup_message_body_appender(const gchar * txt, SoupMessageBody * body
 	soup_message_body_append(body,SOUP_MEMORY_COPY,txt,strlen(txt));
 }
 
+static gchar * build_message_text(const gchar * msgcode)
+{
+	gchar * template = g_key_file_get_string(gkeyfile,"sms","template",NULL);
+
+	if(!template)
+		return g_strdup(msgcode);
+
+	gint validtime_int = g_key_file_get_integer(gkeyfile,"sms","validtime",0);
+
+	gchar * validtime = g_strdup_printf("%d 分钟",validtime_int/60);
+
+	//开始做字符串替换，使用正则表达式啊
+	GRegex * regcode = g_regex_new("%code",0,0,NULL);
+	GRegex * regvalidtime = g_regex_new("%validtime",0,0,NULL);
+
+	gchar * replacedcode = g_regex_replace_literal(regcode,template,-1,0,msgcode,0,0);
+
+	g_regex_unref(regcode);
+
+	gchar * replacedvalidtime =  g_regex_replace_literal(regvalidtime,replacedcode,-1,0,validtime,0,0);
+
+	g_free(validtime);
+	g_free(replacedcode);
+	g_regex_unref(regvalidtime);
+
+	return replacedvalidtime;
+}
+
 static gchar * genarate_new_code(const gchar * phonenumber)
 {
 	gchar * msgcode = NULL;
@@ -364,10 +412,20 @@ static gchar * genarate_new_code(const gchar * phonenumber)
 
 		msgcode = g_strdup_printf("%06" G_GINT32_MODIFIER "d" ,code);
 
-	//	SendMessage(phonenumber,msgcode);
-//		sms_sendmessage();
+		gchar * msg = build_message_text(msgcode);
 
-		g_debug("phone %s\'s code is %s",phonenumber,msgcode);
+		sms_sendmessage(phonenumber,msg);
+
+		phonetocode * ph2code = g_new0(phonetocode,1);
+
+		ph2code->timer = g_timer_new();
+
+		strcpy(ph2code->phone,phonenumber);
+		strcpy(ph2code->code,msgcode);
+
+		phomecodemap = g_list_prepend(phomecodemap,ph2code);
+
+		g_debug("out messge for phone %s is %s",phonenumber,msg);
 
 	}return msgcode;
 }
