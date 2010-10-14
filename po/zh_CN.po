@@ -2,12 +2,13 @@
 # This file is distributed under the same license as the ibus-handwrite package.
 # FIRST AUTHOR <microcai@fedoraproject.org>, 2010.
 # microcai <microcai@fedoraproject.org>, 2010.
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
-"POT-Creation-Date: 2010-10-12 20:33+0800\n"
-"PO-Revision-Date: 2010-04-11 16:57+0800\n"
+"POT-Creation-Date: 2010-10-14 11:33+0800\n"
+"PO-Revision-Date: 2010-10-14 12:05+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
 "Language: \n"
@@ -15,68 +16,84 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: UTF-8\n"
 
-#: src/main.c:75
+#: src/main.c:77
 msgid "monitor - A monitor tool"
 msgstr "monitor － 一个监控工具"
 
-#: src/main.c:79
+#: src/main.c:81
 msgid "run as daemon"
 msgstr "运行为守护进程"
 
-#: src/main.c:80
+#: src/main.c:82
 msgid "flash the db"
 msgstr "清空数据"
 
-#: src/main.c:81
+#: src/main.c:83
 msgid "Create database"
 msgstr "建立数据库"
 
-#: src/main.c:82
+#: src/main.c:84
 msgid "set domain dir root"
 msgstr "设置翻译目录"
 
-#: src/main.c:82 src/main.c:84
+#: src/main.c:84 src/main.c:86
 msgid "dir"
 msgstr "目录"
 
-#: src/main.c:83
+#: src/main.c:85
 msgid "set alternative config file"
 msgstr "制定配置文件"
 
-#: src/main.c:83
+#: src/main.c:85
 msgid "filename"
 msgstr "文件名"
 
-#: src/main.c:84
+#: src/main.c:86
 msgid "set alternative module dir"
 msgstr "设置 模块目录"
 
-#: src/main.c:85
+#: src/main.c:87
 msgid "override config, make monitor capturing on that interface"
 msgstr "覆盖config设置，使用这个接口"
 
-#: src/main.c:85
+#: src/main.c:87
 msgid "nic"
 msgstr "网卡"
 
-#: src/main.c:86
+#: src/main.c:88
 msgid "override config, make monitor listen on that port"
 msgstr "覆盖config设置，使用这个端口"
 
-#: src/main.c:86
+#: src/main.c:88
 msgid "port"
 msgstr "端口"
 
-#: src/main.c:119
+#: src/main.c:89
+msgid "override config, make monitor run with num threads"
+msgstr "覆盖config设置，使用这个端口"
+
+#: src/main.c:89
+msgid "num"
+msgstr "数字"
+
+#: src/main.c:91
+msgid "using dumped file other that live capture. - for stdin"
+msgstr "使用预先抓包的文件而不是直接抓取。- 表示使用标准输入"
+
+#: src/main.c:91
+msgid "pcapsavefile"
+msgstr "pcap文件"
+
+#: src/main.c:124
 msgid "Err opening config file"
 msgstr "打开配置文件发生错误"
 
-#: src/main.c:176
+#: src/main.c:188
 #, c-format
 msgid "unable to create pid file %s : %s"
 msgstr "无法创建 pid 文件 %s : %s"
 
-#: src/main.c:203
+#: src/main.c:215
 #, c-format
 msgid "pidfile exist, another one is running? pid(%d)"
 msgstr "pid文件存在，是否已经运行了一个？ pid(%d)"
@@ -128,49 +145,49 @@ msgstr "使用 socks5 代理 %s"
 msgid "Got message, %s"
 msgstr "获得消息 , %s"
 
-#: src/pcap_thread.c:115
+#: src/pcap_thread.c:134
 #, c-format
 msgid "using %s as capturing interface"
 msgstr "使用网卡 %s 抓包"
 
-#: src/pcap_thread.c:123
+#: src/pcap_thread.c:144
 #, c-format
 msgid "ERROR:can not open %s for capturing!\n"
 msgstr "错误：无法打开 %s 进行抓包\n"
 
-#: src/pcap_thread.c:130
+#: src/pcap_thread.c:151
 #, c-format
 msgid "ERROR:%s is not an ethernet adapter\n"
 msgstr "错误：%s不是一个有效的网卡\n"
 
-#: src/pcap_thread.c:166
+#: src/pcap_thread.c:186
 #, c-format
 msgid "[monitor]:[threads] not set, using 2x cpu (%d) threads"
 msgstr "[monitor]:[threads] 未设置，默认使用2倍 CPU 个数 (%d) "
 
-#: src/pcap_thread.c:176
+#: src/pcap_thread.c:196
 #, c-format
 msgid "Too many thread will exclude the resource limite, reduce to %d"
 msgstr "设置的线程数目太多，超过系统限制，减少到 %d"
 
-#: src/http_server.c:82
+#: src/http_server.c:83
 #, c-format
 msgid "using port %d as default duto the missing [http]:[port] settings"
 msgstr "使用端口 %d 作为默认端口，因为没有设置 [http]:[port]"
 
-#: src/http_server.c:89
+#: src/http_server.c:90
 #, c-format
 msgid "server failt to start at port %d, will use random port!"
 msgstr "从端口%d 启动失败，将使用随机端口！"
 
-#: src/http_server.c:93
+#: src/http_server.c:94
 #, c-format
 msgid "server started at port %u"
 msgstr "服务器在端口%u启动"
 
-#: src/http_server.c:300
+#: src/http_server.c:303
 msgid "System busy, try later!"
-msgstr ""
+msgstr "系统忙，稍候再试"
 
 #: src/ksql.c:56 src/ksql.c:169
 #, c-format
@@ -179,7 +196,7 @@ msgstr "无法连接到数据库 (%d) : %s"
 
 #: src/ksql.c:59
 msgid "sqlite backend not implemented, exiting!"
-msgstr ""
+msgstr "SQLite 数据库后端没有实现，退出!"
 
 #: src/ksql.c:140
 msgid "[database]:[backend] not set or invalid, default to mysql"
@@ -188,18 +205,3 @@ msgstr "[database]:[backend]未设置，将使用 mysql"
 #: src/ksql.c:143
 msgid "[database]:[backend] not set or invalid, default to sqlite"
 msgstr "[database]:[backend]未设置，将使用 sqlite"
-
-#~ msgid "%s loaded at %s"
-#~ msgstr "%s 启动于 %s"
-
-#~ msgid "all tables truncated!\n"
-#~ msgstr "所有的表都已经清空！ :)\n"
-
-#~ msgid "nic %s not enabled!"
-#~ msgstr "网卡%s未启用"
-
-#~ msgid "WARNNING: module not found"
-#~ msgstr "警告：模块未找到"
-
-#~ msgid "Module file : %s \tModule name: %s\n"
-#~ msgstr "模块文件：%s\t模块名字：%s\n"
