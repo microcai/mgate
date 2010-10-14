@@ -67,6 +67,8 @@ gpointer sms_send_thread(gpointer data)
 	gsize	written;
 	sms_item * item;
 	char ans[129];		// 应答串
+	gsize ans_len;		// 串口收到的数据长度
+
 	ans[128]=0;
 
 	gchar * ATcommands[]={
@@ -96,6 +98,7 @@ gpointer sms_send_thread(gpointer data)
 	if (poll(pfd, 1, 300) < 1)
 	{
 		//me 确信猫有问题
+		g_warn_if_reached();
 		return FALSE;
 	}
 
@@ -110,6 +113,7 @@ gpointer sms_send_thread(gpointer data)
 			case 1: //没发送命令就有数据过来，一定是有短信来了
 			{
 				//TODO:读取短信
+				g_io_channel_read_chars(modem,ans,sizeof(ans),&ans_len,NULL);
 
 			}
 			break;
@@ -120,7 +124,6 @@ gpointer sms_send_thread(gpointer data)
 				item = getoneitem(sendqueue);
 				gchar *cmd;		// 命令串
 				unsigned char nSmscLength;	// SMSC串长度
-				gsize ans_len;		// 串口收到的数据长度
 
 				strcat(item->pdudata, "\x01a");		// 以Ctrl-Z结束
 
@@ -134,6 +137,7 @@ gpointer sms_send_thread(gpointer data)
 				g_io_channel_write(modem,cmd,strlen(cmd),&written);
 				g_free(cmd);
 
+				pfd[0].events = POLLIN;
 				//等待读取ready , 使用 poll 比较好吧, 最多等一秒
 				if (poll(pfd, 1, 1000) < 1)
 				{
