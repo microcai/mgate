@@ -57,7 +57,10 @@ static gpointer ksql_thread(gpointer user_data)
 		else
 		{
 			g_warning(_("sqlite backend not implemented, exiting!"));
-			g_thread_exit(-1);
+			for(;;)
+			{
+				g_free(g_async_queue_pop(asqueue));
+			}
 		}
 		g_error_free(err);
 		err = NULL;
