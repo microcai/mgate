@@ -108,7 +108,7 @@ static void client_class_init(ClientClass * klass)
 	 *
 	 * 是否允许上网
 	 */
-	g_object_class_install_property(gobjclass,CLIENT_NAME,
+	g_object_class_install_property(gobjclass,CLIENT_ENABLE,
 			g_param_spec_boolean("enable","enable","enable",TRUE,G_PARAM_CONSTRUCT|G_PARAM_READWRITE));
 }
 
@@ -123,6 +123,8 @@ void client_finalize(GObject * gobj)
 	Client * obj = (typeof(obj))gobj;
 	g_free((gpointer)(obj->id));
 	g_free((gpointer)(obj->name));
+	g_free((gpointer)(obj->room));
+	g_free((gpointer)(obj->idtype));
 	G_OBJECT_CLASS(client_parent_class)->finalize(gobj);
 }
 
@@ -197,14 +199,12 @@ static void client_get_property(GObject *object, guint property_id,GValue *value
 	}
 }
 
-Client * client_new(const gchar * name, const gchar * id,const gchar * idtype)
+Client * client_new(const gchar * name, const gchar * id,const gchar * idtype,guchar mac[6])
 {
-	return g_object_new(G_TYPE_CLIENT,"name",name,"id",id,"idtype",idtype,NULL);
+	Client * client= g_object_new(G_TYPE_CLIENT,"name",name,"id",id,"idtype",idtype,"room","",NULL);
+	memcpy(client->mac,mac,6);
+	return client;
 }
-
-//================================================================================================================
-static volatile int	reader=0;
-static volatile	int have_writer=0;
 
 static GTree	* client_tree;
 static gboolean g_tree_compare_func(gconstpointer a , gconstpointer b , gpointer user_data)
@@ -212,32 +212,7 @@ static gboolean g_tree_compare_func(gconstpointer a , gconstpointer b , gpointer
 	return mac2uint64((guchar*)b) - mac2uint64((guchar*)a);
 }
 
-static inline void spin_read_write_rlock()
-{
-	while(have_writer)g_thread_yield();
-	g_atomic_int_inc(&reader);
-}
-
-static inline void spin_read_write_runlock()
-{
-	g_atomic_int_add(&reader,-1);
-}
-
-static GStaticMutex lock= G_STATIC_MUTEX_INIT;
-
-static inline void spin_read_write_wlock()
-{
-	g_atomic_int_inc(&have_writer);
-	g_static_mutex_lock(&lock);
-	while(g_atomic_int_get(&reader))
-		g_thread_yield();
-}
-
-static inline void spin_read_write_wunlock()
-{
-	g_static_mutex_unlock(&lock);
-	g_atomic_int_add(&have_writer,-1);
-}
+static GStaticRWLock lock= G_STATIC_RW_LOCK_INIT;
 
 /**
  * clientmgr_init:
@@ -269,11 +244,11 @@ Client * clientmgr_get_client_by_ip(in_addr_t ip)
 		return FALSE;
 	}
 
-	spin_read_write_rlock();
+	g_static_rw_lock_writer_lock(&lock);
 
 	g_tree_foreach(client_tree,findval_func,&ret);
 
-	spin_read_write_runlock();
+	g_static_rw_lock_writer_unlock(&lock);
 
 	return ret;
 }
@@ -291,13 +266,23 @@ static Client * clientmgr_get_client_by_mac_internal(const guchar * mac)
  */
 Client * clientmgr_get_client_by_mac(const guchar * mac)
 {
-	spin_read_write_rlock();
-
+	g_static_rw_lock_reader_lock(&lock);
 	Client * ptr = clientmgr_get_client_by_mac_internal(mac);
-
-	spin_read_write_runlock();
-
+	g_static_rw_lock_reader_unlock(&lock);
 	return ptr;
+}
+
+gboolean clientmgr_get_client_is_enable_by_mac(const guchar * mac)
+{
+	gboolean enable = FALSE;
+	g_static_rw_lock_reader_lock(&lock);
+	Client * ptr = clientmgr_get_client_by_mac_internal(mac);
+	if(ptr)
+	{
+		enable = ptr->enable ;
+	}
+	g_static_rw_lock_reader_unlock(&lock);
+	return enable;
 }
 
 static gboolean clientmgr_reomve_client_internal(Client * client)
@@ -309,9 +294,9 @@ gboolean clientmgr_reomve_client(Client * client)
 {
 	gboolean ret;
 
-	spin_read_write_wlock();
+	g_static_rw_lock_writer_lock(&lock);
 	ret = clientmgr_reomve_client_internal(client);
-	spin_read_write_wunlock();
+	g_static_rw_lock_writer_unlock(&lock);
 
 	return ret;
 }
@@ -326,16 +311,16 @@ gboolean clientmgr_reomve_client(Client * client)
  */
 void clientmgr_insert_client_by_mac(guchar * mac, Client * client)
 {
-	spin_read_write_wlock();
+	g_static_rw_lock_writer_lock(&lock);
 
 	Client* old = clientmgr_get_client_by_mac_internal(mac);
 
-	if(old)
-		clientmgr_reomve_client_internal(old);
+	if(old && clientmgr_reomve_client_internal(old))
+			g_object_unref(old);
 
 	guchar * mac_ = g_memdup(mac,6);
 	g_tree_insert(client_tree, mac_, client);
 
-	spin_read_write_wunlock();
+	g_static_rw_lock_writer_unlock(&lock);
 }
 

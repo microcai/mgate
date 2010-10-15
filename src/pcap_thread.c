@@ -41,6 +41,7 @@
 
 #include "i18n.h"
 
+#include "utils.h"
 #include "pcap_thread.h"
 #include "pcap_hander.h"
 #include "clientmgr.h"
@@ -154,6 +155,9 @@ void *pcap_thread_func(void * thread_param)
 				g_free(nic);
 				return 0;
 			}
+		}else
+		{
+
 		}
 		g_free(nic);
 
@@ -162,15 +166,29 @@ void *pcap_thread_func(void * thread_param)
 		pcap_lookupnet(net_interface, &ip, &mask, errbuf);
 
 		int sock = socket(AF_INET, SOCK_DGRAM, 0);
+
 		if (!ioctl(sock, SIOCGIFADDR, &rif))
 		{
 			struct sockaddr_in * in_address;
 			in_address = (struct sockaddr_in*)&(rif.ifr_addr);
 			ip = in_address->sin_addr.s_addr;
 		}
-		close(sock);
 
-		pcap_compile(pcap_handle, &bpf_filter, "tcp or udp", 1, 0);
+		gchar * filterstr = NULL;
+
+		if (!ioctl(sock, SIOCGIFHWADDR, &rif))
+		{
+			gchar macstr[50];
+			formatMAC((guchar*)(rif.ifr_hwaddr.sa_data),macstr);
+			filterstr = g_strdup_printf("tcp or udp and ether src not %s",macstr);
+		}
+
+		close(sock);
+		if(filterstr)
+			pcap_compile(pcap_handle, &bpf_filter, filterstr, 1, 0);
+		else
+			pcap_compile(pcap_handle, &bpf_filter, "tcp or udp", 1, 0);
+		g_free(filterstr);
 		pcap_setfilter(pcap_handle, &bpf_filter);
 		pcap_freecode(&bpf_filter);
 	}

@@ -62,7 +62,7 @@ static int RecordMSNAccount(std::string msn,in_addr_t ip,in_addr_t dst_ip,pcap_p
 	g_debug("[msn]:%s",msn.c_str());
 
     struct tcphdr* tcp = (tcphdr*)(param->packet_ip_contents + sizeof(iphdr));
-    RecordAccout(Type_MSN.c_str(),ip,dst_ip,(char*)param->packet_linklayer_hdr,"","",msn.c_str(),ntohs(tcp->dest),police);
+    RecordAccout(Type_MSN.c_str(),ip,dst_ip,param->packet_linklayer_hdr+6,"","",msn.c_str(),ntohs(tcp->dest),police);
 
     return 1;
 }

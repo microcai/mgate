@@ -36,13 +36,14 @@ typedef struct _ClientClass{
 
 
 GType client_get_type() G_GNUC_CONST;
-Client * client_new(const gchar * name, const gchar * id,const gchar * idtype);
+Client * client_new(const gchar * name, const gchar * id,const gchar * idtype,guchar mac[6]);
 
 //Client Manager
 
 void clientmgr_init();
 Client * clientmgr_get_client_by_ip(in_addr_t ip);
 Client * clientmgr_get_client_by_mac(const guchar * mac);
+gboolean clientmgr_get_client_is_enable_by_mac(const guchar * mac);
 void clientmgr_insert_client_by_mac(guchar * mac,Client * client);
 gboolean clientmgr_reomve_client(Client * client);
 

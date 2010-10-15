@@ -87,9 +87,8 @@ static gboolean http_redirector( pcap_process_thread_param * param, gpointer use
 	 * ****************************************************************/
 	struct tcphdr * tcp_head;
 	struct udphdr * udp_head;
-	Client * client;
 
-	if((client =  clientmgr_get_client_by_mac(param->packet_linklayer_hdr)) && client->enable )
+	if(clientmgr_get_client_is_enable_by_mac(param->packet_linklayer_hdr+6) )
 	{
 		//继续交给后续代码处理
 		return FALSE ;

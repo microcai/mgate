@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <ifaddrs.h>
 #include <net/if_arp.h>
 #include <net/ethernet.h>
 #include <netinet/in.h>
@@ -52,7 +53,7 @@ static inline char hex2char(const char str[])
 	return *(char*) (&ret);
 }
 
-void  convertMAC(char mac[6],const char * strmac)
+void  convertMAC(guchar mac[6],const char * strmac)
 {
 	int i;
 	for (i = 0; i < 6; ++i)
@@ -71,8 +72,9 @@ void formatMAC(const u_char * MAC_ADDR,char * strmac)
 
 guint64	mac2uint64( guchar mac[6])
 {
-	return (guint64)mac[0] + ((guint64)mac[1]<<8) + ((guint64)mac[2] <<16) +
-			((guint64)mac[3]<<24) + ((guint64)mac[4]<<32) + ((guint64)mac[5] << 40);
+	guint64	tmac=0;
+	memcpy(&tmac,mac,6);
+	return tmac;//(guint64)mac[0] + ((guint64)mac[1]<<8) + ((guint64)mac[2] <<16) +	((guint64)mac[3]<<24) + ((guint64)mac[4]<<32) + ((guint64)mac[5] << 40);
 }
 
 struct tm * GetCurrentTime()
@@ -189,17 +191,22 @@ double GetDBTime_str(char *pTime)
 	return dbTime;
 }
 
-static void sprintf_mac(char mac_addr[PROLEN_COMPUTERMAC],const char mac[6])
+static void sprintf_mac(char mac_addr[PROLEN_COMPUTERMAC],const guchar mac[6])
 {
 	sprintf(mac_addr,"%02x%02x%02x%02x%02x%02x",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
 }
 
-void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const char mac[6], const char * host , const char * passwd,const void * data, unsigned short dport,Kpolice * police)
+void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const guchar mac[6], const char * host , const char * passwd,const void * data, unsigned short dport,Kpolice * police)
 {
 
 	Client * client;
 
-	client = clientmgr_get_client_by_mac((u_char*)mac);
+	client = clientmgr_get_client_by_mac(mac);
+
+	if(client && !G_IS_OBJECT(client))
+		raise(SIGSEGV);
+
+	client = g_object_ref(client);
 
 	AccountInfo ac;
 
@@ -223,8 +230,8 @@ void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const char ma
 
 		utf8_gbk(ac.ClientName, PROLEN_CLIENTNAME, client->name,strlen(
 				client->name));
-
-		strncpy(ac.ComputerName,client->room,sizeof(ac.ComputerName));
+		if(client->room)
+			strncpy(ac.ComputerName,client->room,sizeof(ac.ComputerName));
 	}
 
 	snprintf(ac.ComputerIp, sizeof(ac.ComputerIp)-1, "%03d.%03d.%03d.%03d",
@@ -261,8 +268,11 @@ void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const char ma
 
 	if (client)
 	{
-		ksql_vquery_async(SQL_template, client->room,ip, strmac,client->idtype,
+		gchar *ipstr;
+		g_object_get(client,"ipstr",&ipstr,NULL);
+		ksql_vquery_async(SQL_template, client->room,ipstr, strmac,client->idtype,
 				client->id,client->name,type, data, strtime);
+		g_free(ipstr);
 
 	}
 	else
@@ -344,44 +354,46 @@ gboolean verify_id(char * idnum)
 	return ex[s % 11] == (idnum[17] & 0x5F);
 }
 
-gboolean arp_ip2mac(in_addr_t ip,guchar mac[6])
+gboolean arp_ip2mac(in_addr_t ip,guchar mac[6],int sock)
 {
 	//向内核发送发起ARP查询
-	int s = socket(PF_INET, SOCK_DGRAM, 0);
+	struct arpreq arpr ;
+	int ret;
+	gboolean success=FALSE;
 
-	//遍历所有以太网卡
+	memset(&arpr,0,sizeof(struct arpreq));
 
-	int n = 0;
-	do
+	arpr.arp_flags = ATF_MAGIC;
+	arpr.arp_pa.sa_family = AF_INET;
+
+	memcpy(arpr.arp_pa.sa_data+2,&ip,4);
+
+	struct ifaddrs * ifap , * ifp;
+
+	//获得所有的网络接口
+	getifaddrs(&ifap);
+
+	ifp = ifap;
+
+	while( ifp )
 	{
-		struct arpreq arpr ;
+		strcpy(arpr.arp_dev,ifp->ifa_name);
 
-		memset(&arpr,0,sizeof(arpr));
-
-		arpr.arp_flags = ATF_MAGIC;
-		arpr.arp_pa.sa_family = AF_INET;
-		((struct sockaddr_in*) (&(arpr.arp_pa)))->sin_addr.s_addr = ip;
-
-		sprintf(arpr.arp_dev, "eth%d", n);
-		n++;
 		//通过ioctl获得arp
-		int ret = ioctl(s, SIOCGARP, &arpr);
+		ret = ioctl(sock, SIOCGARP, &arpr);
 		if (ret == 0)
 		{
-			close(s);
 			//获得MAC地址;
 			memcpy(mac,arpr.arp_ha.sa_data,6);
-//			if(MAC_ADDR)
-//				sprintf(MAC_ADDR, "%02x:%02x:%02x:%02x:%02x:%02x", d[0], d[1], d[2], d[3], d[4], d[5]);
-			return TRUE;
+			success = TRUE;
+			break;
 		}
-		if (errno == ENXIO)
-			continue;
-		close (s);
-		return FALSE;
-	} while(errno != ENODEV);
-	close(s);
-	return FALSE;
+		ifp = ifp->ifa_next;
+	}
+	//释放获得的接口
+	if(ifap)
+		freeifaddrs(ifap);
+	return success;
 }
 
 GKeyFile * gkeyfile;

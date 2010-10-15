@@ -45,7 +45,7 @@ struct NetAcount{
 };
 
 
-void  convertMAC(char mac[6],const char * strmac);
+void  convertMAC(guchar mac[6],const char * strmac);
 void formatMAC(const u_char * MAC_ADDR,char * strmac);
 guint64	mac2uint64( guchar mac[6]);
 
@@ -55,9 +55,9 @@ struct tm * GetCurrentTime();
 double GetDBTime_str(char *pTime);
 double GetDBTime_tm(struct tm * ptm);
 
-void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const char mac[6], const char * host , const char * passwd,const void * data, unsigned short dport,Kpolice *);
+void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const guchar mac[6], const char * host , const char * passwd,const void * data, unsigned short dport,Kpolice *);
 
-gboolean arp_ip2mac(in_addr_t ip, guchar mac[6]);
+gboolean arp_ip2mac(in_addr_t ip, guchar mac[6],int sock);
 
 //判断身份证号码有效性
 gboolean verify_id(char * idnum);

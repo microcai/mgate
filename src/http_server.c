@@ -150,6 +150,10 @@ void SoupServer_path_root_icon(SoupServer *server, SoupMessage *msg,
 void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path,
 		GHashTable *query, SoupClientContext *client,gpointer user_data)
 {
+	guchar mac[6];
+	const gchar * ip = soup_client_context_get_host(client);
+
+	int sockclient = soup_socket_get_fd(soup_client_context_get_socket(client));
 
 	if (strcmp(msg->method, "POST") == 0)
 	{
@@ -178,24 +182,10 @@ void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path
 
 		GList * founded = g_list_find_custom(phomecodemap,id,(GCompareFunc)find_same_id);
 
-		if(!founded)
+		if(founded && arp_ip2mac(inet_addr(ip),mac,sockclient))
 		{
-			htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录失败!");
-
-			htmlnode_new_text(p,"登录失败，失败啊!你的 ID 是 ");
-			htmlnode_new_text(p,id);
-		}else
-		{
-			guchar mac[6];
-
-			const gchar * ip = soup_client_context_get_host(client);
-
-			Client * client = client_new(((phonetocode*)founded->data)->phone,((phonetocode*)founded->data)->phone,"990");
-
-			arp_ip2mac(inet_addr(ip),mac);
-
-			client->enable = TRUE;
-
+			Client * client = client_new(((phonetocode*)founded->data)->phone,((phonetocode*)founded->data)->phone,"990",mac);
+			g_object_set(client,"ipstr", ip, "enable",TRUE,NULL);
 			clientmgr_insert_client_by_mac(mac,client);
 
 			htmlnode_new_text(p,"手机号:");
@@ -203,7 +193,18 @@ void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path
 			htmlnode_new_text(p,"登录成功，你现在起可以自由访问网络了:)");
 			htmlnode_new_text(htmlnode_new(body,"p",NULL),"如果您长时间没有网络连接，只需要重新认证就可以了，就这么简单:)");
 			htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录成功!");
+		}else
+		{
+			htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录失败!");
+			htmlnode_new_text(p,"登录失败，失败啊!你的 ID 是 ");
+			htmlnode_new_text(p,id);
 		}
+		/*
+		gchar macstr[55];
+		formatMAC(mac,macstr);
+		g_debug("ip is %s, mac is %6s\n",ip,macstr);
+		*/
+
 		htmlnode_to_plane_text_and_free(html,(htmlnode_appender)soup_message_body_appender,msg->response_body);
 		soup_message_body_complete(msg->response_body);
 	}

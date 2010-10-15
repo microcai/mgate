@@ -77,7 +77,7 @@ static gpointer ksql_thread(gpointer user_data)
 
 		//将 mac 加入许可范围 :)
 
-		Client * dummyclient = client_new("","","");
+		Client * dummyclient = client_new("","","",mac_addr);
 
 		dummyclient->enable = TRUE;
 

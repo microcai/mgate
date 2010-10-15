@@ -220,7 +220,7 @@ static int RecordPOST(const char *user, const char*pswd, const char*host, pcap_p
 
 	char key2[80];
 	snprintf(key2,80,"%s:%s",user,pswd);
-	RecordAccout("0006",sip,dip,(char*)param->packet_linklayer_hdr,host,key2,host,ntohs(tcp->dest),police);
+	RecordAccout("0006",sip,dip,param->packet_linklayer_hdr+6,host,key2,host,ntohs(tcp->dest),police);
 	return 1;
 }
 
@@ -228,7 +228,7 @@ static int RecordUrl(char *url,pcap_process_thread_param * param,in_addr_t sip,i
 {
 	g_debug("got url  %s",url);
 	struct tcphdr* tcp = (tcphdr*)(param->packet_ip_contents + sizeof(iphdr));
-	RecordAccout("0001",sip,dip,(char*)param->packet_linklayer_hdr+6,"","",url,ntohs(tcp->dest),police);
+	RecordAccout("0001",sip,dip,param->packet_linklayer_hdr+6,"","",url,ntohs(tcp->dest),police);
     return 1;
 }
 
