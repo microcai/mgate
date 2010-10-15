@@ -99,11 +99,11 @@ gpointer sms_send_thread(gpointer data)
 	{
 		//me 确信猫有问题
 		g_warn_if_reached();
-		return FALSE;
+	}else
+	{
+		//丢弃返回结果吧
+		g_io_channel_read_chars(modem,ans,sizeof(ans),NULL,NULL);
 	}
-
-	//丢弃返回结果吧
-	g_io_channel_read_chars(modem,ans,sizeof(ans),NULL,NULL);
 
 	while(TRUE)
 	{
@@ -159,8 +159,12 @@ gpointer sms_send_thread(gpointer data)
 				}
 				//开始发送编码
 				g_io_channel_write_chars(modem,item->pdudata,strlen(item->pdudata),&written,NULL);
-				g_usleep(4250);
-				g_io_channel_read_chars(modem,ans,sizeof(ans),&ans_len,NULL);
+
+				if(poll(pfd,1,6000)>0)
+				{
+					g_io_channel_read_chars(modem,ans,sizeof(ans),&ans_len,NULL);
+				}
+
 				g_free(item);
 			}
 		}
