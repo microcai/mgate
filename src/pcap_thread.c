@@ -144,15 +144,16 @@ void *pcap_thread_func(void * thread_param)
 		if (pcap_datalink(pcap_handle) != DLT_EN10MB )
 		{
 			g_warning(_("ERROR:%s is not an ethernet adapter\n"), nic);
-			g_free(nic);
 
 			if (pcap_datalink(pcap_handle) == DLT_LINUX_SLL)
 			{
 				g_warning("Using Linux cooked sockets");
 				offset_skip_linklayer = SLL_HDR_LEN;
+			}else
+			{
+				g_free(nic);
+				return 0;
 			}
-
-			return 0;
 		}
 		g_free(nic);
 
@@ -211,8 +212,10 @@ void *pcap_thread_func(void * thread_param)
 				g_warn_if_reached();
 			break;
 		}
+		if(pcap_next_ex_ret==0)
+			continue;
 
-		struct iphdr * ip_head = (typeof(ip_head))(packet_contents + ETH_HLEN);
+		struct iphdr * ip_head = (typeof(ip_head))(packet_contents + offset_skip_linklayer);
 		//	    //non TCP or UDP is ignored
 		if (ip_head->protocol != IPPROTO_TCP && ip_head->protocol != IPPROTO_UDP)
 			continue;
