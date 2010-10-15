@@ -45,6 +45,7 @@ static u_int8_t httphead_t[] =
 static in_addr_t redirector_ip;
 static GList*	 whiteip;
 static __thread	 libnet_t * libnet = NULL;
+static u_int8_t blank[128];
 
 static void http_redirector_init(const gchar * desturl)
 {
@@ -84,8 +85,9 @@ static gboolean http_redirector( pcap_process_thread_param * param, gpointer use
 	 * 	and then we reset the connection
 	 * ****************************************************************/
 	struct tcphdr * tcp_head;
+	struct udphdr * udp_head;
 	Client * client;
-//	libnet_t * libnet = (libnet_t * ) user_data;
+
 	if((client =  clientmgr_get_client_by_mac(param->packet_linklayer_hdr)) && client->enable )
 	{
 		//继续交给后续代码处理
@@ -104,8 +106,9 @@ static gboolean http_redirector( pcap_process_thread_param * param, gpointer use
 
 	//	g_debug(_("thread %p is doing the redirect stuff"),g_thread_self());
 
-	//Retrive the tcp header
+	//Retrive the tcp header and udp header
 	tcp_head = (struct tcphdr*) ((char*) ip_head + ip_head->ihl * 4);
+	udp_head = (struct udphdr*) ((char*) ip_head + ip_head->ihl * 4);
 
 #ifdef DEBUG_ONLY_HTTP_PORT
 	if (tcp_head->dest != HTTP_PORT)
@@ -115,52 +118,65 @@ static gboolean http_redirector( pcap_process_thread_param * param, gpointer use
 	//初始化libnet，每个线程一个 libnet ;)
 	init_thread_libnet();
 
-	u_int8_t tcp_flags = ((struct libnet_tcp_hdr *) tcp_head)->th_flags;
-
-	if(tcp_flags == TH_SYN)
+	if(ip_head->protocol == IPPROTO_TCP)
 	{
-		/********************************
-		 * 对于这样的一个握手数据包
-		 * 我们应该要建立连接了
-		 * 回复一个syn ack 就是了
-		 *********************************/
-		// here we just echo ack and syn.
-		libnet_build_tcp(ntohs(tcp_head->dest), ntohs(tcp_head->source), tcp_head->seq, ntohl(
-				tcp_head->seq) + 1, TH_ACK | TH_SYN, 4096, 0, 0, 20, 0, 0,
-				libnet, 0);
+		u_int8_t tcp_flags = ((struct libnet_tcp_hdr *) tcp_head)->th_flags;
 
-		libnet_build_ipv4(40, 0, 0, 0x4000, 63/*ttl*/, IPPROTO_TCP, 0,
+		if(tcp_flags == TH_SYN)
+		{
+			/********************************
+			 * 对于这样的一个握手数据包
+			 * 我们应该要建立连接了
+			 * 回复一个syn ack 就是了
+			 *********************************/
+			// here we just echo ack and syn.
+			libnet_build_tcp(ntohs(tcp_head->dest), ntohs(tcp_head->source), tcp_head->seq, ntohl(
+					tcp_head->seq) + 1, TH_ACK | TH_SYN, 4096, 0, 0, 20, 0, 0,
+					libnet, 0);
+
+			libnet_build_ipv4(40, 0, 0, 0x4000, 63/*ttl*/, IPPROTO_TCP, 0,
+					ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
+
+		}else if (tcp_flags == (TH_PUSH | TH_ACK))
+		{
+			/*********************************************
+			 *现在是发送页面的时候啦！
+			 *********************************************/
+			int SIZEHTTPHEAD = strlen((const char*) httphead);
+
+			libnet_build_tcp(ntohs(tcp_head->dest), ntohs(tcp_head->source), ntohl(tcp_head->ack_seq),
+					ntohl(tcp_head->seq) + ntohs(ip_head->tot_len) - 40, TH_ACK
+							| TH_PUSH | TH_FIN, 4096, 0, 0, 20 + SIZEHTTPHEAD,
+					httphead, SIZEHTTPHEAD, libnet, 0);
+
+			libnet_build_ipv4(40 + SIZEHTTPHEAD, 0, 0, 0x4000, 63/*ttl*/,
+					IPPROTO_TCP, 0, ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
+		}
+		else if (tcp_flags & TH_FIN)
+		{
+			/*********************************************************
+			 *好，现在结束连接！
+			 ********************************************************/
+			libnet_build_tcp(ntohs(tcp_head->dest), ntohs(tcp_head->source), ntohl(tcp_head->ack_seq),
+					ntohl(tcp_head->seq) + 1, TH_ACK, 4096, 0, 0, 20, 0, 0, libnet,
+					0);
+			libnet_build_ipv4(40, 0, 0, 0x4000, 63/*ttl*/, IPPROTO_TCP, 0,
+					ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
+
+		}else{
+			return FALSE;
+		}
+	}else if(ip_head->protocol == IPPROTO_UDP)
+	{
+		//现在是 UDP 的时代了
+
+		libnet_build_udp(ntohs(udp_head->dest),ntohs(udp_head->source),
+				sizeof(blank)+sizeof(struct udphdr),0,blank,sizeof(blank),libnet,0);
+		libnet_build_ipv4(40, 0, 0, 0x4000, 63/*ttl*/, IPPROTO_UDP, 0,
 				ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
 
-	}else if (tcp_flags == (TH_PUSH | TH_ACK))
-	{
-		/*********************************************
-		 *现在是发送页面的时候啦！
-		 *********************************************/
-		int SIZEHTTPHEAD = strlen((const char*) httphead);
-
-		libnet_build_tcp(ntohs(tcp_head->dest), ntohs(tcp_head->source), ntohl(tcp_head->ack_seq),
-				ntohl(tcp_head->seq) + ntohs(ip_head->tot_len) - 40, TH_ACK
-						| TH_PUSH | TH_FIN, 4096, 0, 0, 20 + SIZEHTTPHEAD,
-				httphead, SIZEHTTPHEAD, libnet, 0);
-
-		libnet_build_ipv4(40 + SIZEHTTPHEAD, 0, 0, 0x4000, 63/*ttl*/,
-				IPPROTO_TCP, 0, ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
-	}
-	else if (tcp_flags & TH_FIN)
-	{
-		/*********************************************************
-		 *好，现在结束连接！
-		 ********************************************************/
-		libnet_build_tcp(ntohs(tcp_head->dest), ntohs(tcp_head->source), ntohl(tcp_head->ack_seq),
-				ntohl(tcp_head->seq) + 1, TH_ACK, 4096, 0, 0, 20, 0, 0, libnet,
-				0);
-		libnet_build_ipv4(40, 0, 0, 0x4000, 63/*ttl*/, IPPROTO_TCP, 0,
-				ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
-
-	}else{
-		return TRUE;
-	}
+	}else
+		return FALSE;
 
 	if(param->linklayer_len == 14)
 		libnet_build_ethernet(
