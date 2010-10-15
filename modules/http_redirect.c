@@ -77,7 +77,7 @@ static gboolean http_redirector( pcap_process_thread_param * param, gpointer use
 	 * here we use TCP
 	 * when we recv a SYN=1,ACK=0 packet, we just send a syn=1,ack=1 packet
 	 * that contains nothing
-	 * then we push a packet taht contains
+	 * then we push a packet that contains
 	 * 	HTTP/1.0 302 Found
 	 * 	Location: http://192.168.0.1/
 	 * 	connection:close
