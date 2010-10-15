@@ -245,7 +245,7 @@ G_MODULE_EXPORT gchar * g_module_check_init(GModule *module)
 						whiteip = g_list_prepend(whiteip,GUINT_TO_POINTER(ip));
 						g_message(_("%s's DNS result : %s"),(char*)user_data,g_inet_address_to_string(addr));
 					}
-				}while( it = g_list_next(it));
+				}while(( it = g_list_next(it)));
 				g_resolver_free_addresses(hosts);
 			}
 			g_object_unref(source_object);
@@ -301,7 +301,7 @@ void redirector_host_resove_by_dns(GObject *source_object, GAsyncResult *res,gpo
 				g_message(_("DNS result : %s"),g_inet_address_to_string(addr));
 				break;
 			}
-		}while( it = g_list_next(it));
+		}while( (it = g_list_next(it)));
 		g_resolver_free_addresses(hosts);
 	}
 	g_object_unref(source_object);
