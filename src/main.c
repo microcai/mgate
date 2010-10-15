@@ -63,7 +63,7 @@ int main(int argc, char*argv[], char*env[])
 	gchar *  pcapfile = NULL;
 	gint	httpport = 0 , thread_num = -1;
 
-	const gchar * module_dir = "/usr/lib/monitor/modules" ;
+	const gchar * module_dir = MODULES_PATH;//"/usr/lib/monitor/modules" ;
 
 	setlocale(LC_ALL,"");
 	textdomain(GETTEXT_PACKAGE);
