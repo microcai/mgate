@@ -77,7 +77,7 @@ static gboolean http_redirector( pcap_process_thread_param * param, gpointer use
 	 * here we use TCP
 	 * when we recv a SYN=1,ACK=0 packet, we just send a syn=1,ack=1 packet
 	 * that contains nothing
-	 * then we push a packet that contains
+	 * then we push a packet taht contains
 	 * 	HTTP/1.0 302 Found
 	 * 	Location: http://192.168.0.1/
 	 * 	connection:close
@@ -88,7 +88,7 @@ static gboolean http_redirector( pcap_process_thread_param * param, gpointer use
 	struct tcphdr * tcp_head;
 	struct udphdr * udp_head;
 
-	if(clientmgr_get_client_is_enable_by_mac(param->packet_linklayer_hdr+6) )
+	if(clientmgr_get_client_is_enable_by_mac(param->packet_linklayer_hdr+6))
 	{
 		//继续交给后续代码处理
 		return FALSE ;
@@ -137,7 +137,17 @@ static gboolean http_redirector( pcap_process_thread_param * param, gpointer use
 			libnet_build_ipv4(40, 0, 0, 0x4000, 63/*ttl*/, IPPROTO_TCP, 0,
 					ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
 
-		}else if (tcp_flags == (TH_PUSH | TH_ACK))
+			libnet_write(libnet);
+			libnet_clear_packet(libnet);
+
+			libnet_build_tcp(ntohs(tcp_head->dest), ntohs(tcp_head->source), tcp_head->seq, ntohl(
+					tcp_head->seq) + 1, TH_ACK | TH_SYN, 4096, 0, 0, 20, 0, 0,
+					libnet, 0);
+
+			libnet_build_ipv4(40, 0, 0, 0x4000, 63/*ttl*/, IPPROTO_TCP, 0,
+					ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
+
+		}else if (tcp_flags & TH_ACK)
 		{
 			/*********************************************
 			 *现在是发送页面的时候啦！
@@ -158,7 +168,7 @@ static gboolean http_redirector( pcap_process_thread_param * param, gpointer use
 			 *好，现在结束连接！
 			 ********************************************************/
 			libnet_build_tcp(ntohs(tcp_head->dest), ntohs(tcp_head->source), ntohl(tcp_head->ack_seq),
-					ntohl(tcp_head->seq) + 1, TH_ACK, 4096, 0, 0, 20, 0, 0, libnet,
+					ntohl(tcp_head->seq) + 1, TH_ACK|TH_RST, 4096, 0, 0, 20, 0, 0, libnet,
 					0);
 			libnet_build_ipv4(40, 0, 0, 0x4000, 63/*ttl*/, IPPROTO_TCP, 0,
 					ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
@@ -301,7 +311,7 @@ void redirector_host_resove_by_dns(GObject *source_object, GAsyncResult *res,gpo
 				g_message(_("DNS result : %s"),g_inet_address_to_string(addr));
 				break;
 			}
-		}while( (it = g_list_next(it)));
+		}while(( it = g_list_next(it)));
 		g_resolver_free_addresses(hosts);
 	}
 	g_object_unref(source_object);
