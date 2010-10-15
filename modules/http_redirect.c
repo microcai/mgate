@@ -29,7 +29,8 @@
 static void init_thread_libnet();
 static void redirector_host_resove_by_dns(GObject *source_object, GAsyncResult *res,gpointer user_data);
 
-#define	HTTP_PORT 20480
+#define	HTTP_PORT 0x5000
+#define DNS_PORT  0x3500
 
 #define GROUP_NAME	"http_redirect"
 
@@ -166,10 +167,9 @@ static gboolean http_redirector( pcap_process_thread_param * param, gpointer use
 		}else{
 			return FALSE;
 		}
-	}else if(ip_head->protocol == IPPROTO_UDP)
+	}else if(ip_head->protocol == IPPROTO_UDP && udp_head->dest != DNS_PORT)
 	{
 		//现在是 UDP 的时代了
-
 		libnet_build_udp(ntohs(udp_head->dest),ntohs(udp_head->source),
 				sizeof(blank)+sizeof(struct udphdr),0,blank,sizeof(blank),libnet,0);
 		libnet_build_ipv4(40, 0, 0, 0x4000, 63/*ttl*/, IPPROTO_UDP, 0,
