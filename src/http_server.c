@@ -194,6 +194,8 @@ void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path
 
 			arp_ip2mac(inet_addr(ip),mac);
 
+			client->enable = TRUE;
+
 			clientmgr_insert_client_by_mac(mac,client);
 
 			htmlnode_new_text(p,"手机号:");
