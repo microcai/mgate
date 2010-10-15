@@ -300,6 +300,22 @@ Client * clientmgr_get_client_by_mac(const guchar * mac)
 	return ptr;
 }
 
+static gboolean clientmgr_reomve_client_internal(Client * client)
+{
+	return g_tree_remove(client_tree,client->mac);
+}
+
+gboolean clientmgr_reomve_client(Client * client)
+{
+	gboolean ret;
+
+	spin_read_write_wlock();
+	ret = clientmgr_reomve_client_internal(client);
+	spin_read_write_wunlock();
+
+	return ret;
+}
+
 /**
  * clientmgr_insert_client_by_mac:
  * @mac : mac 地址
@@ -312,11 +328,14 @@ void clientmgr_insert_client_by_mac(guchar * mac, Client * client)
 {
 	spin_read_write_wlock();
 
-	if(!clientmgr_get_client_by_mac_internal(mac))
-	{
-		guchar * mac_ = g_memdup(mac,6);
-		g_tree_insert(client_tree, mac_, client);
-	}
+	Client* old = clientmgr_get_client_by_mac_internal(mac);
+
+	if(old)
+		clientmgr_reomve_client_internal(old);
+
+	guchar * mac_ = g_memdup(mac,6);
+	g_tree_insert(client_tree, mac_, client);
+
 	spin_read_write_wunlock();
 }
 

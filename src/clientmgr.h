@@ -44,7 +44,7 @@ void clientmgr_init();
 Client * clientmgr_get_client_by_ip(in_addr_t ip);
 Client * clientmgr_get_client_by_mac(const guchar * mac);
 void clientmgr_insert_client_by_mac(guchar * mac,Client * client);
-
+gboolean clientmgr_reomve_client(Client * client);
 
 G_END_DECLS
 
