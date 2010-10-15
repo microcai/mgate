@@ -51,7 +51,7 @@ static u_int8_t blank[128];
 static void http_redirector_init(const gchar * desturl)
 {
 	char host[128];
-	sscanf(desturl,"http://%128[^/]",host);
+	sscanf(desturl,"http://%128[^/^:]",host);
 	redirector_ip = inet_addr(host);
 	if (redirector_ip == INADDR_NONE)
 	{
@@ -96,12 +96,20 @@ static gboolean http_redirector( pcap_process_thread_param * param, gpointer use
 	//非 enable 的客户端，现在要开始这般处理了,重定向到 ... 嘿嘿
 	struct iphdr * ip_head = (typeof(ip_head))(param->packet_ip_contents);
 
-	if(ip_head->daddr == redirector_ip)
+	if (ip_head->daddr == redirector_ip)
+	{
 		return TRUE;
+	}
 
+	if (ip_head->saddr == redirector_ip)
+	{
+		return TRUE;
+	}
 	//如果是在 white list ....
 
-	if(whiteip && g_list_find(whiteip,GINT_TO_POINTER(ip_head->daddr)))
+	if (whiteip && g_list_find(whiteip, GINT_TO_POINTER(ip_head->daddr)))
+		return FALSE;
+	if (whiteip && g_list_find(whiteip, GINT_TO_POINTER(ip_head->saddr)))
 		return FALSE;
 
 	//	g_debug(_("thread %p is doing the redirect stuff"),g_thread_self());
