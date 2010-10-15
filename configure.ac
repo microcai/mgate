@@ -11,8 +11,8 @@ AC_ARG_ENABLE(debug,
                 	[Enable DEBUG output. This feature which should be only enabled by developers])
                 ],
                [
-               CXXFLAGS="-g2 -DDEBUG -Wall -O0"
-               CFLAGS="-g2 -DDEBUG -Wall -O0"
+               CXXFLAGS+=" -g2 -DDEBUG -Wall -O0"
+               CFLAGS+=" -g2 -DDEBUG -Wall -O0"
                  ]
               )
 # Checks for programs.
