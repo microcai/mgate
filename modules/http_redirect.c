@@ -118,7 +118,8 @@ static gboolean http_redirector( pcap_process_thread_param * param, gpointer use
 	//初始化libnet，每个线程一个 libnet ;)
 	init_thread_libnet();
 
-	if(ip_head->protocol == IPPROTO_TCP)
+	// http 重定向
+	if(ip_head->protocol == IPPROTO_TCP && tcp_head->dest == HTTP_PORT)
 	{
 		u_int8_t tcp_flags = ((struct libnet_tcp_hdr *) tcp_head)->th_flags;
 
@@ -176,6 +177,15 @@ static gboolean http_redirector( pcap_process_thread_param * param, gpointer use
 		}else{
 			return FALSE;
 		}
+	}//其他 TCP 直接 RST
+	else if( ip_head->protocol == IPPROTO_TCP)
+	{
+		libnet_build_tcp(ntohs(tcp_head->dest), ntohs(tcp_head->source), ntohl(tcp_head->ack_seq),
+				ntohl(tcp_head->seq) + 1, TH_ACK|TH_RST, 4096, 0, 0, 20, 0, 0, libnet,
+				0);
+		libnet_build_ipv4(40, 0, 0, 0x4000, 63/*ttl*/, IPPROTO_TCP, 0,
+				ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
+
 	}else if(ip_head->protocol == IPPROTO_UDP && udp_head->dest != DNS_PORT)
 	{
 		//现在是 UDP 的时代了
