@@ -246,7 +246,6 @@ static inline void spin_read_write_wunlock()
  */
 void clientmgr_init()
 {
-	g_type_init();
 	client_tree = g_tree_new_full(g_tree_compare_func,0,g_free,g_object_unref);
 }
 
