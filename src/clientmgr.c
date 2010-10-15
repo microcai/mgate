@@ -278,6 +278,10 @@ Client * clientmgr_get_client_by_ip(in_addr_t ip)
 	return ret;
 }
 
+static Client * clientmgr_get_client_by_mac_internal(const guchar * mac)
+{
+	return (Client*)g_tree_lookup(client_tree,mac);
+}
 /**
  * clientmgr_get_client_by_mac:
  * @mac : mac 地址，6 个字节
@@ -289,7 +293,7 @@ Client * clientmgr_get_client_by_mac(const guchar * mac)
 {
 	spin_read_write_rlock();
 
-	Client * ptr = (Client*)g_tree_lookup(client_tree,mac);
+	Client * ptr = clientmgr_get_client_by_mac_internal(mac);
 
 	spin_read_write_runlock();
 
@@ -307,8 +311,12 @@ Client * clientmgr_get_client_by_mac(const guchar * mac)
 void clientmgr_insert_client_by_mac(guchar * mac, Client * client)
 {
 	spin_read_write_wlock();
-	guchar * mac_ = g_memdup(mac,6);
-	g_tree_insert(client_tree, mac_, client);
+
+	if(!clientmgr_get_client_by_mac_internal(mac))
+	{
+		guchar * mac_ = g_memdup(mac,6);
+		g_tree_insert(client_tree, mac_, client);
+	}
 	spin_read_write_wunlock();
 }
 
