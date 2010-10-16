@@ -133,7 +133,7 @@ void *pcap_thread_func(void * thread_param)
 		memset(&rif,0,sizeof(rif));
 		strcpy(rif.ifr_name,nic);
 
-		pcap_handle = pcap_open_live(nic, 65536, 0, 0, errbuf);
+		pcap_handle = pcap_open_live(nic, 65536, 1, 0, errbuf);
 
 		if (!pcap_handle)
 		{

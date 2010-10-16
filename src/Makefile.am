@@ -33,6 +33,7 @@ monitor_SOURCES += gsqlresult.c gsqlresult.h
 monitor_SOURCES += ksql.h ksql.c
 monitor_SOURCES += http_server.c http_server.h
 monitor_SOURCES += htmlnode.c htmlnode.h
+monitor_SOURCES += traffic_status.c traffic_status.h
 
 monitor_LDADD =  favicon.o
 monitor_DEPENDENCES = favicon.ico
