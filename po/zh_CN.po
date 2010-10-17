@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
-"POT-Creation-Date: 2010-10-15 08:59+0800\n"
+"POT-Creation-Date: 2010-10-17 22:09+0800\n"
 "PO-Revision-Date: 2010-10-14 12:05+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
@@ -102,94 +102,94 @@ msgstr "pid文件存在，是否已经运行了一个？ pid(%d)"
 msgid "connection to police center lost, reconnect!"
 msgstr "连接丢失, 重试！"
 
-#: src/kpolice.c:314
+#: src/kpolice.c:312
 msgid "A connection to the police server has been successfully established"
 msgstr "成功建立到公安机关中心服务器的连接"
 
-#: src/kpolice.c:342
+#: src/kpolice.c:338
 msgid ""
 "A connection to the police server port2 has been successfully established"
 msgstr "成功建立到公安机关中心服务器 端口2 的连接"
 
-#: src/kpolice.c:398
+#: src/kpolice.c:394
 msgid ""
 "[kpolice]:[HotelID] not set, monitor will not be able to send infomation"
 msgstr "[kpolice]:[HotelID] 客户端 ID 未指定，数据将无法上传"
 
-#: src/kpolice.c:404
+#: src/kpolice.c:400
 msgid "police ip not set, monitor will not upload any infomation!"
 msgstr "公安IP没有设置，数据将不会上传!"
 
-#: src/kpolice.c:415
+#: src/kpolice.c:411
 #, c-format
 msgid "[kpolice]:[port1] not set, default to %d"
 msgstr "[kpolice]:[port1] 未设置，使用默认值 %d"
 
-#: src/kpolice.c:425
+#: src/kpolice.c:421
 #, c-format
 msgid "[kpolice]:[port2] not set, default to 'port1+1'(%d)"
 msgstr "[kpolice]:[port1] 未设置，使用默认值 %d ( port1+1)"
 
-#: src/kpolice.c:476 src/kpolice.c:491
+#: src/kpolice.c:472 src/kpolice.c:487
 #, c-format
 msgid "using http proxy %s"
 msgstr "使用 http 代理 %s"
 
-#: src/kpolice.c:498
+#: src/kpolice.c:494
 #, c-format
 msgid "using socks5 proxy %s"
 msgstr "使用 socks5 代理 %s"
 
-#: src/kpolice.c:705
+#: src/kpolice.c:701
 #, c-format
 msgid "Got message, %s"
 msgstr "获得消息 , %s"
 
-#: src/pcap_thread.c:129
+#: src/pcap_thread.c:131
 #, c-format
 msgid "using %s as capturing interface"
 msgstr "使用网卡 %s 抓包"
 
-#: src/pcap_thread.c:139
+#: src/pcap_thread.c:141
 #, c-format
 msgid "ERROR:can not open %s for capturing!\n"
 msgstr "错误：无法打开 %s 进行抓包\n"
 
-#: src/pcap_thread.c:146
+#: src/pcap_thread.c:148
 #, c-format
 msgid "ERROR:%s is not an ethernet adapter\n"
 msgstr "错误：%s不是一个有效的网卡\n"
 
-#: src/pcap_thread.c:188
+#: src/pcap_thread.c:208
 #, c-format
 msgid "[monitor]:[threads] not set, using 2x cpu (%d) threads"
 msgstr "[monitor]:[threads] 未设置，默认使用2倍 CPU 个数 (%d) "
 
-#: src/pcap_thread.c:198
+#: src/pcap_thread.c:218
 #, c-format
 msgid "Too many thread will exclude the resource limite, reduce to %d"
 msgstr "设置的线程数目太多，超过系统限制，减少到 %d"
 
-#: src/http_server.c:107
+#: src/http_server.c:108
 #, c-format
 msgid "using port %d as default duto the missing [http]:[port] settings"
 msgstr "使用端口 %d 作为默认端口，因为没有设置 [http]:[port]"
 
-#: src/http_server.c:114
+#: src/http_server.c:115
 #, c-format
 msgid "server failt to start at port %d, will use random port!"
 msgstr "从端口%d 启动失败，将使用随机端口！"
 
-#: src/http_server.c:118
+#: src/http_server.c:119
 #, c-format
 msgid "server started at port %u"
 msgstr "服务器在端口%u启动"
 
-#: src/http_server.c:348
+#: src/http_server.c:368
 msgid "System busy, try later!"
 msgstr "系统忙，稍候再试"
 
-#: src/ksql.c:56 src/ksql.c:169
+#: src/ksql.c:56 src/ksql.c:172
 #, c-format
 msgid "unable to connect to database server (%d): %s"
 msgstr "无法连接到数据库 (%d) : %s"
@@ -198,10 +198,10 @@ msgstr "无法连接到数据库 (%d) : %s"
 msgid "sqlite backend not implemented, exiting!"
 msgstr "SQLite 数据库后端没有实现，退出!"
 
-#: src/ksql.c:140
+#: src/ksql.c:143
 msgid "[database]:[backend] not set or invalid, default to mysql"
 msgstr "[database]:[backend]未设置，将使用 mysql"
 
-#: src/ksql.c:143
+#: src/ksql.c:146
 msgid "[database]:[backend] not set or invalid, default to sqlite"
 msgstr "[database]:[backend]未设置，将使用 sqlite"

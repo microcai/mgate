@@ -81,8 +81,15 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src \
 	$(NULL)
-GTKDOC_LIBS = $(top_srcdir)/src/c*.o  $(top_srcdir)/src/k*.o  $(top_srcdir)/src/u*.o $(top_srcdir)/src/g*.o @MYSQL_LIBS@ \
-	$(NULL)
+GTKDOC_LIBS = $(top_builddir)/src/monitor-c*.o \
+				$(top_builddir)/src/monitor-utils.o \
+				$(top_builddir)/src/monitor-kpolice.o \
+				$(top_builddir)/src/monitor-gsqlconnect.o \
+				$(top_builddir)/src/monitor-gsqlresult.o \
+				$(top_builddir)/src/monitor-ksql.o \
+				$(top_builddir)/src/monitor-g_socket_client_proxy.o \
+				@MYSQL_LIBS@ \
+				$(NULL)
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
 include $(top_srcdir)/gtk-doc.make
