@@ -48,3 +48,10 @@ install-data-hook: httpd.conf.patch
 	if [ -x ${DESTDIR}/etc/apache ] ; then \
 	cat  $< | (  cd ${DESTDIR}/etc/apache/ && patch )\
 fi
+
+
+readme.xeltex : README README.xetex
+	echo '\end{document}' | cat README.xetex README - > $@
+
+readme.pdf:readme.xeltex
+	xelatex $<

@@ -1,0 +1,48 @@
+\documentclass[a4paper]{report}
+\def\pgfsysdriver{pgfsys-dvipdfm.def}
+\usepackage[
+bookmarks = true,
+urlcolor = blue,
+colorlinks = true,
+citecolor = black,
+linkcolor = black]{hyperref}
+%\usepackage{type1cm}
+\usepackage[cm-default]{fontspec}
+\usepackage{indentfirst}
+\usepackage{graphicx}
+\usepackage{xltxtra}
+\usepackage{fancyhdr}
+\usepackage{booktabs}
+\usepackage{indentfirst}
+\usepackage{framed,color}
+%\usepackage[dvipsnames,prologue,table]{pstricks}
+%\usepackage{pst-all}
+\usepackage{lipsum}
+\usepackage{rotating}
+%\usepackage[ISBN=978-80-85955-35-4]{ean13isbn}
+
+\setlength{\parindent}{24pt}
+ \setlength{\parskip}{3pt plus1pt minus2pt}
+ \setlength{\baselineskip}{20pt plus2pt minus1pt}
+ \setlength{\textheight}{21.5true cm}
+ \setlength{\textwidth}{14.5true cm}
+  \setlength{\headsep}{10truemm}
+  \setlength{\oddsidemargin}{0.26cm}   % 左边 3.25cm=0.71+2.54
+\setlength{\evensidemargin}{0.26cm}
+%  上下
+\setlength{\topmargin}{-0.29cm}   
+ %\setlength{\jot}{4.5pt}
+\renewcommand{\baselinestretch}{1.2}
+
+\definecolor{shadecolor}{gray}{0.90}
+
+\setromanfont[Mapping=tex-text,Bold=Adobe Heiti Std]{Adobe Song Std}
+\setmonofont{Adobe Song Std}
+ 
+\XeTeXlinebreaklocale{zh-cn}
+\XeTeXlinebreakskip = 0pt plus 1pt minus 1pt
+\XeTeXlinebreakpenalty=0
+
+\begin{document}
+
+
