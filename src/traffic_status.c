@@ -117,37 +117,6 @@ static gpointer update_ip_trafffic(gpointer  queue)
 		{
 			g_time_val_add(endtime,1000000);
 			g_tree_foreach(ipstatus,(GTraverseFunc)mark_eclipsed,0);
-
-//			//打印他怎么样？
-//
-			gboolean printstatus(gpointer key,struct ip_traffic_status * status)
-			{
-				guint upspeed=0,downspeed=0;
-
-				for( int j=0;j < 8 ;j++ )
-				{
-					if (j != status->current)
-					{
-						downspeed += status->currents[j].down;
-						upspeed += status->currents[j].up;
-					}
-				}
-
-				downspeed/=7;
-				upspeed/=7;
-
-				g_message("流量统计：ip %s,上传%u,下载%u,上传速度%dkb/s,下载速度%dkb/s",
-						inet_ntoa((struct in_addr){status->ip}),
-						(guint)status->up,(guint)status->down,
-						upspeed/1024,downspeed/1024);
-				return FALSE;
-			}
-
-			g_message("============================");
-
-			g_tree_foreach(ipstatus,(GTraverseFunc)printstatus,0);
-
-			g_message("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
 		}
 		g_static_mutex_unlock(&lock);
 	}

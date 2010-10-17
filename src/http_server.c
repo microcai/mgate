@@ -257,7 +257,7 @@ void SoupServer_path_info(SoupServer *_server, SoupMessage *msg,
 
 	HtmlNode * table = htmlnode_new_table(htmlbody,"align=center",NULL);
 
-	htmlnode_new_text(htmlnode_new(htmlnode_new(table,"tr","align=center",0),"td",0),"IP状态表");
+	htmlnode_new_text(htmlnode_new(htmlnode_new(table,"tr","align=center",0),"td","align=center",0),"IP状态表");
 
 	gsize num;
 
