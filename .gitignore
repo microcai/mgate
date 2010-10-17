@@ -32,3 +32,4 @@ docs/*
 docs/*/
 !po/zh_CN.po
 po/*
+readme.*
