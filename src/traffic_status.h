@@ -14,6 +14,7 @@ typedef struct IPStatus{
 	in_addr_t	ip;
 	guint64		up,down;
 	guint		upspeed,downspeed;
+	time_t		last_active;
 }IPStatus;
 
 G_BEGIN_DECLS
@@ -25,6 +26,9 @@ void traffic_packet_callback ( in_addr_t ip, in_addr_t mask , struct iphdr * ip_
 
 //should g_free results
 IPStatus * ip_traffic_get_status(gsize * numberofips);
+//remove records of ip
+void ip_traffic_reset_ip(in_addr_t ip);
+void ip_traffic_reset_all();
 
 G_END_DECLS
 

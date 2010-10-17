@@ -44,16 +44,16 @@ struct current_updown{
 	volatile guint	  down;
 };
 
-struct ip_traffic_status
+typedef struct ip_traffic_status
 {
-	volatile in_addr_t ip;
-	volatile guint64	  up;
-	volatile guint64	  down;
-
+	in_addr_t ip;
+	guint64	  up;
+	guint64	  down;
+	time_t	  last_active;
 	//当前一秒的上传下载 aka 速率
 	struct current_updown	currents[8];
-	volatile unsigned current:3;
-};
+	unsigned current:3;
+}ip_traffic_status;
 
 static GTree	*ipstatus;
 static GAsyncQueue * queue;
@@ -111,6 +111,7 @@ static gpointer update_ip_trafffic(gpointer  queue)
 				status->down += size;
 				status->currents[status->current].down += size;
 			}
+			time(&status->last_active);
 			ip_traffice_thread_param_free(data);
 
 		}else //过一秒了，可以那个了
@@ -120,7 +121,6 @@ static gpointer update_ip_trafffic(gpointer  queue)
 		}
 		g_static_mutex_unlock(&lock);
 	}
-
 	return NULL;
 }
 
@@ -129,9 +129,14 @@ static gboolean compare_ip(gconstpointer a , gconstpointer b)
 	return GPOINTER_TO_UINT(a) - GPOINTER_TO_UINT(b);
 }
 
+static void free_value(ip_traffic_status * status)
+{
+	g_slice_free(ip_traffic_status,status);
+}
+
 void traffic_status_init()
 {
-	ipstatus = g_tree_new(compare_ip);
+	ipstatus = g_tree_new_full((GCompareDataFunc)compare_ip,NULL,NULL,(GDestroyNotify)free_value);
 	queue = g_async_queue_new_full((GDestroyNotify)ip_traffice_thread_param_free);
 	g_thread_create(update_ip_trafffic,queue,0,0);
 }
@@ -199,6 +204,23 @@ void traffic_packet_callback ( in_addr_t ip, in_addr_t mask , struct iphdr * ip_
 	}
 }
 
+void ip_traffic_reset_ip(in_addr_t ip)
+{
+	g_static_mutex_lock(&lock);
+
+	g_tree_remove(ipstatus,GUINT_TO_POINTER(ip));
+
+	g_static_mutex_unlock(&lock);
+}
+
+void ip_traffic_reset_all()
+{
+	g_static_mutex_lock(&lock);
+	g_tree_ref(ipstatus);
+	g_tree_destroy(ipstatus);
+	g_static_mutex_unlock(&lock);
+}
+
 IPStatus * ip_traffic_get_status(gsize * numberofips)
 {
 	IPStatus * ret = NULL;
@@ -226,6 +248,7 @@ IPStatus * ip_traffic_get_status(gsize * numberofips)
 			}
 			ret[i].downspeed/=7;
 			ret[i].upspeed/=7;
+			ret[i].last_active = status->last_active;
 			i++;
 			return FALSE;
 		}
