@@ -5,8 +5,9 @@ SUBDIRS = src modules po docs
 dist_doc_DATA = README 
 EXTRA_DIST = @PACKAGE_NAME@.spec.in monitor.cfg httpd.conf.patch readme.pdf
 
-DISTCLEANFILES = @PACKAGE_NAME@.spec readme.aux  readme.log  readme.out readme.xeltex
+DISTCLEANFILES = @PACKAGE_NAME@.spec readme.pdf
 
+CLEANFILES =  readme.aux  readme.log  readme.out readme.xeltex
 
 rpm: dist @PACKAGE_NAME@-hotel.spec @PACKAGE_NAME@-cafe.spec
 	rpmbuild -bb \
