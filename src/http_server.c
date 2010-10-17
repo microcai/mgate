@@ -25,6 +25,7 @@
 #include "monitor_icon.h"
 #include "htmlnode.h"
 #include "smsapi.h"
+#include "traffic_status.h"
 
 typedef struct{
 	GTimer*timer;
@@ -253,6 +254,24 @@ void SoupServer_path_info(SoupServer *_server, SoupMessage *msg,
 	htmlnode_new_text(htmlnode_new(div, "dd", NULL), tr);
 
 	g_free(tr);
+
+	HtmlNode * table = htmlnode_new_table(htmlbody,"align=center",NULL);
+
+	htmlnode_new_text(htmlnode_new(htmlnode_new(table,"tr","align=center",0),"td",0),"IP状态表");
+
+	gsize num;
+
+	IPStatus * ret = ip_traffic_get_status(&num);
+
+	while(num--)
+	{
+		HtmlNode * tr = htmlnode_new(table,"tr","align=center",0);
+
+		htmlnode_new_text(htmlnode_new(tr,"td",0),inet_ntoa((struct in_addr){ret[num].ip}));
+		htmlnode_new_text_printf(htmlnode_new(tr,"td",0),"下载%ukb/s",ret[num].downspeed/1024);
+	}
+	g_free(ret);
+
 
 	htmlnode_to_plane_text_and_free(html,
 			(htmlnode_appender) soup_message_body_appender, msg->response_body);

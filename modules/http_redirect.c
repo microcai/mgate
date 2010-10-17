@@ -14,7 +14,6 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <time.h>
-#include <pcap/pcap.h>
 #include <libnet.h>
 
 #include <glib.h>

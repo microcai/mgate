@@ -96,6 +96,16 @@ HtmlNode * htmlnode_new_text(HtmlNode * parent, const char * text)
 	return node;
 }
 
+HtmlNode * htmlnode_new_text_printf(HtmlNode * parent, const char * fmt,...)
+{
+	va_list va;
+	va_start(va,fmt);
+	gchar * txt = g_strdup_vprintf(fmt,va);
+	va_end(va);
+	HtmlNode * ret = htmlnode_new_text(parent,txt);
+	g_free(txt);
+	return ret;
+}
 
 HtmlNode * htmlnode_new_head(HtmlNode * parent, const char * attrlist, ...)
 {

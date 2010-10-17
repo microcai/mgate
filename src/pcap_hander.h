@@ -14,7 +14,7 @@
 
 typedef struct _pcap_process_thread_param
 {
-	in_addr_t	ip;
+	in_addr_t	ip,mask;
 	gsize		linklayer_len;
 	const u_char*packet_linklayer_hdr;
 	const u_char*packet_ip_contents;

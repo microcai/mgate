@@ -46,6 +46,7 @@
 #include "pcap_hander.h"
 #include "clientmgr.h"
 #include "global.h"
+#include "traffic_status.h"
 
 static void pcap_process_thread_func(gpointer _thread_data, Kpolice* police)
 {
@@ -220,6 +221,8 @@ void *pcap_thread_func(void * thread_param)
 
 	GThreadPool * threadpool = g_thread_pool_new((GFunc)pcap_process_thread_func, thread_param, num_threads, TRUE, NULL);
 
+	traffic_status_init();
+
 	pcap_process_thread_param * thread_data;
 
 	for (;;)
@@ -237,9 +240,12 @@ void *pcap_thread_func(void * thread_param)
 		//	    //non TCP or UDP is ignored
 		if (ip_head->protocol != IPPROTO_TCP && ip_head->protocol != IPPROTO_UDP)
 			continue;
+
 		//out -> in is ignored
 		if ((ip_head->saddr & mask) != (ip & mask))
 		{
+			//流量统计需要从外到内的下行流量和上行流量
+			traffic_packet_callback(ip,mask,ip_head);
 			continue;
 		}
 
@@ -267,9 +273,9 @@ void *pcap_thread_func(void * thread_param)
 
 		g_thread_pool_push(threadpool, thread_data, NULL);
 
+		//处理了再统计，别干扰处理的响应时间
+		traffic_packet_callback(ip,mask,ip_head);
 	}
-	//	int fno = pcap_fileno(pcap_handle);
-
 	pcap_close(pcap_handle);
 	g_thread_pool_free(threadpool,FALSE,TRUE);
 

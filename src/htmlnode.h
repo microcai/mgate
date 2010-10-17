@@ -52,6 +52,7 @@ HtmlNode * htmlnode_append_attr_take(HtmlNode * node, char * attr);
 
 HtmlNode * htmlnode_new(HtmlNode * parent, const char * tag , ...);
 HtmlNode * htmlnode_new_text(HtmlNode * parent, const char * text );
+HtmlNode * htmlnode_new_text_printf(HtmlNode * parent, const char * fmt,...);
 HtmlNode * htmlnode_newv(HtmlNode * parent, const char * tag,const char * , va_list v);
 HtmlNode * htmlnode_new_head(HtmlNode * parent, const char * attrlist, ...);
 HtmlNode * htmlnode_new_body(HtmlNode * parent, const char * attrlist, ...);
