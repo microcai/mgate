@@ -268,10 +268,10 @@ void SoupServer_path_info(SoupServer *_server, SoupMessage *msg,
 		HtmlNode * tr = htmlnode_new(table,"tr","align=center",0);
 
 		htmlnode_new_text(htmlnode_new(tr,"td",0),inet_ntoa((struct in_addr){ret[num].ip}));
+		htmlnode_new_text_printf(htmlnode_new(tr,"td",0),"下行流量%umb",ret[num].down/(1024*1024));
 		htmlnode_new_text_printf(htmlnode_new(tr,"td",0),"下载%ukb/s",ret[num].downspeed/1024);
 	}
 	g_free(ret);
-
 
 	htmlnode_to_plane_text_and_free(html,
 			(htmlnode_appender) soup_message_body_appender, msg->response_body);
