@@ -40,7 +40,7 @@ start () {
 stop () {
 	# stop daemon
 	echo -n $"Stopping $prog: "
-	killall -2 monitor > /dev/NULL 2>/dev/null
+	kill	$( cat /tmp/${prog}.pid )
 	echo "OK"
 	return 0
 }

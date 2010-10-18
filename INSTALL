@@ -7,7 +7,7 @@
 1 编译安装
 
 编译需求
-需要   mysql-devel libpcap-devel libnet-devel(开启酒店支持需要) sqlite-deve(开启sqlite支持的话也要安装 )
+需要  glib2-devel libsoup-2.4-devel mysql-devel libpcap-devel libnet-devel(开启酒店支持需要) sqlite-deve(开启sqlite支持的话也要安装 )
 
 解压后进入解压后的目录
 
@@ -19,7 +19,6 @@
 具体的，编译进酒店支持系统需要加 --enable-hotel，编译进sqlite 支持需要加 --with-sqlite3
 
 
-
 然后执行 make
 
 这一步应该会编译生成可执行文件和模块
@@ -27,15 +26,7 @@
 如果成功的还请执行 make install
 注意，这一步需要 root 权限
 
-2 安装 网页 
-
-解压 www.tar.bz2 到 /var/www/
-
-tar -xvf www.tar.bz2 -C /var/www
-
-注意，需要 root 权限
-
-3 导入数据库
+2 导入数据库
 
 执行 monitor
 会自动导入数据库后退出
@@ -44,13 +35,12 @@ tar -xvf www.tar.bz2 -C /var/www
 
 配置指导
 
-需要配置的文件在 /var/www/application/config/config.ini
-主要是 mysql 的密码.
+需要配置的文件在 /etc/monitor.cfg
+请详细阅读注释，相信可以很快完成配置
 
-
-配置好后运行 httpd 和 mysql
-/etc/init.d/httpd start
+配置好后运行 mysql 和 monitor
 /etc/init.d/mysqld start
+/etc/init.d/monitord start
 
 然后在浏览器输入 http://localhost/index
 
