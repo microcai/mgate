@@ -33,6 +33,7 @@
 #include "ksql.h"
 #include "gsqlconnect.h"
 #include "gsqlconnect_mysql.h"
+#include "gsqlconnect_sqlite3.h"
 #include "gsqlresult.h"
 #include "clientmgr.h"
 
@@ -86,7 +87,7 @@ static gpointer ksql_thread(gpointer user_data)
 
 		clientmgr_insert_client_by_mac(mac_addr,dummyclient);
 	}
-
+	g_object_unref(res);
 	//还有呢！预先加载一些,目前是不需要了 :D
 
 	gchar * sql;
@@ -142,15 +143,14 @@ GType	ksql_get_backend()
 #ifdef HAVE_MYSQL
 		g_message(_("[database]:[backend] not set or invalid, default to mysql"));
 		backend = G_TYPE_SQL_CONNNECT_MYSQL;
-#else
+#endif
+#ifdef HAVE_SQLITE3
 		g_message(_("[database]:[backend] not set or invalid, default to sqlite"));
-		backend = "GSQLConnectSqlite";
+		backend = G_TYPE_SQL_CONNNECT_SQLITE;
 #endif
 	}
 	return backend ;
 }
-
-
 
 void	ksql_init(gboolean createdb)
 {

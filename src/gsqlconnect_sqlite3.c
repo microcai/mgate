@@ -86,12 +86,15 @@ gboolean g_sql_connect_sqlite3_real_connect(GSQLConnect * obj,GError ** err)
 
 	gchar * file;
 	g_object_get(obj,"file",&file,NULL);
-	if (sqlite3_open(file,&mobj->sqlite)==SQLITE_OK)
+	int errcode = sqlite3_open(file,&mobj->sqlite);
+
+	if (errcode!=SQLITE_OK)
 	{
+		g_error("%s",sqlite3_errmsg(mobj->sqlite));
 		sqlite3_close(mobj->sqlite);
-		return TRUE;
+		return FALSE;
 	}
-	return FALSE;
+	return TRUE;
 }
 
 gboolean g_sql_connect_sqlite3_ping(GSQLConnect * obj,GError ** err)
@@ -236,7 +239,7 @@ gboolean g_sql_connect_sqlite3_check_config(GSQLConnect * obj)
 {
 	g_assert(IS_G_SQL_CONNECT_SQLITE(obj));
 
-	gchar * g_file = g_key_file_get_string(gkeyfile,"sqlite3","file",NULL);
+	gchar * g_file = g_key_file_get_string(gkeyfile,"sqlite","file",NULL);
 
 	if (g_file)
 	{
