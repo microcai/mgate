@@ -144,6 +144,7 @@ void traffic_status_end()
 {
 	g_warn_if_reached();
 	//TODO:	释放结构
+	ip_traffic_reset_all();
 }
 
 static void update_ip_trafffic_info(in_addr_t ip ,enum directions direction, gsize size)
