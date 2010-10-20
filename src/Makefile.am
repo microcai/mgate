@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS = foreign
 
 AM_CPPFLAGS = @NEED_ALL_CFLAGS@ @MYSQL_CFLAGS@
 
-LIBS += @NEED_ALL_LIBS@ @MYSQL_LIBS@
+LIBS += @NEED_ALL_LIBS@ @MYSQL_LIBS@ @SQLITE3_LIBS@
 
 DISTCLEANFILES = monitord
 
@@ -55,4 +55,10 @@ if WITH_MYSQL
   monitor_SOURCES += gsqlconnect_mysql.c	 gsqlconnect_mysql.h
   monitor_SOURCES += ksql_static_template.h
   AM_CPPFLAGS += -D__HAVE_MYSQL
+endif
+
+if WITH_SQLITE3
+  monitor_SOURCES += gsqlconnect_sqlite3.c	 gsqlconnect_sqlite3.h
+  monitor_SOURCES += ksql_static_template.h
+  AM_CPPFLAGS += -DWITH_SQLITE3
 endif

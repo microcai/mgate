@@ -43,7 +43,15 @@ AC_ARG_WITH(mysql-libs,[AC_HELP_STRING([--with-mysql-libs],[supply non-default L
 AC_ARG_WITH(mysql-cflags,[AC_HELP_STRING([--with-mysql-cflags],[supply non-default CPP flags for mysql])],
 		[ MYSQL_CFLAGS=$withval ])
 		
-AC_ARG_WITH(jincheng,[AC_HELP_STRING([--without-jincheng],[disable jincheng module])],[],[with_jincheng="yes"])
+AC_ARG_WITH(sqlite3,
+	[AC_HELP_STRING([--with-sqlite3],[build with sqlite3 backend])],
+	[
+		PKG_CHECK_MODULES(SQLITE3, [sqlite3])
+		AM_CONDITIONAL(WITH_SQLITE3,[true])	
+	],[AM_CONDITIONAL(WITH_SQLITE3,[false])])
+
+AC_ARG_WITH(jincheng,
+	[AC_HELP_STRING([--without-jincheng],[disable jincheng module])],[],[with_jincheng="yes"])
 
 AC_ARG_WITH(kqq, [AC_HELP_STRING([--with-kqq], [enable kqq module (default)])],[with_kqq=$withval],[with_kqq="yes"])
 AC_ARG_WITH(kurl,[AC_HELP_STRING([--with-kurl],[enable kkurl module (default)])],[with_kurl=$withval],[with_kurl="yes"])
@@ -53,7 +61,6 @@ AC_ARG_WITH(kmsn,[AC_HELP_STRING([--with-kmsn],[enable kmsn module (default)])],
 AM_CONDITIONAL([WITH_KQQ],[test x$with_kqq=xyes])
 AM_CONDITIONAL([WITH_KURL],[test x$with_kurl=xyes])
 AM_CONDITIONAL([WITH_KMSN],[test x$with_kmsn=xyes])
-
 
 AC_SUBST(MODULES_PATH,/usr/libexec/)
 
@@ -68,6 +75,7 @@ AC_TYPE_UINT32_T
 PKG_CHECK_MODULES(LIBSOUP, [libsoup-2.4 >= 2.26])
 PKG_CHECK_MODULES(GLIB2, [glib-2.0 >= 2.18 gthread-2.0 gobject-2.0 gmodule-2.0 gio-2.0 ])
 PKG_CHECK_MODULES(NEED_ALL, [libsoup-2.4 >= 2.26 glib-2.0 >= 2.18 gthread-2.0 gobject-2.0 gmodule-2.0 gio-2.0 ])
+
 AC_CHECK_LIB([pthread], [main])
 AC_CHECK_LIB([pcap], [main],[],[AC_MSG_ERROR(need libpcap)])
 AC_CHECK_LIB([pcap], [main],[AC_CHECK_HEADER(pcap.h)],[AC_MSG_ERROR(need libpcap)])
