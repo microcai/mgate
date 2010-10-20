@@ -28,7 +28,7 @@
 #include "global.h"
 #include "gsqlconnect.h"
 #include "gsqlconnect_sqlite3.h"
-#include "ksql_static_template.h"
+#include "sqlite_static_template.h"
 
 enum G_SQL_CONNECT_MYSQL_PROPERTY{
 	GSQL_CONNECT_SQLITE_FILE = 1,
@@ -94,6 +94,15 @@ gboolean g_sql_connect_sqlite3_real_connect(GSQLConnect * obj,GError ** err)
 		sqlite3_close(mobj->sqlite);
 		return FALSE;
 	}
+
+	gchar * errmsg;
+
+	for (int i = 0; i < G_N_ELEMENTS(create_sql); ++i)
+	{
+		sqlite3_exec(mobj->sqlite, create_sql[i],0,0,&errmsg);
+		g_debug("sqlite err:%s",errmsg);
+	}
+
 	return TRUE;
 }
 

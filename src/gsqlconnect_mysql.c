@@ -29,7 +29,7 @@
 #include "global.h"
 #include "gsqlconnect.h"
 #include "gsqlconnect_mysql.h"
-#include "ksql_static_template.h"
+#include "mysql_static_template.h"
 
 enum G_SQL_CONNECT_MYSQL_PROPERTY{
 	GSQL_CONNECT_MYSQL_HOST = 1,
@@ -54,6 +54,7 @@ static gboolean	g_sql_connect_mysql_get_row(GSQLResult * obj);
 static void g_sql_connect_mysql_free_result(GSQLResult * );
 
 G_DEFINE_TYPE(GSQLConnectMysql,g_sql_connect_mysql,G_TYPE_SQL_CONNNECT);
+
 
 void g_sql_connect_mysql_class_init(GSQLConnectMysqlClass * klass)
 {

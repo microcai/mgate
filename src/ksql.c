@@ -144,7 +144,7 @@ GType	ksql_get_backend()
 		g_message(_("[database]:[backend] not set or invalid, default to mysql"));
 		backend = G_TYPE_SQL_CONNNECT_MYSQL;
 #endif
-#ifdef HAVE_SQLITE3
+#ifdef WITH_SQLITE3
 		g_message(_("[database]:[backend] not set or invalid, default to sqlite"));
 		backend = G_TYPE_SQL_CONNNECT_SQLITE;
 #endif

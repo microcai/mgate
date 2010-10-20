@@ -5,8 +5,8 @@
  *      Author: cai
  */
 
-#ifndef KSQL_STATIC_TEMPLATE_H_
-#define KSQL_STATIC_TEMPLATE_H_
+#ifndef MYSQL_STATIC_TEMPLATE_H_
+#define MYSQL_STATIC_TEMPLATE_H_
 
 
 static const char * create_sql[] =
@@ -182,4 +182,4 @@ static const char * create_sql[] =
 };
 
 
-#endif /* KSQL_STATIC_TEMPLATE_H_ */
+#endif /* MYSQL_STATIC_TEMPLATE_H_ */
