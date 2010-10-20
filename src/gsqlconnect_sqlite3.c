@@ -100,7 +100,6 @@ gboolean g_sql_connect_sqlite3_real_connect(GSQLConnect * obj,GError ** err)
 	for (int i = 0; i < G_N_ELEMENTS(create_sql); ++i)
 	{
 		sqlite3_exec(mobj->sqlite, create_sql[i],0,0,&errmsg);
-		g_debug("sqlite err:%s",errmsg);
 	}
 
 	return TRUE;
