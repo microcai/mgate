@@ -2,6 +2,12 @@ AUTOMAKE_OPTIONS = foreign
 
 AM_CPPFLAGS = @NEED_ALL_CFLAGS@ -I$(srcdir)/../sqlclient -I$(srcdir)/.. -I$(srcdir)/../sms
 
+OBJCOPY=@OBJCOPY@ 
+
+RESTOOBJ=$(OBJCOPY) -I binary -B @obj_machine@ -O @obj_format@
+
+EXTRA_PICTURES = favicon.ico  
+
 if BUILD_HTTP_SERVER
 
 noinst_LIBRARIES = libhttp_server.a
@@ -15,12 +21,11 @@ libhttp_server_a_SOURCES += html_path_favicon.c
 
 libhttp_server_a_LIBADD =  favicon.o
 
-libhttp_server_a_DEPENDENCIES = favicon.o
-
-EXTRA_libhttp_server_a_SOURCES = favicon.ico
+EXTRA_libhttp_server_a_SOURCES = $(EXTRA_PICTURES)
 
 endif
 
- 
-favicon.o: favicon.ico
-	$(OBJCOPY)	-I binary -B @obj_machine@ -O @obj_format@ $< $@
+SUFFIXES = .ico  
+
+.ico.o:
+	$(RESTOOBJ)	 $< $@

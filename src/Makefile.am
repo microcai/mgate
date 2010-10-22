@@ -12,8 +12,6 @@ LIBS += @NEED_ALL_LIBS@ @MYSQL_LIBS@ @SQLITE3_LIBS@ \
 
 DISTCLEANFILES = monitord
 
-OBJCOPY=@OBJCOPY@ 
-
 sbindir=/etc/init.d/
 
 bin_PROGRAMS = monitor 
