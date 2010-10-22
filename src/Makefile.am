@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = foreign
 
-AM_CPPFLAGS = @NEED_ALL_CFLAGS@ @MYSQL_CFLAGS@ -I$(srcdir)/dbclient
+AM_CPPFLAGS = @NEED_ALL_CFLAGS@ @MYSQL_CFLAGS@ -I$(srcdir)/dbclient -I$(srcdir)/http_server
 
 LIBS += @NEED_ALL_LIBS@ @MYSQL_LIBS@ @SQLITE3_LIBS@
 
@@ -27,13 +27,16 @@ monitor_SOURCES += module.c module.h
 monitor_SOURCES += $(md5_SOURCE)
 monitor_SOURCES += kpolice.c kpolice.h
 monitor_SOURCES += g_socket_client_proxy.c g_socket_client_proxy.h
+
+monitor_SOURCES += ksql.h ksql.c
+monitor_SOURCES += traffic_status.c traffic_status.h
+
 monitor_SOURCES += dbclient/gsqlconnect.c  dbclient/gsqlconnect.h
 monitor_SOURCES += dbclient/gsqlresult.c dbclient/gsqlresult.h
 
-monitor_SOURCES += ksql.h ksql.c
-monitor_SOURCES += http_server.c http_server.h
-monitor_SOURCES += htmlnode.c htmlnode.h
-monitor_SOURCES += traffic_status.c traffic_status.h
+monitor_SOURCES += http_server/http_server.c http_server/http_server.h
+monitor_SOURCES += http_server/htmlnode.c http_server/htmlnode.h
+
 
 monitor_LDADD =  favicon.o
 monitor_DEPENDENCES = favicon.ico
