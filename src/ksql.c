@@ -89,6 +89,9 @@ static gpointer ksql_thread(gpointer user_data)
 	}
 	g_object_unref(res);
 	//还有呢！预先加载一些,目前是不需要了 :D
+	//预加载已经存在的客户端
+
+
 
 	gchar * sql;
 	for (;;)

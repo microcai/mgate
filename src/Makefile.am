@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = foreign
 
-AM_CPPFLAGS = @NEED_ALL_CFLAGS@ @MYSQL_CFLAGS@
+AM_CPPFLAGS = @NEED_ALL_CFLAGS@ @MYSQL_CFLAGS@ -I$(srcdir)/dbclient
 
 LIBS += @NEED_ALL_LIBS@ @MYSQL_LIBS@ @SQLITE3_LIBS@
 
@@ -27,8 +27,8 @@ monitor_SOURCES += module.c module.h
 monitor_SOURCES += $(md5_SOURCE)
 monitor_SOURCES += kpolice.c kpolice.h
 monitor_SOURCES += g_socket_client_proxy.c g_socket_client_proxy.h
-monitor_SOURCES += gsqlconnect.c  gsqlconnect.h
-monitor_SOURCES += gsqlresult.c gsqlresult.h
+monitor_SOURCES += dbclient/gsqlconnect.c  dbclient/gsqlconnect.h
+monitor_SOURCES += dbclient/gsqlresult.c dbclient/gsqlresult.h
 
 monitor_SOURCES += ksql.h ksql.c
 monitor_SOURCES += http_server.c http_server.h
@@ -52,13 +52,13 @@ monitor_SOURCES += sms/smsthread.c sms/smsthread.h
 
 		 
 if WITH_MYSQL
-  monitor_SOURCES += gsqlconnect_mysql.c	 gsqlconnect_mysql.h
-  monitor_SOURCES += ksql_static_template.h
+  monitor_SOURCES += dbclient/gsqlconnect_mysql.c	 dbclient/gsqlconnect_mysql.h
+  monitor_SOURCES += dbclient/mysql_static_template.h
   AM_CPPFLAGS += -D__HAVE_MYSQL
 endif
 
 if WITH_SQLITE3
-  monitor_SOURCES += gsqlconnect_sqlite3.c	 gsqlconnect_sqlite3.h
-  monitor_SOURCES += ksql_static_template.h
+  monitor_SOURCES += dbclient/gsqlconnect_sqlite3.c	 dbclient/gsqlconnect_sqlite3.h
+  monitor_SOURCES += dbclient/sqlite_static_template.h
   AM_CPPFLAGS += -DWITH_SQLITE3
 endif
