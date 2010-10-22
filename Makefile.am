@@ -45,11 +45,6 @@ $(top_builddir)/src/monitor :
 
 gdb : $(top_builddir)/src/monitor /tmp/${prefix}/share/locale/
 	gdbserver localhost:5000 $(top_builddir)/src/monitor --module_dir=$(top_builddir)/modules  --config=$(top_srcdir)/monitor.cfg --locale=/tmp/${prefix}/share/locale/  ${ARG}
-			
-install-data-hook: httpd.conf.patch
-	if [ -x ${DESTDIR}/etc/apache ] ; then \
-	cat  $< | (  cd ${DESTDIR}/etc/apache/ && patch )\
-fi
 
 
 readme.xeltex : README README.xetex
