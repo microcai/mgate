@@ -28,16 +28,16 @@
 #include "traffic_status.h"
 #include "html_paths.h"
 
-extern char	_binary_favicon_ico_start[];
-extern size_t _binary_favicon_ico_size;
+extern const char _binary_favicon_ico_start[];
+extern const char _binary_favicon_ico_end[];
 
 struct inode{
 	const char * path;
 	const char * content_type;
-	gpointer	data;
-	gsize*		data_length;
+	gconstpointer	data;
+	gconstpointer	data_end;
 }inodes[]={
-		{ "/favicon.ico" , "image/x-icon",_binary_favicon_ico_start, &_binary_favicon_ico_size },
+		{ "/favicon.ico" , "image/x-icon",_binary_favicon_ico_start,_binary_favicon_ico_end},
 
 };
 
@@ -52,7 +52,7 @@ void SoupServer_path_static_file(SoupServer *server, SoupMessage *msg,
 		{
 			soup_message_set_status(msg, SOUP_STATUS_OK);
 			soup_message_set_response(msg, "image/x-icon", SOUP_MEMORY_STATIC,
-					inodes[i].data, *inodes[i].data_length);
+					inodes[i].data, (gsize) inodes[i].data_end - (gsize)inodes[i].data);
 			return ;
 		}
 	}
