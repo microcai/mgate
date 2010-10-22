@@ -167,6 +167,7 @@ AC_CHECK_DECL(_SC_NPROCESSORS_ONLN,[],[AC_MSG_FAILURE(_SC_NPROCESSORS_ONLN not f
 #AC_CONFIG_FILES([modules/Makefile])
 AC_CONFIG_FILES( [					
 					monitor.spec
+					src/misc/Makefile
 					src/sqlclient/Makefile
 					src/http_server/Makefile
 					src/Makefile

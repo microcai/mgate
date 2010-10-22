@@ -27,18 +27,26 @@
 #include "htmlnode.h"
 #include "traffic_status.h"
 #include "html_paths.h"
+#include "unzip.h"
+#include "mime.h"
 
-extern const char _binary_favicon_ico_start[];
-extern const char _binary_favicon_ico_end[];
+extern const char _binary_resource_zip_start[];
+extern const char _binary_resource_zip_end[];
+
+typedef enum inodetype{
+	inode_file, //文件
+	inode_dirarchive, // zip 压缩的文件夹
+}inodetype;
 
 struct inode{
+	int			inode_type;
 	const char * path;
 	const char * content_type;
 	gconstpointer	data;
 	gconstpointer	data_end;
 }inodes[]={
-		{ "/favicon.ico" , "image/x-icon",_binary_favicon_ico_start,_binary_favicon_ico_end},
-
+//		{ inode_file , "/favicon.ico" , "image/x-icon",_binary_favicon_ico_start,_binary_favicon_ico_end},
+		{ inode_dirarchive , "/" , "stream/unkown",_binary_resource_zip_start,_binary_resource_zip_end},
 };
 
 void SoupServer_path_static_file(SoupServer *server, SoupMessage *msg,
@@ -48,13 +56,44 @@ void SoupServer_path_static_file(SoupServer *server, SoupMessage *msg,
 	int i;
 	for(i=0;i<G_N_ELEMENTS(inodes);++i)
 	{
-		if(strcasecmp(inodes[i].path,path)==0)
+		switch (inodes[i].inode_type)
 		{
-			soup_message_set_status(msg, SOUP_STATUS_OK);
-			soup_message_set_response(msg, "image/x-icon", SOUP_MEMORY_STATIC,
-					inodes[i].data, (gsize) inodes[i].data_end - (gsize)inodes[i].data);
-			return ;
+			case inode_file:
+			if (strcasecmp(inodes[i].path, path) == 0)
+			{
+				soup_message_set_status(msg, SOUP_STATUS_OK);
+				soup_message_set_response(msg, "image/x-icon",
+						SOUP_MEMORY_STATIC, inodes[i].data,
+						(gsize) inodes[i].data_end - (gsize) inodes[i].data);
+				return;
+			}
+			break;
+			case inode_dirarchive:
+				if (!strncasecmp(path, inodes[i].path,strlen(inodes[i].path)))
+				{
+					const char * file = path + strlen(inodes[i].path);
+					const zipRecord * ziprec = zipbuffer_search(inodes[i].data,inodes[i].data_end, file);
+
+					if (ziprec)
+					{
+						const char * zipeddata = (char *)ziprec + sizeof(zipRecord) + ziprec->filename_len + ziprec->extra_len;
+						gsize content_length = ziprec->size_ziped;
+
+						soup_message_set_status(msg, SOUP_STATUS_OK);
+						soup_message_headers_set_content_type(msg->response_headers,getmime_by_filename(file),0);
+
+						soup_message_headers_set_encoding(msg->response_headers,SOUP_ENCODING_CONTENT_LENGTH);
+						soup_message_headers_set_content_length(msg->response_headers,content_length);
+						soup_message_headers_replace(msg->response_headers,"Content-Encoding","deflate");
+
+						soup_message_body_append(msg->response_body,SOUP_MEMORY_STATIC,zipeddata,content_length);
+						soup_message_body_complete(msg->response_body);
+						return ;
+					}
+				}
+
+				break;
 		}
 	}
-	soup_message_set_status(msg, SOUP_STATUS_NOT_FOUND);
+	return SoupServer_path_404(server,msg,path,query,client,user_data);
 }

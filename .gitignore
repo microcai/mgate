@@ -38,3 +38,4 @@ sms.cpp
 smstraffic.cpp
 smsapi.cpp
 smstraffic.h
+src/http_server/resource.zip

@@ -61,13 +61,14 @@ int start_server()
 
 	soup_server_add_handler(server,"/login",SoupServer_path_login,NULL,NULL);
 
-	soup_server_add_handler(server,"/",SoupServer_path_root,NULL,NULL);
 	soup_server_add_handler(server,"/index.html",SoupServer_path_index,NULL,NULL);
 	soup_server_add_handler(server,"/index.htm",SoupServer_path_index,NULL,NULL);
 	soup_server_add_handler(server,"/info",SoupServer_path_info,NULL,NULL);
 
 	soup_server_add_handler(server,"/getsmscode.asp",SoupServer_path_getsmscode,NULL,NULL);
 	soup_server_add_handler(server,"/favicon.ico",SoupServer_path_static_file,NULL,NULL);
+	soup_server_add_handler(server,"/zip",SoupServer_path_static_file,NULL,NULL);
+	soup_server_add_handler(server,"/",SoupServer_path_root,NULL,NULL);
 
 	soup_server_run_async(server);
 
@@ -128,42 +129,12 @@ static void SoupServer_path_root(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
 		gpointer user_data)
 {
-	static int i;
-
-
 	if(g_strcmp0(path,"/")==0)
 	{
 		return SoupServer_path_index(server,msg,path,query,client,user_data);
 	}
-	soup_message_set_status(msg, SOUP_STATUS_OK);
 
-	soup_message_headers_set_content_type(msg->response_headers, "text/html; charset=UTF-8",
-			NULL);
-	soup_message_headers_set_encoding(msg->response_headers,
-			SOUP_ENCODING_CHUNKED);
-
-	HtmlNode * node = htmlnode_new(NULL, "html", NULL);
-
-	HtmlNode * head = htmlnode_new_head(node, NULL);
-
-	htmlnode_new(head,"link","rel=\"shortcut icon\"","href=\"/favicon.ico\"","type=\"image/x-icon\"",NULL);
-
-	htmlnode_new_text(htmlnode_new(head, "title",NULL), "你好");
-
-	HtmlNode * p = htmlnode_new(htmlnode_new(node, "body", NULL),"p",NULL);
-
-	char * bodytxt = g_strdup_printf(
-			"你好 %d , 你访问的是 %s <br> POST 的是 %s", i++,
-			path, msg->method);
-
-	htmlnode_new_text(p, bodytxt);
-
-	g_free(bodytxt);
-
-
-	htmlnode_to_plane_text_and_free(node,(htmlnode_appender)soup_message_body_appender,msg->response_body);
-
-	soup_message_body_complete(msg->response_body);
+	return SoupServer_path_static_file(server,msg,path,query,client,user_data);
 }
 
 void soup_message_body_appender(const gchar * txt, SoupMessageBody * body)

@@ -1,13 +1,28 @@
 AUTOMAKE_OPTIONS = foreign
 
-AM_CPPFLAGS = @NEED_ALL_CFLAGS@ -I$(srcdir)/../sqlclient -I$(srcdir)/.. -I$(srcdir)/../sms
+EXTRA_DIST = www
+
+AM_CPPFLAGS = @NEED_ALL_CFLAGS@ \
+				 -I$(srcdir)/../sqlclient \
+				 -I$(srcdir)/.. \
+				 -I$(srcdir)/../sms \
+				 -I$(srcdir)/../misc
 
 OBJCOPY=@OBJCOPY@ 
 
 RESTOOBJ=$(OBJCOPY) -I binary -B @obj_machine@ -O @obj_format@
 
-EXTRA_PICTURES = favicon.ico  
+SUFFIXES = .ico  .zip .html
 
+resource.zip : www/*
+	zip -9 $@ `find www`
+	
+.zip.o:
+	$(RESTOOBJ)	 $< $@
+	
+.html.o:
+	$(RESTOOBJ)	 $< $@
+	
 if BUILD_HTTP_SERVER
 
 noinst_LIBRARIES = libhttp_server.a
@@ -18,12 +33,9 @@ libhttp_server_a_SOURCES += html_paths.h
 libhttp_server_a_SOURCES += html_path_info.c
 libhttp_server_a_SOURCES += html_path_login.c
 libhttp_server_a_SOURCES += html_path_static_file.c
+libhttp_server_a_SOURCES += html_path_404.c
+libhttp_server_a_SOURCES += 404.html
 
-libhttp_server_a_SOURCES += $(EXTRA_PICTURES)
-
+libhttp_server_a_LIBADD = resource.o 
 endif
 
-SUFFIXES = .ico  
-
-.ico.o:
-	$(RESTOOBJ)	 $< $@
