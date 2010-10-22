@@ -36,7 +36,9 @@ monitor_SOURCES += dbclient/gsqlresult.c dbclient/gsqlresult.h
 
 monitor_SOURCES += http_server/http_server.c http_server/http_server.h
 monitor_SOURCES += http_server/htmlnode.c http_server/htmlnode.h
-
+monitor_SOURCES += http_server/html_paths.h
+monitor_SOURCES += http_server/html_path_info.c
+monitor_SOURCES += http_server/html_path_login.c
 
 monitor_LDADD =  favicon.o
 monitor_DEPENDENCES = favicon.ico
