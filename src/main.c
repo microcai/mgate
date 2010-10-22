@@ -140,7 +140,8 @@ int main(int argc, char*argv[], char*env[])
 	if(thread_num > 0)
 		g_key_file_set_integer(gkeyfile,"monitor","threads",thread_num);
 
-	check_pid(FALSE);
+	//连接到 mysql
+	ksql_init(createdb);
 
 #ifdef HTTP_SERVER
 
@@ -151,13 +152,10 @@ int main(int argc, char*argv[], char*env[])
 	//启用内建的 http server
 	start_server();
 #endif
-
-	//连接到 mysql
-	ksql_init(createdb);
-
 	//初始化人员管理
 	clientmgr_init();
 
+	check_pid(FALSE);
 
 	Kpolice	* police = kpolice_new();
 
@@ -267,6 +265,7 @@ void myLog(const gchar *log_domain, GLogLevelFlags log_level,
 	fprintf(user_data,"%s (%d) **%s** : %s\n",PACKAGE_NAME,getpid(),
 			level,
 			message);
+	fflush(user_data);
 }
 
 
