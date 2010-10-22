@@ -52,4 +52,5 @@ extern void (*g_sql_connect_thread_init)();
 extern void (*g_sql_connect_thread_end)();
 
 
+GType	sqlconnect_get_backend();
 #endif /* GSQLCONNECT_H_ */

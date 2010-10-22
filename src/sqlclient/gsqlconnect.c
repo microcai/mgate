@@ -210,3 +210,4 @@ void g_marshal_VOID__INT_STRING(GClosure *closure, GValue *return_value G_GNUC_U
 	callback(data1, g_value_get_int(param_values + 1),
 			g_value_get_string(param_values + 2), data2);
 }
+

@@ -12,7 +12,6 @@
 #include "gsqlresult.h"
 
 void	ksql_init(gboolean createdb) ;
-GType	ksql_get_backend();
 
 GSQLResult * ksql_query(const gchar * stm);
 GSQLResult * ksql_query_free_str(gchar * stm);

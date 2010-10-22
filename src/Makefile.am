@@ -1,8 +1,14 @@
 AUTOMAKE_OPTIONS = foreign
 
-AM_CPPFLAGS = @NEED_ALL_CFLAGS@ @MYSQL_CFLAGS@ -I$(srcdir)/dbclient -I$(srcdir)/http_server
+DIST_SUBDIRS = sqlclient http_server
 
-LIBS += @NEED_ALL_LIBS@ @MYSQL_LIBS@ @SQLITE3_LIBS@
+SUBDIRS = sqlclient @http_server@
+
+AM_CPPFLAGS = @GLIB2_CFLAGS@ -I$(srcdir)/sqlclient
+
+LIBS += @NEED_ALL_LIBS@ @MYSQL_LIBS@ @SQLITE3_LIBS@ \
+			$(builddir)/sqlclient/libsqlclient.a \
+			@http_server_lib@ 
 
 DISTCLEANFILES = monitord
 
@@ -31,16 +37,11 @@ monitor_SOURCES += g_socket_client_proxy.c g_socket_client_proxy.h
 monitor_SOURCES += ksql.h ksql.c
 monitor_SOURCES += traffic_status.c traffic_status.h
 
-monitor_SOURCES += dbclient/gsqlconnect.c  dbclient/gsqlconnect.h
-monitor_SOURCES += dbclient/gsqlresult.c dbclient/gsqlresult.h
+monitor_SOURCES += sqlclient/gsqlconnect.c  sqlclient/gsqlconnect.h
+monitor_SOURCES += sqlclient/gsqlresult.c sqlclient/gsqlresult.h
 
-monitor_SOURCES += http_server/http_server.c http_server/http_server.h
-monitor_SOURCES += http_server/htmlnode.c http_server/htmlnode.h
-monitor_SOURCES += http_server/html_paths.h
-monitor_SOURCES += http_server/html_path_info.c
-monitor_SOURCES += http_server/html_path_login.c
-
-monitor_LDADD =  favicon.o
+monitor_LDADD =  favicon.o 
+						
 monitor_DEPENDENCES = favicon.ico
 EXTRA_monitor_SOURCES = favicon.ico
 
@@ -54,16 +55,3 @@ monitor_SOURCES += sms/at_modem.h sms/at_modem.c
 monitor_SOURCES += sms/smsapi.c sms/smsapi.h
 monitor_SOURCES += sms/sms.c sms/sms.h
 monitor_SOURCES += sms/smsthread.c sms/smsthread.h
-
-		 
-if WITH_MYSQL
-  monitor_SOURCES += dbclient/gsqlconnect_mysql.c	 dbclient/gsqlconnect_mysql.h
-  monitor_SOURCES += dbclient/mysql_static_template.h
-  AM_CPPFLAGS += -D__HAVE_MYSQL
-endif
-
-if WITH_SQLITE3
-  monitor_SOURCES += dbclient/gsqlconnect_sqlite3.c	 dbclient/gsqlconnect_sqlite3.h
-  monitor_SOURCES += dbclient/sqlite_static_template.h
-  AM_CPPFLAGS += -DWITH_SQLITE3
-endif

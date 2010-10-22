@@ -19,6 +19,7 @@ AC_ARG_ENABLE(debug,
 AC_GNU_SOURCE
 AC_PROG_CC_C99
 AC_PROG_CXX
+AC_PROG_RANLIB
 AC_CANONICAL_TARGET
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall -Werror])
@@ -30,9 +31,6 @@ AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Define to the read-only 
 
 AM_GNU_GETTEXT([external])
 AM_GNU_GETTEXT_VERSION(0.16.1)
-
-GTK_DOC_CHECK([1.11],[--flavour no-tmpl])
-
 
 AC_ARG_WITH(mysql,[AC_HELP_STRING([--without-mysql],[disable support for mysql])],
 		[ with_mysql=$withval ],[with_mysql=check])
@@ -57,6 +55,8 @@ AC_ARG_WITH(kqq, [AC_HELP_STRING([--with-kqq], [enable kqq module (default)])],[
 AC_ARG_WITH(kurl,[AC_HELP_STRING([--with-kurl],[enable kkurl module (default)])],[with_kurl=$withval],[with_kurl="yes"])
 AC_ARG_WITH(kmsn,[AC_HELP_STRING([--with-kmsn],[enable kmsn module (default)])],[with_kmsn-$withval],[with_kmsn="yes"])
 
+AC_ARG_ENABLE(http-server,[AC_HELP_STRING([--disable-http-server],[disable the built-in http server[default is enable.Depends on libsoup-2.4]])],
+	[enable_http_server=$enableval],[enable_http_server=yes])
 
 AM_CONDITIONAL([WITH_KQQ],[test x$with_kqq=xyes])
 AM_CONDITIONAL([WITH_KURL],[test x$with_kurl=xyes])
@@ -72,14 +72,27 @@ AC_TYPE_UINT16_T
 AC_TYPE_UINT32_T
 
 # Checks for library functions.
-PKG_CHECK_MODULES(LIBSOUP, [libsoup-2.4 >= 2.26])
 PKG_CHECK_MODULES(GLIB2, [glib-2.0 >= 2.18 gthread-2.0 gobject-2.0 gmodule-2.0 gio-2.0 ])
-PKG_CHECK_MODULES(NEED_ALL, [libsoup-2.4 >= 2.26 glib-2.0 >= 2.18 gthread-2.0 gobject-2.0 gmodule-2.0 gio-2.0 ])
+
+AC_SUBST(http_server)
+AC_SUBST(http_server_lib)
+
+AS_IF([test x${enable_http_server} = xyes] ,[
+	libsoup="libsoup-2.4 >= 2.26"
+	http_server="http_server"
+	http_server_lib='$(builddir)/http_server/libhttp_server.a'
+	PKG_CHECK_MODULES(LIBSOUP, [${libsoup}])
+	AC_DEFINE_UNQUOTED(HTTP_SERVER,1,[defined if configured to with builtin http server])	
+	] ,[])
+
+
+AM_CONDITIONAL([BUILD_HTTP_SERVER],[test x${enable_http_server} = xyes])
+
+PKG_CHECK_MODULES(NEED_ALL, [ ${libsoup} glib-2.0 >= 2.18 gthread-2.0 gobject-2.0 gmodule-2.0 gio-2.0 ])
 
 AC_CHECK_LIB([pthread], [main])
 AC_CHECK_LIB([pcap], [main],[],[AC_MSG_ERROR(need libpcap)])
 AC_CHECK_LIB([pcap], [main],[AC_CHECK_HEADER(pcap.h)],[AC_MSG_ERROR(need libpcap)])
-
 
 AC_ARG_ENABLE(hotel,[AC_HELP_STRING([--enable-hotel],[enabel build of hotel specific feature, need libnet])],[enable_hotel=$withval],[enable_hotel=no])
 
@@ -157,11 +170,12 @@ AC_CHECK_DECL(_SC_NPROCESSORS_ONLN,[],[AC_MSG_FAILURE(_SC_NPROCESSORS_ONLN not f
 #AC_CONFIG_FILES([modules/Makefile])
 AC_CONFIG_FILES( [					
 					monitor.spec
+					src/sqlclient/Makefile
+					src/http_server/Makefile
 					src/Makefile
 					src/monitord
 					modules/Makefile
 					po/Makefile.in
-					docs/Makefile					
 					Makefile
 		])
 

@@ -41,7 +41,7 @@
 #include "module.h"
 #include "kpolice.h"
 #include "ksql.h"
-#include "http_server.h"
+#include "http_server/http_server.h"
 
 static void myLog(const gchar *log_domain, GLogLevelFlags log_level,
 		const gchar *message, gpointer user_data);
@@ -61,7 +61,12 @@ int main(int argc, char*argv[], char*env[])
 	gchar *  domain_dir = NULL;
 	gchar *	 device = NULL;
 	gchar *  pcapfile = NULL;
-	gint	httpport = 0 , thread_num = -1;
+
+#ifdef 	HTTP_SERVER
+	gint	httpport = 0 ;
+#endif
+
+	gint	thread_num = -1;
 
 	const gchar * module_dir = MODULES_PATH;
 
@@ -86,7 +91,9 @@ int main(int argc, char*argv[], char*env[])
 			{"config",'f',0,G_OPTION_ARG_STRING,&config_file_name,N_("set alternative config file"),N_("filename")},
 			{"module_dir",'f',0,G_OPTION_ARG_STRING,&module_dir,N_("set alternative module dir"),N_("dir")},
 			{"device",'d',0,G_OPTION_ARG_STRING,&device,N_("override config, make monitor capturing on that interface"),N_("nic")},
+#ifdef 	HTTP_SERVER
 			{"http-port",0,0,G_OPTION_ARG_INT,&httpport,N_("override config, make monitor listen on that port"),N_("port")},
+#endif
 			{"thread-num",0,0,G_OPTION_ARG_INT,&thread_num,N_("override config, make monitor run with num threads"),N_("num")},
 			//使用离线的抓包文件而不是在线抓包。调式的时候非常有用
 			{"pcapfile",0,0,G_OPTION_ARG_FILENAME,&pcapfile,N_("using dumped file other that live capture. - for stdin"),N_("pcapsavefile")},
@@ -130,18 +137,20 @@ int main(int argc, char*argv[], char*env[])
 		g_free(device);
 	}
 
-	if(httpport)
-	{
-		g_key_file_set_integer(gkeyfile,"http","port",httpport);
-	}
-
 	if(thread_num > 0)
 		g_key_file_set_integer(gkeyfile,"monitor","threads",thread_num);
 
 	check_pid(FALSE);
 
+#ifdef HTTP_SERVER
+
+	if(httpport)
+	{
+		g_key_file_set_integer(gkeyfile,"http","port",httpport);
+	}
 	//启用内建的 http server
 	start_server();
+#endif
 
 	//连接到 mysql
 	ksql_init(createdb);
