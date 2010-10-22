@@ -67,7 +67,6 @@ int start_server()
 
 	soup_server_add_handler(server,"/getsmscode.asp",SoupServer_path_getsmscode,NULL,NULL);
 	soup_server_add_handler(server,"/favicon.ico",SoupServer_path_static_file,NULL,NULL);
-	soup_server_add_handler(server,"/zip",SoupServer_path_static_file,NULL,NULL);
 	soup_server_add_handler(server,"/",SoupServer_path_root,NULL,NULL);
 
 	soup_server_run_async(server);
