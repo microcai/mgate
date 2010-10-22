@@ -174,6 +174,13 @@ HtmlNode * htmlnode_new_iframe(HtmlNode * parent, const char * src,const char * 
 	return node;
 }
 
+HtmlNode * htmlnode_new_js(HtmlNode * parent,const char * jsfunc)
+{
+	HtmlNode *js = htmlnode_new(parent,"script","language=\"javascript\"",0);
+	htmlnode_new_text_printf(js,"\n<!--\n\t%s\n//-->\n",jsfunc);
+	return js;
+}
+
 HtmlNode * htmlnode_append_child(HtmlNode * node,HtmlNode * child)
 {
 	node->children = g_list_append(node->children,child);

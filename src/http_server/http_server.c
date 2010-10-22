@@ -100,16 +100,20 @@ static void SoupServer_path_index(SoupServer *server, SoupMessage *msg,
 
 	htmlnode_new_text(htmlnode_new(head,"title",NULL),"登录以使用网络");
 
+	htmlnode_new_js(head,"function btClick(){"
+			"window.open('/login.monitor','loginwin','toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no,width=500,height=300');"
+			"loginform.action=\"/login.monitor\";loginform.submit();}");
+
 	HtmlNode * body = htmlnode_new_body(html,NULL);
 
-	HtmlNode * tr = htmlnode_new(htmlnode_new_table(htmlnode_new_form(body,"POST","/login.monitor",NULL),"border=\"0\"","align=\"center\"",NULL),"tr",NULL);
+	HtmlNode * tr = htmlnode_new(htmlnode_new_table(htmlnode_new_form(body,"POST","/login.monitor","name=\"loginform\"","target=\"loginwin\"",NULL),"border=\"0\"","align=\"center\"",NULL),"tr",NULL);
 
 	htmlnode_new_text(htmlnode_new(htmlnode_new(tr,"td",NULL),"p",NULL),"输入验证码:");
 
 	htmlnode_new(htmlnode_new(tr,"td",NULL),"input","type=\"text\"","name=\"id\"",NULL);
 
 
-	htmlnode_new(htmlnode_new(tr,"td",NULL),"input","type=\"submit\"","value=\"验证\"","name=\"Submit\"",NULL);
+	htmlnode_new(htmlnode_new(tr,"td",NULL),"input","type=\"submit\"","value=\"验证\"","name=\"Submit\"","onclick=\"btClick()\"",NULL);
 
 
 	gchar * smsurl = g_key_file_get_string(gkeyfile, "http", "sms_url", NULL);

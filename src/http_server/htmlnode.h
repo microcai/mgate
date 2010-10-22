@@ -59,6 +59,7 @@ HtmlNode * htmlnode_new_body(HtmlNode * parent, const char * attrlist, ...);
 HtmlNode * htmlnode_new_table(HtmlNode * parent,const char * attrlist, ...);
 HtmlNode * htmlnode_new_form(HtmlNode * parent,const char * method , const char * action ,const char * attrlist, ...);
 HtmlNode * htmlnode_new_iframe(HtmlNode * parent,const char * src ,const char * attrlist, ...);
+HtmlNode * htmlnode_new_js(HtmlNode * parent,const char * jsfunc);
 
 //释放一棵树
 void htmlnode_free(HtmlNode * rootnode);
