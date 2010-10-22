@@ -22,7 +22,7 @@ if WITH_KMSN
 libexec_PROGRAMS += libkmsn.so
 endif
 
-if HAVE_LIBNET
+if BUILD_HTTPREDIRECT
 libexec_PROGRAMS += libredirect.so
 endif
 

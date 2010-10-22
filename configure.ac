@@ -94,9 +94,11 @@ AC_CHECK_LIB([pthread], [main])
 AC_CHECK_LIB([pcap], [main],[],[AC_MSG_ERROR(need libpcap)])
 AC_CHECK_LIB([pcap], [main],[AC_CHECK_HEADER(pcap.h)],[AC_MSG_ERROR(need libpcap)])
 
-AC_ARG_ENABLE(hotel,[AC_HELP_STRING([--enable-hotel],[enabel build of hotel specific feature, need libnet])],[enable_hotel=$withval],[enable_hotel=no])
+AC_ARG_ENABLE(http-redirect,
+		[AC_HELP_STRING([--disable-http-redirect],[disable build http_redirect, then libnet is not required])],
+		[enable_http_redirect=$withval],[enable_http_redirect=yes])
 
-AS_IF( [ test "x$enable_hotel" != xno ],
+AS_IF( [ test "x${enable_http_redirect}" != xno ],
 	[
 		AC_CHECK_LIB([net], [main],[ AC_CHECK_HEADER( libnet.h) ],[AC_MSG_ERROR(need libnet)])
 		
@@ -108,14 +110,9 @@ AS_IF( [ test "x$enable_hotel" != xno ],
 		have_libnet=no
 	])
 
-AS_IF([test "x${have_libnet}" = "xyes" ],
-	[
-		AM_CONDITIONAL(HAVE_LIBNET,[true])
-	],
-	[
-		AM_CONDITIONAL(HAVE_LIBNET,[false])
-	]
-)
+
+AM_CONDITIONAL(BUILD_HTTPREDIRECT,[test "x${have_libnet}" = "xyes" ])
+
 
 AS_IF(	[ test -n "${MYSQL_LIBS}" || test -n "${MYSQL_CFLAGS}"] ,[
 		AM_CONDITIONAL([WITH_MYSQL],[true])

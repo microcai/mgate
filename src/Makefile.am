@@ -19,7 +19,7 @@ sbin_SCRIPTS = monitord
 
 EXTRA_DIST =  monitord.in
 
-md5_SOURCE = md5.c md5.h
+md5_SOURCE = misc/md5.c misc/md5.h
 
 monitor_SOURCES =main.c global.h i18n.h
 
@@ -35,8 +35,6 @@ monitor_SOURCES += g_socket_client_proxy.c g_socket_client_proxy.h
 monitor_SOURCES += ksql.h ksql.c
 monitor_SOURCES += traffic_status.c traffic_status.h
 
-monitor_SOURCES += sqlclient/gsqlconnect.c  sqlclient/gsqlconnect.h
-monitor_SOURCES += sqlclient/gsqlresult.c sqlclient/gsqlresult.h
 
 monitor_DEPENDENCIES = @http_server_lib@  $(builddir)/sqlclient/libsqlclient.a
 

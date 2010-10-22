@@ -19,4 +19,3 @@ if WITH_SQLITE3
   libsqlclient_a_SOURCES += sqlite_static_template.h
   AM_CPPFLAGS += -DWITH_SQLITE3
 endif
-
