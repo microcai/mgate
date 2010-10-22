@@ -17,13 +17,9 @@ libhttp_server_a_SOURCES += htmlnode.c htmlnode.h
 libhttp_server_a_SOURCES += html_paths.h
 libhttp_server_a_SOURCES += html_path_info.c
 libhttp_server_a_SOURCES += html_path_login.c
-libhttp_server_a_SOURCES += html_path_favicon.c
+libhttp_server_a_SOURCES += html_path_static_file.c
 
 libhttp_server_a_SOURCES += $(EXTRA_PICTURES)
-
-#libhttp_server_a_LIBADD =  favicon.o
-
-
 
 endif
 

@@ -34,4 +34,8 @@ void SoupServer_path_root_icon(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
 		gpointer user_data) G_GNUC_INTERNAL;
 
+void SoupServer_path_static_file(SoupServer *server, SoupMessage *msg,
+		const char *path, GHashTable *query, SoupClientContext *client,
+		gpointer user_data) G_GNUC_INTERNAL;
+
 #endif /* HTML_PATHS_H_ */
