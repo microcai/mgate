@@ -40,15 +40,8 @@ monitor_SOURCES += traffic_status.c traffic_status.h
 monitor_SOURCES += sqlclient/gsqlconnect.c  sqlclient/gsqlconnect.h
 monitor_SOURCES += sqlclient/gsqlresult.c sqlclient/gsqlresult.h
 
-monitor_LDADD =  favicon.o 
+monitor_DEPENDENCIES = @http_server_lib@  $(builddir)/sqlclient/libsqlclient.a
 
-EXTRA_monitor_SOURCES = favicon.ico
-
-monitor_DEPENDENCIES = favicon.o @http_server_lib@  $(builddir)/sqlclient/libsqlclient.a
-
-favicon.o: favicon.ico
-	$(OBJCOPY)	-I binary -B @obj_machine@ -O @obj_format@ $< $@
-	
 ## SMS
 monitor_CFLAGS = -I$(srcdir)/sms
 

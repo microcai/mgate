@@ -22,14 +22,9 @@
 #include "http_server.h"
 #include "i18n.h"
 #include "global.h"
-#include "monitor_icon.h"
 #include "htmlnode.h"
 #include "smsapi.h"
 #include "html_paths.h"
-
-static void SoupServer_path_root_icon(SoupServer *server, SoupMessage *msg,
-		const char *path, GHashTable *query, SoupClientContext *client,
-		gpointer user_data);
 
 static void SoupServer_path_index(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
@@ -83,15 +78,6 @@ int start_server()
 	g_timeout_add_seconds(1,remove_outdated_phone_code_map,GINT_TO_POINTER(g_key_file_get_integer(gkeyfile,"sms","validtime",0)));
 
 	return soup_server_get_port(server);
-}
-
-void SoupServer_path_root_icon(SoupServer *server, SoupMessage *msg,
-		const char *path, GHashTable *query, SoupClientContext *client,
-		gpointer user_data)
-{
-	soup_message_set_status(msg, SOUP_STATUS_OK);
-	soup_message_set_response(msg, "image/x-icon", SOUP_MEMORY_STATIC,
-			(gpointer) _binary_favicon_ico_start, (long)_binary_favicon_ico_size);
 }
 
 

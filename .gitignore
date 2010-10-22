@@ -34,3 +34,7 @@ docs/*/
 po/*
 readme.*
 /static-lib32
+sms.cpp
+smstraffic.cpp
+smsapi.cpp
+smstraffic.h

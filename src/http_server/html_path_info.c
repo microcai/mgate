@@ -21,7 +21,6 @@
 #include "http_server.h"
 #include "i18n.h"
 #include "global.h"
-#include "monitor_icon.h"
 #include "htmlnode.h"
 #include "traffic_status.h"
 #include "html_paths.h"
