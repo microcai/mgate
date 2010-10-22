@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
-"POT-Creation-Date: 2010-10-17 22:09+0800\n"
+"POT-Creation-Date: 2010-10-22 13:53+0800\n"
 "PO-Revision-Date: 2010-10-14 12:05+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
@@ -15,6 +15,48 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: UTF-8\n"
+
+#: src/pcap_thread.c:131
+#, c-format
+msgid "using %s as capturing interface"
+msgstr "使用网卡 %s 抓包"
+
+#: src/pcap_thread.c:141
+#, c-format
+msgid "ERROR:can not open %s for capturing!\n"
+msgstr "错误：无法打开 %s 进行抓包\n"
+
+#: src/pcap_thread.c:148
+#, c-format
+msgid "ERROR:%s is not an ethernet adapter\n"
+msgstr "错误：%s不是一个有效的网卡\n"
+
+#: src/pcap_thread.c:208
+#, c-format
+msgid "[monitor]:[threads] not set, using 2x cpu (%d) threads"
+msgstr "[monitor]:[threads] 未设置，默认使用2倍 CPU 个数 (%d) "
+
+#: src/pcap_thread.c:218
+#, c-format
+msgid "Too many thread will exclude the resource limite, reduce to %d"
+msgstr "设置的线程数目太多，超过系统限制，减少到 %d"
+
+#: src/ksql.c:57 src/ksql.c:175
+#, c-format
+msgid "unable to connect to database server (%d): %s"
+msgstr "无法连接到数据库 (%d) : %s"
+
+#: src/ksql.c:60
+msgid "sqlite backend not implemented, exiting!"
+msgstr "SQLite 数据库后端没有实现，退出!"
+
+#: src/ksql.c:147
+msgid "[database]:[backend] not set or invalid, default to mysql"
+msgstr "[database]:[backend]未设置，将使用 mysql"
+
+#: src/ksql.c:151
+msgid "[database]:[backend] not set or invalid, default to sqlite"
+msgstr "[database]:[backend]未设置，将使用 sqlite"
 
 #: src/main.c:78
 msgid "monitor - A monitor tool"
@@ -98,6 +140,25 @@ msgstr "无法创建 pid 文件 %s : %s"
 msgid "pidfile exist, another one is running? pid(%d)"
 msgstr "pid文件存在，是否已经运行了一个？ pid(%d)"
 
+#: src/http_server/http_server.c:108
+#, c-format
+msgid "using port %d as default duto the missing [http]:[port] settings"
+msgstr "使用端口 %d 作为默认端口，因为没有设置 [http]:[port]"
+
+#: src/http_server/http_server.c:115
+#, c-format
+msgid "server failt to start at port %d, will use random port!"
+msgstr "从端口%d 启动失败，将使用随机端口！"
+
+#: src/http_server/http_server.c:119
+#, c-format
+msgid "server started at port %u"
+msgstr "服务器在端口%u启动"
+
+#: src/http_server/http_server.c:368
+msgid "System busy, try later!"
+msgstr "系统忙，稍候再试"
+
 #: src/kpolice.c:94
 msgid "connection to police center lost, reconnect!"
 msgstr "连接丢失, 重试！"
@@ -144,64 +205,3 @@ msgstr "使用 socks5 代理 %s"
 #, c-format
 msgid "Got message, %s"
 msgstr "获得消息 , %s"
-
-#: src/pcap_thread.c:131
-#, c-format
-msgid "using %s as capturing interface"
-msgstr "使用网卡 %s 抓包"
-
-#: src/pcap_thread.c:141
-#, c-format
-msgid "ERROR:can not open %s for capturing!\n"
-msgstr "错误：无法打开 %s 进行抓包\n"
-
-#: src/pcap_thread.c:148
-#, c-format
-msgid "ERROR:%s is not an ethernet adapter\n"
-msgstr "错误：%s不是一个有效的网卡\n"
-
-#: src/pcap_thread.c:208
-#, c-format
-msgid "[monitor]:[threads] not set, using 2x cpu (%d) threads"
-msgstr "[monitor]:[threads] 未设置，默认使用2倍 CPU 个数 (%d) "
-
-#: src/pcap_thread.c:218
-#, c-format
-msgid "Too many thread will exclude the resource limite, reduce to %d"
-msgstr "设置的线程数目太多，超过系统限制，减少到 %d"
-
-#: src/http_server.c:108
-#, c-format
-msgid "using port %d as default duto the missing [http]:[port] settings"
-msgstr "使用端口 %d 作为默认端口，因为没有设置 [http]:[port]"
-
-#: src/http_server.c:115
-#, c-format
-msgid "server failt to start at port %d, will use random port!"
-msgstr "从端口%d 启动失败，将使用随机端口！"
-
-#: src/http_server.c:119
-#, c-format
-msgid "server started at port %u"
-msgstr "服务器在端口%u启动"
-
-#: src/http_server.c:368
-msgid "System busy, try later!"
-msgstr "系统忙，稍候再试"
-
-#: src/ksql.c:56 src/ksql.c:172
-#, c-format
-msgid "unable to connect to database server (%d): %s"
-msgstr "无法连接到数据库 (%d) : %s"
-
-#: src/ksql.c:59
-msgid "sqlite backend not implemented, exiting!"
-msgstr "SQLite 数据库后端没有实现，退出!"
-
-#: src/ksql.c:143
-msgid "[database]:[backend] not set or invalid, default to mysql"
-msgstr "[database]:[backend]未设置，将使用 mysql"
-
-#: src/ksql.c:146
-msgid "[database]:[backend] not set or invalid, default to sqlite"
-msgstr "[database]:[backend]未设置，将使用 sqlite"
