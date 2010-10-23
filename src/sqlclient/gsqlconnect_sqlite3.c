@@ -126,6 +126,9 @@ gboolean	g_sql_connect_sqlite3_real_query(GSQLConnect*obj,const char * sql_stmt,
 	{
 		obj->lastresult = NULL;
 		g_signal_emit_by_name(obj, "query-err",sqlite3_errcode(mobj->sqlite), sqlite3_errmsg(mobj->sqlite));
+#ifdef DEBUG
+		g_debug("sql err :%s",sqlite3_errmsg(mobj->sqlite));
+#endif
 		return FALSE;
 	}
 

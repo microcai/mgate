@@ -66,8 +66,7 @@ static gpointer ksql_thread(gpointer user_data)
 		sleep(2);
 	}
 
-	//load white list
-	//TODO : 然后是 mysql 数据库内的白名单
+	//load white list sqlite 数据库没有白名单制度，(*^__^*) 嘻嘻……
 	res = ksql_query("select MAC_ADDR from whitelist LIMIT 0,1000");
 	while(g_sql_result_fetch_row(res))
 	{
@@ -85,7 +84,8 @@ static gpointer ksql_thread(gpointer user_data)
 
 		clientmgr_insert_client_by_mac(mac_addr,dummyclient);
 	}
-	g_object_unref(res);
+	if(res)
+		g_object_unref(res);
 	//还有呢！预先加载一些,目前是不需要了 :D
 	//预加载已经存在的客户端
 

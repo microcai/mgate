@@ -45,7 +45,6 @@ struct inode{
 	gconstpointer	data;
 	gconstpointer	data_end;
 }inodes[]={
-//		{ inode_file , "/favicon.ico" , "image/x-icon",_binary_favicon_ico_start,_binary_favicon_ico_end},
 		{ inode_dirarchive , "/" , "stream/unkown",_binary_resource_zip_start,_binary_resource_zip_end},
 };
 

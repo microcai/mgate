@@ -64,6 +64,8 @@ int start_server()
 	soup_server_add_handler(server,"/favicon.ico",SoupServer_path_static_file,NULL,NULL);
 	soup_server_add_handler(server,"/",SoupServer_path_root,NULL,NULL);
 
+	soup_server_add_handler(server,"/keep_alive",SoupServer_path_keep_alive,NULL,NULL);
+
 	soup_server_run_async(server);
 
 	sms_init();

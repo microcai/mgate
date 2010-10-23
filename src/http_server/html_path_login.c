@@ -27,6 +27,12 @@
 
 static GList * phomecodemap;
 
+static const char * jstemplate = "$(document).ready(function()"
+"{$.jheartbeat.set({url: \"/keep_alive?phone=13429664974\", // The URL that jHeartbeat will retrieve\n"
+"delay: 5, // How often jHeartbeat should retrieve the URL\n"
+"div_id: “test_div” // Where the data will be appended.\n"
+", function (){// Callback Function\n"
+"});});});";
 
 void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path,
 		GHashTable *query, SoupClientContext *client,gpointer user_data)
@@ -52,6 +58,11 @@ void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path
 
 		sscanf(msg->request_body->data, "id=%31[0123456789]", id);
 
+		HtmlNode *head =  htmlnode_new_head(html,NULL);
+
+		htmlnode_new_jssrc(head,"jquery-1.4.3.js");
+		htmlnode_new_jssrc(head,"jheartbeat.js");
+
 		HtmlNode * body = htmlnode_new_body(html,NULL);
 
 		HtmlNode * p = htmlnode_new(body,"p",NULL);
@@ -68,24 +79,30 @@ void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path
 			Client * client = client_new(((phonetocode*)founded->data)->phone,((phonetocode*)founded->data)->phone,"990",mac);
 			g_object_set(client,"ipstr", ip, "enable",TRUE,NULL);
 			clientmgr_insert_client_by_mac(mac,client);
+/*
+			htmlnode_new(head,"meta","http-equiv=\"Refresh\"",
+					"content=\"5\"", 0,"url=/keep_alive?phone=13429664974\"",0);
+*/
+			htmlnode_new_js(head,jstemplate);
+
+			HtmlNode * div = htmlnode_new(body,"div","id=\"test_div\"",0);
+
+			p = htmlnode_new(div,"p",NULL);
 
 			htmlnode_new_text(p,"手机号:");
 			htmlnode_new_text(p,((phonetocode*)founded->data)->phone);
 			htmlnode_new_text(p,"登录成功，你现在起可以自由访问网络了:)");
-			htmlnode_new_text(htmlnode_new(body,"p",NULL),"如果您长时间没有网络连接，只需要重新认证就可以了，就这么简单:)");
+			htmlnode_new_text(htmlnode_new(div,"p",NULL),"如果您长时间没有网络连接，只需要重新认证就可以了，就这么简单:)");
 			htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录成功!");
+
+			htmlnode_new_iframe(body,"/keep_alive?phone=13429664974","height=\"-1\"","width=\"-1\"",0);
+
 		}else
 		{
 			htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录失败!");
 			htmlnode_new_text(p,"登录失败，失败啊!你的 ID 是 ");
 			htmlnode_new_text(p,id);
 		}
-		/*
-		gchar macstr[55];
-		formatMAC(mac,macstr);
-		g_debug("ip is %s, mac is %6s\n",ip,macstr);
-		*/
-
 		htmlnode_to_plane_text_and_free(html,(htmlnode_appender)soup_message_body_appender,msg->response_body);
 		soup_message_body_complete(msg->response_body);
 	}
@@ -216,3 +233,24 @@ void SoupServer_path_getsmscode(SoupServer *_server, SoupMessage *msg,
 }
 
 
+static char keep[]=""
+		"<html>\n\t<head>\n\t\t<meta http-equiv=\"Refresh\"content=\"5\">\n"
+		"\t</head>\n</html>\n";
+
+void func(const char *name, const char *value, gpointer user_data)
+{
+	g_debug("name=%s, value=%s",name,value);
+}
+//登录完成后的页面将不停的刷新本页面(每15s)，如果他在一分钟内没有刷新，那么就判断为下线。
+void SoupServer_path_keep_alive(SoupServer *server, SoupMessage *msg,const char *path,
+		GHashTable *query, SoupClientContext *client,gpointer user_data)
+{
+	//使用 GET 的方法啦。
+	// GET /keep_alive?phone=xxxxxxx
+//	const char * phone = g_hash_table_lookup(query,"phone");
+
+	//
+
+	soup_message_set_status(msg,SOUP_STATUS_OK);
+	soup_message_set_response(msg,"text/html",SOUP_MEMORY_STATIC,keep,sizeof(keep));
+}

@@ -356,6 +356,12 @@ gboolean verify_id(char * idnum)
 
 gboolean arp_ip2mac(in_addr_t ip,guchar mac[6],int sock)
 {
+
+#ifdef DEBUG
+	memset(mac,0xe2,6);
+	return TRUE;
+#endif
+
 	//向内核发送发起ARP查询
 	struct arpreq arpr ;
 	int ret;

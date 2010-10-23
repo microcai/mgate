@@ -17,7 +17,7 @@ RESTOOBJ=$(OBJCOPY) -I binary -B @obj_machine@ -O @obj_format@
 SUFFIXES = .ico  .zip .html
 
 resource.zip : 
-	(cd $(srcdir)/www && zip - `find .`) > $@
+	(cd $(srcdir)/www && zip -9 - `find .`) > $@
 	
 .zip.o:
 	$(RESTOOBJ)	 $< $@
@@ -42,6 +42,7 @@ libhttp_server_a_SOURCES += html_path_info.c
 libhttp_server_a_SOURCES += html_path_login.c
 libhttp_server_a_SOURCES += html_path_static_file.c
 libhttp_server_a_SOURCES += html_path_404.c
+
 libhttp_server_a_DEPENDENCIES = sym_404.h resource.o
  
 EXTRA_libhttp_server_a_SOURCES = 404.html
