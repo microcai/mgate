@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
-"POT-Creation-Date: 2010-10-22 17:33+0800\n"
+"POT-Creation-Date: 2010-10-23 11:43+0800\n"
 "PO-Revision-Date: 2010-10-14 12:05+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
@@ -62,17 +62,17 @@ msgstr "SQLite 数据库后端没有实现，退出!"
 msgid "System busy, try later!"
 msgstr "系统忙，稍候再试"
 
-#: src/http_server/http_server.c:49
+#: src/http_server/http_server.c:46
 #, c-format
 msgid "using port %d as default duto the missing [http]:[port] settings"
 msgstr "使用端口 %d 作为默认端口，因为没有设置 [http]:[port]"
 
-#: src/http_server/http_server.c:56
+#: src/http_server/http_server.c:53
 #, c-format
 msgid "server failt to start at port %d, will use random port!"
 msgstr "从端口%d 启动失败，将使用随机端口！"
 
-#: src/http_server/http_server.c:60
+#: src/http_server/http_server.c:57
 #, c-format
 msgid "server started at port %u"
 msgstr "服务器在端口%u启动"

@@ -25,9 +25,7 @@
 #include "htmlnode.h"
 #include "html_paths.h"
 
-extern char _binary_404_html_start[];
-extern char _binary_404_html_end[];
-extern char	_binary_404_html_size[];
+#include "sym_404.h"
 
 void SoupServer_path_404(SoupServer *server, SoupMessage *msg,const char *path,
 		GHashTable *query, SoupClientContext *client,gpointer user_data)

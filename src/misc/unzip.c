@@ -26,7 +26,7 @@ const zipRecord* zipbuffer_search(gconstpointer data, gconstpointer data_end, co
 	while (ziprec->magic == ztohl(0x04034b50) &&
 			(((gsize)ziprec) < ((gsize)data_end)))
 	{
-		if(strncasecmp(ziprec->filename,file,filename_len)==0)
+		if(filename_len == ziprec->filename_len && strncasecmp(ziprec->filename,file,filename_len)==0)
 			return ziprec;
 
 		ptr += sizeof(zipRecord) + ziprec->filename_len + ziprec->extra_len + ziprec->size_ziped;

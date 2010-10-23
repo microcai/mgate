@@ -2,6 +2,8 @@ AUTOMAKE_OPTIONS = foreign
 
 EXTRA_DIST = www
 
+BUILT_SOURCES = sym_404.h
+
 AM_CPPFLAGS = @NEED_ALL_CFLAGS@ \
 				 -I$(srcdir)/../sqlclient \
 				 -I$(srcdir)/.. \
@@ -14,8 +16,8 @@ RESTOOBJ=$(OBJCOPY) -I binary -B @obj_machine@ -O @obj_format@
 
 SUFFIXES = .ico  .zip .html
 
-resource.zip : www/*
-	cd www && zip ../resource.zip `find .`
+resource.zip : 
+	(cd $(srcdir)/www && zip - `find .`) > $@
 	
 .zip.o:
 	$(RESTOOBJ)	 $< $@
@@ -23,6 +25,12 @@ resource.zip : www/*
 .html.o:
 	$(RESTOOBJ)	 $< $@
 	
+sym_404.h:404.o
+	( objdump  -t  $< | grep _start |(read a b c d e ; echo "extern char $$e[];" ; echo "#define _binary_404_html_start $$e") \
+	 && objdump  -t  $< | grep _end |(read a b c d e ; echo "extern char $$e[];" ; echo "#define _binary_404_html_end $$e") \
+	 && objdump  -t  $< | grep _size |(read a b c d e ; echo "extern char $$e[];" ;echo "#define _binary_404_html_size $$e" ) \
+	 ) > $@
+		
 if BUILD_HTTP_SERVER
 
 noinst_LIBRARIES = libhttp_server.a
@@ -34,8 +42,10 @@ libhttp_server_a_SOURCES += html_path_info.c
 libhttp_server_a_SOURCES += html_path_login.c
 libhttp_server_a_SOURCES += html_path_static_file.c
 libhttp_server_a_SOURCES += html_path_404.c
-libhttp_server_a_SOURCES += 404.html
+libhttp_server_a_DEPENDENCIES = sym_404.h resource.o
+ 
+EXTRA_libhttp_server_a_SOURCES = 404.html
 
-libhttp_server_a_LIBADD = resource.o 
+libhttp_server_a_LIBADD = resource.o 404.o 
 endif
 

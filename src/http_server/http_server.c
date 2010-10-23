@@ -58,8 +58,6 @@ int start_server()
 
 	soup_server_add_handler(server,"/login",SoupServer_path_login,NULL,NULL);
 
-//	soup_server_add_handler(server,"/index.html",SoupServer_path_index,NULL,NULL);
-//	soup_server_add_handler(server,"/index.htm",SoupServer_path_index,NULL,NULL);
 	soup_server_add_handler(server,"/info",SoupServer_path_info,NULL,NULL);
 
 	soup_server_add_handler(server,"/getsmscode.asp",SoupServer_path_getsmscode,NULL,NULL);

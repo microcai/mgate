@@ -39,3 +39,4 @@ smstraffic.cpp
 smsapi.cpp
 smstraffic.h
 src/http_server/resource.zip
+src/http_server/sym_404.h
