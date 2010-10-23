@@ -1,0 +1,29 @@
+<html>
+ <head>
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon"></link>
+  <title>登录以使用网络</title>
+  <script language="javascript">
+<!--
+	function btClick(){window.open('/login.monitor','loginwin','toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no,width=500,height=300');loginform.action="/login.monitor";loginform.submit();}
+//-->
+</script>
+ </head>
+ <body>
+  <form method="POST" action="/login.monitor" name="loginform" target="loginwin">
+   <table border="0" align="center">
+    <tr>
+     <td>
+      <p>输入验证码:</p>
+     </td>
+     <td>
+      <input type="text" name="id"></input>
+     </td>
+     <td>
+      <input type="submit" value="验证" name="Submit" onclick="btClick()"></input>
+     </td>
+    </tr>
+   </table>
+  </form>
+  <iframe src="/getsmscode.asp" height="80%" width="100%" name="smsframe"></iframe>
+ </body>
+</html>
