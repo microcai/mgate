@@ -27,19 +27,6 @@
 
 static GList * phomecodemap;
 
-static const char * jstemplate = "$(document).ready(function()"
-"{$.jheartbeat.set({url: \"/keep_alive?phone=13429664974\", // The URL that jHeartbeat will retrieve\n"
-"delay: 5, // How often jHeartbeat should retrieve the URL\n"
-"div_id: “test_div” // Where the data will be appended.\n"
-", function (){// Callback Function\n"
-"});});});";
-
-
-static char keep[]=""
-		"<html>\n\t<head>\n\t\t<meta http-equiv=\"Refresh\"content=\"5\">\n"
-		"\t</head>\n</html>\n";
-
-
 gboolean remove_outdated_inactive_client(gpointer data)
 {
 	clientmgr_reomve_outdate_client(GPOINTER_TO_SIZE(data));//只有60秒允许啊
@@ -50,6 +37,10 @@ gboolean remove_outdated_inactive_client(gpointer data)
 void SoupServer_path_keep_alive(SoupServer *server, SoupMessage *msg,const char *path,
 		GHashTable *query, SoupClientContext *soupclient,gpointer user_data)
 {
+	static char keep[]=""
+			"<html>\n\t<head>\n\t\t<meta http-equiv=\"Refresh\"content=\"5\">\n"
+			"\t</head>\n</html>\n";
+
 	//使用 GET 的方法啦。
 	// GET /keep_alive?phone=xxxxxxx
 	const char * phone = g_hash_table_lookup(query,"phone");
@@ -115,11 +106,6 @@ void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path
 			client->remove_outdate = TRUE;
 
 			clientmgr_insert_client_by_mac(mac,client);
-/*
-			htmlnode_new(head,"meta","http-equiv=\"Refresh\"",
-					"content=\"5\"", 0,"url=/keep_alive?phone=13429664974\"",0);
-*/
-			htmlnode_new_js(head,jstemplate);
 
 			HtmlNode * div = htmlnode_new(body,"div","id=\"test_div\"",0);
 
@@ -131,7 +117,11 @@ void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path
 			htmlnode_new_text(htmlnode_new(div,"p",NULL),"如果您长时间没有网络连接，只需要重新认证就可以了，就这么简单:)");
 			htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录成功!");
 
-			htmlnode_new_iframe(body,"/keep_alive?phone=13429664974","height=\"-1\"","width=\"-1\"",0);
+			gchar * keep_aliveurl = g_strdup_printf("/keep_alive?phone=%s",((phonetocode*)founded->data)->phone);
+
+			htmlnode_new_iframe(body,keep_aliveurl,"height=\"-1\"","width=\"-1\"",0);
+
+			g_free(keep_aliveurl);
 
 		}else
 		{
