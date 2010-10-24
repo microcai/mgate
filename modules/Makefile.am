@@ -4,7 +4,7 @@ libexecdir=${libdir}/@PACKAGE_NAME@/modules
 
 AM_CPPFLAGS = @GLIB2_CFLAGS@ -I$(top_srcdir)/src -fpic
 
-LIBS = @GLIB2_LIBS@ -shared
+LIBS = @GLIB2_LIBS@ -shared -Wl,--as-needed
 
 EXTRA_PROGRAMS= libkqq.so libkurl.so libkmsn.so libredirect.so klz.so kjincheng.so 
 

@@ -4,10 +4,14 @@
 
 安装分成 3 个部分
 
-1 编译安装
+1 - a 安装预编译二进制包
+小蔡为 monitor 预编译32位和64位的二进制包。对于 libsoup和 libnet 以及 libpcap 这种系统并不预装的库，实行静态链接。对于系统
+已经安装的 glibc , glib 和 sqlite 这些常用库就动态连接，在绝大多数系统上应该可以做到解压即可使用
+
+1 -b 编译安装
 
 编译需求
-需要  glib2-devel libsoup-2.4-devel mysql-devel libpcap-devel libnet-devel(开启酒店支持需要) sqlite-deve(开启sqlite支持的话也要安装 )
+需要  glib2-devel libsoup-2.4-devel mysql-devel(关闭 mysql支持就不需要了) libpcap-devel libnet-devel(开启断网支持需要) sqlite-deve(开启sqlite支持的话也要安装 )
 
 解压后进入解压后的目录
 
@@ -16,8 +20,8 @@
 如果需要的软件包都有的话，这一步应该很快就会通过。
 
 查看配置选项可以用 ./configure --help
-具体的，编译进酒店支持系统需要加 --enable-hotel，编译进sqlite 支持需要加 --with-sqlite3
-
+具体的，如果不需要限制网络访问，就需要 --disable--http-redirect , 这样就不需要 libnet 开发库了
+编译进sqlite 支持需要加 --with-sqlite3。这在没有 mysql 的时候使用。
 
 然后执行 make
 
@@ -26,11 +30,6 @@
 如果成功的还请执行 make install
 注意，这一步需要 root 权限
 
-2 导入数据库
-
-执行 monitor
-会自动导入数据库后退出
-
 ==============================================
 
 配置指导
@@ -38,21 +37,6 @@
 需要配置的文件在 /etc/monitor.cfg
 请详细阅读注释，相信可以很快完成配置
 
-配置好后运行 mysql 和 monitor
-/etc/init.d/mysqld start
+配置好后运行 mysql 和 monitor (用 root 执行)
+/etc/init.d/mysqld start (如果编译进了mysql支持的话)
 /etc/init.d/monitord start
-
-然后在浏览器输入 http://localhost/index
-
-点击 “系统初始化”
-
-输入好正确的 公安端地址和酒店编号和酒店名称
-探测网卡一般选1， Web服务器ip填入本机的内网ip
-
-===================================================
-
-执行 monitor
-
-====================================================
-
-

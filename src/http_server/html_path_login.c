@@ -114,7 +114,7 @@ void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path
 			htmlnode_new_text(p,"手机号:");
 			htmlnode_new_text(p,((phonetocode*)founded->data)->phone);
 			htmlnode_new_text(p,"登录成功，你现在起可以自由访问网络了:)");
-			htmlnode_new_text(htmlnode_new(div,"p",NULL),"如果您长时间没有网络连接，只需要重新认证就可以了，就这么简单:)");
+			htmlnode_new_text(htmlnode_new(div,"p",NULL),"请不要关闭本页。如果您关闭了本页面，您将立即断网");
 			htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录成功!");
 
 			gchar * keep_aliveurl = g_strdup_printf("/keep_alive?phone=%s",((phonetocode*)founded->data)->phone);
