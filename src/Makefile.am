@@ -10,8 +10,7 @@ STATIC_LIBS = 	$(builddir)/sqlclient/libsqlclient.a \
 			@http_server_lib@ $(builddir)/misc/libmisc.a	
 			
 
-LIBS += @NEED_ALL_LIBS@ @MYSQL_LIBS@ @SQLITE3_LIBS@ \
-			${STATIC_LIBS}
+LIBS += @NEED_ALL_LIBS@ @MYSQL_LIBS@ @SQLITE3_LIBS@ 
 
 DISTCLEANFILES = monitord
 
@@ -35,6 +34,7 @@ monitor_SOURCES += g_socket_client_proxy.c g_socket_client_proxy.h
 monitor_SOURCES += ksql.h ksql.c
 monitor_SOURCES += traffic_status.c traffic_status.h
 
+monitor_LDADD =  ${STATIC_LIBS}
 
 monitor_DEPENDENCIES = ${STATIC_LIBS}
 

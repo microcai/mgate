@@ -10,7 +10,7 @@ AM_CPPFLAGS = @NEED_ALL_CFLAGS@ \
 				 -I$(srcdir)/../sms \
 				 -I$(srcdir)/../misc
 
-OBJCOPY=@OBJCOPY@ 
+OBJCOPY=:@OBJCOPY@ 
 
 RESTOOBJ=$(OBJCOPY) -I binary -B @obj_machine@ -O @obj_format@
 

@@ -48,7 +48,7 @@ static void g_sql_connect_class_init(GSQLConnectClass * klass)
 	 * 如果查询结果出错，::query-err 信号将会发出
 	 */
 	g_signal_new("query-err",G_TYPE_FROM_CLASS(klass),G_SIGNAL_RUN_LAST,0,NULL,NULL,
-			g_cclosure_marshal_VOID__STRING,
+			g_marshal_VOID__INT_STRING,
 			G_TYPE_NONE,2,G_TYPE_INT,G_TYPE_STRING,NULL);
 }
 

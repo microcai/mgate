@@ -74,6 +74,8 @@ int start_server()
 
 	g_timeout_add_seconds(1,remove_outdated_phone_code_map,GINT_TO_POINTER(g_key_file_get_integer(gkeyfile,"sms","validtime",0)));
 
+	g_timeout_add_seconds(16,remove_outdated_inactive_client,GINT_TO_POINTER(30));
+
 	return soup_server_get_port(server);
 }
 

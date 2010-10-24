@@ -34,6 +34,43 @@ static const char * jstemplate = "$(document).ready(function()"
 ", function (){// Callback Function\n"
 "});});});";
 
+
+static char keep[]=""
+		"<html>\n\t<head>\n\t\t<meta http-equiv=\"Refresh\"content=\"5\">\n"
+		"\t</head>\n</html>\n";
+
+
+gboolean remove_outdated_inactive_client(gpointer data)
+{
+	clientmgr_reomve_outdate_client(GPOINTER_TO_SIZE(data));//只有60秒允许啊
+	return TRUE;
+}
+
+//登录完成后的页面将不停的刷新本页面(每15s)，如果他在一分钟内没有刷新，那么就判断为下线。
+void SoupServer_path_keep_alive(SoupServer *server, SoupMessage *msg,const char *path,
+		GHashTable *query, SoupClientContext *soupclient,gpointer user_data)
+{
+	//使用 GET 的方法啦。
+	// GET /keep_alive?phone=xxxxxxx
+	const char * phone = g_hash_table_lookup(query,"phone");
+
+	const gchar * ip = soup_client_context_get_host(soupclient);
+
+	Client * client = clientmgr_get_client_by_ip(inet_addr(ip));
+
+	if(client && !g_strcmp0(client->id,phone))
+		return SoupServer_path_404(server,msg,path,query,soupclient,user_data);
+
+	time(&client->last_active_time);
+	soup_message_set_status(msg,SOUP_STATUS_OK);
+	soup_message_set_response(msg,"text/html",SOUP_MEMORY_STATIC,keep,sizeof(keep));
+}
+
+static gboolean	find_same_id(phonetocode* data , gchar * code)
+{
+	return strcasecmp(data->code,code);
+}
+
 void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path,
 		GHashTable *query, SoupClientContext *client,gpointer user_data)
 {
@@ -67,17 +104,16 @@ void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path
 
 		HtmlNode * p = htmlnode_new(body,"p",NULL);
 
-		gboolean	find_same_id(phonetocode* data , gchar * code)
-		{
-			return strcasecmp(data->code,code);
-		}
-
 		GList * founded = g_list_find_custom(phomecodemap,id,(GCompareFunc)find_same_id);
 
 		if(founded && arp_ip2mac(inet_addr(ip),mac,sockclient))
 		{
 			Client * client = client_new(((phonetocode*)founded->data)->phone,((phonetocode*)founded->data)->phone,"990",mac);
 			g_object_set(client,"ipstr", ip, "enable",TRUE,NULL);
+
+			//TODO ; check if it is self owned computer
+			client->remove_outdate = TRUE;
+
 			clientmgr_insert_client_by_mac(mac,client);
 /*
 			htmlnode_new(head,"meta","http-equiv=\"Refresh\"",
@@ -232,25 +268,3 @@ void SoupServer_path_getsmscode(SoupServer *_server, SoupMessage *msg,
 	soup_message_body_complete(msg->response_body);
 }
 
-
-static char keep[]=""
-		"<html>\n\t<head>\n\t\t<meta http-equiv=\"Refresh\"content=\"5\">\n"
-		"\t</head>\n</html>\n";
-
-void func(const char *name, const char *value, gpointer user_data)
-{
-	g_debug("name=%s, value=%s",name,value);
-}
-//登录完成后的页面将不停的刷新本页面(每15s)，如果他在一分钟内没有刷新，那么就判断为下线。
-void SoupServer_path_keep_alive(SoupServer *server, SoupMessage *msg,const char *path,
-		GHashTable *query, SoupClientContext *client,gpointer user_data)
-{
-	//使用 GET 的方法啦。
-	// GET /keep_alive?phone=xxxxxxx
-//	const char * phone = g_hash_table_lookup(query,"phone");
-
-	//
-
-	soup_message_set_status(msg,SOUP_STATUS_OK);
-	soup_message_set_response(msg,"text/html",SOUP_MEMORY_STATIC,keep,sizeof(keep));
-}

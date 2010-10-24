@@ -116,6 +116,7 @@ G_DEFINE_TYPE(Client,client,G_TYPE_OBJECT);
 
 void client_init(Client * obj)
 {
+	time(&obj->last_active_time);
 }
 
 void client_finalize(GObject * gobj)
@@ -150,7 +151,7 @@ static void client_set_property(GObject *object, guint property_id,const GValue 
 		obj->room = g_value_dup_string(value);
 		break;
 	case CLIENT_IP:
-		obj->ip = g_value_get_int(value);
+		obj->ip = g_value_get_uint(value);
 		break;
 	case CLIENT_ENABLE:
 		obj->enable = g_value_get_boolean(value);
@@ -188,7 +189,7 @@ static void client_get_property(GObject *object, guint property_id,GValue *value
 		g_value_set_string(value,obj->room);
 		break;
 	case CLIENT_IP:
-		g_value_set_int(value,obj->ip);
+		g_value_set_uint(value,obj->ip);
 		break;
 	case CLIENT_ENABLE:
 		g_value_set_boolean(value,obj->enable);
@@ -206,7 +207,7 @@ Client * client_new(const gchar * name, const gchar * id,const gchar * idtype,gu
 	return client;
 }
 
-static GTree	* client_tree;
+static volatile GTree	* client_tree;
 static gboolean g_tree_compare_func(gconstpointer a , gconstpointer b , gpointer user_data)
 {
 	return mac2uint64((guchar*)b) - mac2uint64((guchar*)a);
@@ -299,6 +300,39 @@ gboolean clientmgr_reomve_client(Client * client)
 	g_static_rw_lock_writer_unlock(&lock);
 
 	return ret;
+}
+
+void clientmgr_reomve_outdate_client(gulong	inactive_time_allowed)
+{
+	time_t cutime;
+	time(&cutime);
+
+	gboolean remove_outdate(gpointer key, Client * client, GTree * newtree)
+	{
+		if( client->remove_outdate && ( (cutime - client->last_active_time) > inactive_time_allowed))
+		{
+			g_debug("will remove client %p, id=%s, lastactivetime is %d, now is %d, sub %d",
+					client,client->id,client->last_active_time,cutime,cutime - client->last_active_time
+					);
+		}else
+		{
+			//add the unit to new tree
+			g_tree_insert(newtree,g_memdup(key,6),g_object_ref(client));
+		}
+		return FALSE;
+	}
+
+	g_static_rw_lock_writer_lock(&lock);
+
+	GTree * oldclient_tree = client_tree;
+
+	clientmgr_init();
+
+	g_tree_foreach(oldclient_tree,(GTraverseFunc)remove_outdate,client_tree);
+
+	g_tree_unref(oldclient_tree);
+
+	g_static_rw_lock_writer_unlock(&lock);
 }
 
 /**

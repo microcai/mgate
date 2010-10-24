@@ -22,6 +22,8 @@ typedef struct{
 }phonetocode;
 
 gboolean remove_outdated_phone_code_map(gpointer data) G_GNUC_INTERNAL;
+gboolean remove_outdated_inactive_client(gpointer data) G_GNUC_INTERNAL;
+
 void SoupServer_path_getsmscode(SoupServer *_server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
 		gpointer user_data) G_GNUC_INTERNAL;
