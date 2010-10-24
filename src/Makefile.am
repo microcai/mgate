@@ -37,11 +37,3 @@ monitor_SOURCES += traffic_status.c traffic_status.h
 monitor_LDADD =  ${STATIC_LIBS}
 
 monitor_DEPENDENCIES = ${STATIC_LIBS}
-
-## SMS
-monitor_CFLAGS = -I$(srcdir)/sms
-
-monitor_SOURCES += sms/at_modem.h sms/at_modem.c
-monitor_SOURCES += sms/smsapi.c sms/smsapi.h
-monitor_SOURCES += sms/sms.c sms/sms.h
-monitor_SOURCES += sms/smsthread.c sms/smsthread.h
