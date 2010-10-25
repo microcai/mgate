@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
-"POT-Creation-Date: 2010-10-23 11:43+0800\n"
-"PO-Revision-Date: 2010-10-14 12:05+0800\n"
+"POT-Creation-Date: 2010-10-25 11:27+0800\n"
+"PO-Revision-Date: 2010-10-25 11:26+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
 "Language: \n"
@@ -58,7 +58,7 @@ msgstr "无法连接到数据库 (%d) : %s"
 msgid "sqlite backend not implemented, exiting!"
 msgstr "SQLite 数据库后端没有实现，退出!"
 
-#: src/http_server/html_path_login.c:209
+#: src/http_server/html_path_login.c:252
 msgid "System busy, try later!"
 msgstr "系统忙，稍候再试"
 
@@ -77,84 +77,88 @@ msgstr "从端口%d 启动失败，将使用随机端口！"
 msgid "server started at port %u"
 msgstr "服务器在端口%u启动"
 
-#: src/main.c:83
+#: src/main.c:57
+msgid "MicroAppliyLab"
+msgstr "薇菜工作室"
+
+#: src/main.c:91
 msgid "monitor - A monitor tool"
 msgstr "monitor － 一个监控工具"
 
-#: src/main.c:87
+#: src/main.c:95
 msgid "run as daemon"
 msgstr "运行为守护进程"
 
-#: src/main.c:88
+#: src/main.c:96
 msgid "flash the db"
 msgstr "清空数据"
 
-#: src/main.c:89
+#: src/main.c:97
 msgid "Create database"
 msgstr "建立数据库"
 
-#: src/main.c:90
+#: src/main.c:98
 msgid "set domain dir root"
 msgstr "设置翻译目录"
 
-#: src/main.c:90 src/main.c:92
+#: src/main.c:98 src/main.c:100
 msgid "dir"
 msgstr "目录"
 
-#: src/main.c:91
+#: src/main.c:99
 msgid "set alternative config file"
 msgstr "制定配置文件"
 
-#: src/main.c:91
+#: src/main.c:99
 msgid "filename"
 msgstr "文件名"
 
-#: src/main.c:92
+#: src/main.c:100
 msgid "set alternative module dir"
 msgstr "设置 模块目录"
 
-#: src/main.c:93
+#: src/main.c:101
 msgid "override config, make monitor capturing on that interface"
 msgstr "覆盖config设置，使用这个接口"
 
-#: src/main.c:93
+#: src/main.c:101
 msgid "nic"
 msgstr "网卡"
 
-#: src/main.c:95
+#: src/main.c:103
 msgid "override config, make monitor listen on that port"
 msgstr "覆盖config设置，使用这个端口"
 
-#: src/main.c:95
+#: src/main.c:103
 msgid "port"
 msgstr "端口"
 
-#: src/main.c:97
+#: src/main.c:105
 msgid "override config, make monitor run with num threads"
 msgstr "覆盖config设置，使用这个端口"
 
-#: src/main.c:97
+#: src/main.c:105
 msgid "num"
 msgstr "数字"
 
-#: src/main.c:99
+#: src/main.c:107
 msgid "using dumped file other that live capture. - for stdin"
 msgstr "使用预先抓包的文件而不是直接抓取。- 表示使用标准输入"
 
-#: src/main.c:99
+#: src/main.c:107
 msgid "pcapsavefile"
 msgstr "pcap文件"
 
-#: src/main.c:132
+#: src/main.c:142
 msgid "Err opening config file"
 msgstr "打开配置文件发生错误"
 
-#: src/main.c:196
+#: src/main.c:206
 #, c-format
 msgid "unable to create pid file %s : %s"
 msgstr "无法创建 pid 文件 %s : %s"
 
-#: src/main.c:223
+#: src/main.c:233
 #, c-format
 msgid "pidfile exist, another one is running? pid(%d)"
 msgstr "pid文件存在，是否已经运行了一个？ pid(%d)"

@@ -8,14 +8,14 @@
 #ifndef I18N_H_
 #define I18N_H_
 
+#define N_(x) (x)
+
 #ifdef HAVE_GETTEXT
 #include <locale.h>
 #include <libintl.h>
 #define _(x) gettext(x)
-#define N_(x) (x)
 #else
 #define _(x) N_(x)
-#define N_(x) (x)
 #endif
 
 #endif /* I18N_H_ */

@@ -32,6 +32,7 @@
 #include <pcap/pcap.h>
 #include <errno.h>
 #include <glib.h>
+#include <glib/gprintf.h>
 #include <fcntl.h>
 
 #include "i18n.h"
@@ -49,6 +50,13 @@ static gboolean do_daemon(gpointer user_data);
 static void check_pid(gboolean) ;
 
 const gchar * config_file_name = "/etc/monitor.cfg";
+
+static void copyright_notice()
+{
+	g_printf("%s Version %s\n",PACKAGE_NAME,PACKAGE_VERSION);
+	g_printf("Copyright %s %s %d-%d\n","©",_("MicroAppliyLab"),2008,2010);
+	g_printf("All rights reserved\n");
+}
 
 int main(int argc, char*argv[], char*env[])
 {
@@ -74,7 +82,7 @@ int main(int argc, char*argv[], char*env[])
 	textdomain(GETTEXT_PACKAGE);
 	bindtextdomain(GETTEXT_PACKAGE,GETTEXT_LOCALE_PATH);
 #ifdef DEBUG
-	bindtextdomain(GETTEXT_PACKAGE,"/tmp/share/locale");
+	bindtextdomain(GETTEXT_PACKAGE,"/tmp//usr/local/share/locale/");
 #endif
 
 	g_thread_init(NULL);
@@ -102,6 +110,8 @@ int main(int argc, char*argv[], char*env[])
 
 	time(&t);
 
+	copyright_notice();
+
 	GOptionContext * context;
 	context = g_option_context_new("");
 	g_option_context_set_ignore_unknown_options(context,TRUE);
@@ -118,7 +128,6 @@ int main(int argc, char*argv[], char*env[])
 	if(domain_dir)
 	{
 		bindtextdomain(GETTEXT_PACKAGE,domain_dir);
-		g_free(domain_dir);
 	}
 
 	loop = g_main_loop_new(NULL,FALSE);
