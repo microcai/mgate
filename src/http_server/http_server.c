@@ -23,8 +23,8 @@
 #include "i18n.h"
 #include "global.h"
 #include "htmlnode.h"
-#include "smsapi.h"
 #include "html_paths.h"
+#include "smsserver_connector.h"
 
 static void SoupServer_path_root(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
@@ -54,25 +54,25 @@ int start_server()
 		port = 0;
 	}
 
+	smsserver_pinger_start();
+
 	g_debug(_("server started at port %u"),soup_server_get_port(server));
 
 	soup_server_add_handler(server,"/login",SoupServer_path_login,NULL,NULL);
 
 	soup_server_add_handler(server,"/info",SoupServer_path_info,NULL,NULL);
 
-	soup_server_add_handler(server,"/getsmscode.asp",SoupServer_path_getsmscode,NULL,NULL);
 	soup_server_add_handler(server,"/favicon.ico",SoupServer_path_static_file,NULL,NULL);
+
 	soup_server_add_handler(server,"/",SoupServer_path_root,NULL,NULL);
 
 	soup_server_add_handler(server,"/keep_alive",SoupServer_path_keep_alive,NULL,NULL);
 
+	soup_server_add_handler(server,"/getcode.html",SoupServer_path_getverifycode,NULL,NULL);
+
 	soup_server_run_async(server);
 
-	sms_init();
-
 	g_timeout_add_seconds(10,celect_usage,NULL);
-
-	g_timeout_add_seconds(1,remove_outdated_phone_code_map,GINT_TO_POINTER(g_key_file_get_integer(gkeyfile,"sms","validtime",0)));
 
 	g_timeout_add_seconds(16,remove_outdated_inactive_client,GINT_TO_POINTER(30));
 

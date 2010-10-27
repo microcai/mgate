@@ -78,7 +78,7 @@ AC_SUBST(http_server)
 AC_SUBST(http_server_lib)
 
 AS_IF([test x${enable_http_server} = xyes] ,[
-	libsoup="libsoup-2.4 >= 2.26"
+	libsoup="libsoup-2.4 "
 	http_server="http_server"
 	http_server_lib='$(builddir)/http_server/libhttp_server.a'
 	PKG_CHECK_MODULES(LIBSOUP, [${libsoup}])
@@ -96,7 +96,7 @@ AC_CHECK_LIB([pcap], [main],[AC_CHECK_HEADER(pcap.h)],[AC_MSG_ERROR(need libpcap
 
 AC_ARG_ENABLE(http-redirect,
 		[AC_HELP_STRING([--disable-http-redirect],[disable build http_redirect, then libnet is not required])],
-		[enable_http_redirect=$withval],[enable_http_redirect=yes])
+		[enable_http_redirect=$enableval],[enable_http_redirect=yes])
 
 AS_IF( [ test "x${enable_http_redirect}" != xno ],
 	[
@@ -142,16 +142,19 @@ AC_CHECK_HEADERS([mysql/mysql.h],[],[AM_CONDITIONAL([WITH_MYSQL],[false])])
 AC_SUBST(MYSQL_CFLAGS)
 AC_SUBST(MYSQL_LIBS)
 
-AC_CHECK_TARGET_TOOL(OBJCOPY,objcopy,[],[])
+AC_CHECK_TARGET_TOOL(OBJCOPY,objcopy,[objcopy],[])
 
 case "$target" in
 i386-* | i686-* )
 AC_SUBST(obj_format,elf32-i386)
 AC_SUBST(obj_machine,i386)
 ;;
-x86_64-*)
+x86_64-* )
 AC_SUBST(obj_format,elf64-x86-64) 
 AC_SUBST(obj_machine,i386:x86-64)
+;;
+* )
+AC_MSG_ERROR("unsupported system",1)
 ;;
 esac
 

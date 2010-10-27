@@ -65,7 +65,7 @@ static void g_sql_result_dispose(GObject * gobj)
 	GSQLResult * obj = (GSQLResult*)gobj;
 	GObjectClass* klass = G_OBJECT_CLASS(g_sql_result_parent_class);
 
-	g_signal_emit_by_name(gobj,"destory");
+	g_signal_emit_by_name(obj,"destory");
 
 	if(klass->dispose)
 		klass->dispose(gobj);
@@ -108,7 +108,7 @@ void	g_sql_result_set_result_array(GSQLResult * obj, ...)
 	va_list	v;
 	va_start(v,obj);
 
-	while( charptr = va_arg(v,gchar*) )
+	while(( charptr = va_arg(v,gchar*) ))
 	{
 		gchar * pstr = strdup(charptr);
 		g_ptr_array_add(obj->colum,pstr);

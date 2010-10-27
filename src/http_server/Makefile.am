@@ -10,7 +10,7 @@ AM_CPPFLAGS = @NEED_ALL_CFLAGS@ \
 				 -I$(srcdir)/sms \
 				 -I$(srcdir)/../misc
 
-OBJCOPY=:@OBJCOPY@ 
+OBJCOPY:=@OBJCOPY@ 
 
 RESTOOBJ=$(OBJCOPY) -I binary -B @obj_machine@ -O @obj_format@
 
@@ -42,11 +42,9 @@ libhttp_server_a_SOURCES += html_path_info.c
 libhttp_server_a_SOURCES += html_path_login.c
 libhttp_server_a_SOURCES += html_path_static_file.c
 libhttp_server_a_SOURCES += html_path_404.c
+libhttp_server_a_SOURCES += html_path_get_code.c
+libhttp_server_a_SOURCES += smsserver_connector.c smsserver_connector.h
 
-libhttp_server_a_SOURCES += sms/at_modem.h sms/at_modem.c
-libhttp_server_a_SOURCES += sms/smsapi.c sms/smsapi.h
-libhttp_server_a_SOURCES += sms/sms.c sms/sms.h
-libhttp_server_a_SOURCES += sms/smsthread.c sms/smsthread.h
 
 libhttp_server_a_DEPENDENCIES = sym_404.h resource.o
  
