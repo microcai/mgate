@@ -9,12 +9,15 @@
 	{
 		window.open('/login.monitor','loginwin','toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no,width=500,height=300');
 		loginform.action="/login.monitor";
+		
 		loginform.submit();
 	}
 	
 	function refreshcode()
 	{
 		window.frames["getcode"].location.reload();
+		var childHtml = document.getElementById("getcode").contentWindow;
+		document.getElementById("codename").value = childHtml.document.getElementById("codename").value;
 	}
 	//-->
 </script>
@@ -28,15 +31,12 @@
 	</tr>
 	<tr>
 	<td width="70%">
-<!--
-		<iframe frameborder="0"  src="gettest.html" width="40%" name="getcode"></iframe>
-//-->
-		<iframe frameborder="0"  src="getcode.html" width="70%" name="getcode"></iframe>
+		<iframe frameborder="0"  src="getcode.html" width="50%" id="getcode" name="getcode"></iframe>
 		<button type="button" onclick=refreshcode()>重新获得验证码</button>
 	</td>
 	</tr>
   </table>
-  <form method="POST" action="/login.monitor" name="loginform" target="loginwin">
+  <form method="POST" action="/login.monitor" id="loginform" name="loginform" target="loginwin">
    <table border="0" align="center">
     <tr>
      <td><input type="hidden" name="codename" id="codename"/>
@@ -47,3 +47,8 @@
   </form>
  </body>
 </html>
+
+<script language="javascript">
+	var childHtml = document.getElementById("getcode").contentWindow;
+	document.getElementById("codename").value = childHtml.document.getElementById("codename").value;
+</script>

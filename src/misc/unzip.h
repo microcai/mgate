@@ -8,6 +8,8 @@
 #ifndef UNZIP_H_
 #define UNZIP_H_
 
+#include <zlib.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -48,7 +50,7 @@ typedef struct DataDesc{
 }DataDesc;
 
 const zipRecord* zipbuffer_search(gconstpointer data, gconstpointer data_end, const char * file);
-
+void unzip_buffer(char * dst, gsize * dstlen ,const zipRecord * rc);
 
 #ifdef __cplusplus
 }

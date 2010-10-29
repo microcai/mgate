@@ -38,3 +38,24 @@ const zipRecord* zipbuffer_search(gconstpointer data, gconstpointer data_end, co
 	return NULL;
 }
 
+void unzip_buffer(char * dst, gsize * dstlen , const zipRecord * rc)
+{
+	z_stream strm[1];
+
+	memset(strm,0,sizeof(strm));
+
+	inflateInit2(strm,-MAX_WBITS);
+
+	strm->avail_in = rc->size_ziped;
+	strm->avail_out = *dstlen;
+
+	strm->next_in = (Bytef *)rc + sizeof(zipRecord) + rc->filename_len + rc->extra_len;
+	strm->next_out = (Bytef *)dst;
+
+	inflate(strm,Z_FINISH);
+
+	*dstlen -= strm->avail_out;
+
+	inflateEnd(strm);
+}
+
