@@ -78,7 +78,7 @@ AC_SUBST(http_server)
 AC_SUBST(http_server_lib)
 
 AS_IF([test x${enable_http_server} = xyes] ,[
-	libsoup="libsoup-2.4 "
+	libsoup="libsoup-2.4 libxml-2.0"
 	http_server="http_server"
 	http_server_lib='$(builddir)/http_server/libhttp_server.a'
 	PKG_CHECK_MODULES(LIBSOUP, [${libsoup}])

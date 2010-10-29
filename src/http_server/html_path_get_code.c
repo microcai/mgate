@@ -33,6 +33,7 @@ enum SmscenterStatusCode{
 	SERVER_LOGIN_FAILED,
 	SERVER_CODE_GENERATED,
 };
+/*
 
 static void make_response(SoupMessage * msg, int smscenter_status_code,const char * code)
 {
@@ -48,49 +49,15 @@ static void make_response(SoupMessage * msg, int smscenter_status_code,const cha
 	}
 
 }
-
-gboolean  sms_read_ready(GSocket * socket, GIOCondition cond , SoupMessage *msg)
+*/
+void send_getcode(smsserver_result* rst, SoupMessage *msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data)
 {
-	char buff[256];
-	gssize ret = g_socket_receive(socket,buff,sizeof(buff),0,0);
+	soup_message_set_status(msg,SOUP_STATUS_BAD_REQUEST);
 
-	if(ret)
-	{
+	soup_message_set_response(msg,"text/html",SOUP_MEMORY_STATIC,"服务器内部错误",21);
 
-	}
-
-	SoupServer_path_static_file(server,msg,"/gotpswd.html",0,0,0);
-	return FALSE;
+	return 	soup_server_unpause_message(server,msg);
 }
-
-void sms_host_connected(GSocketClient *source_object, GAsyncResult *res,SoupMessage *msg)
-{
-	static gchar * clientid;
-
-	if(!clientid)
-	{
-		clientid = g_key_file_get_string(gkeyfile,"kpolice","HotelID",0);
-		clientid = g_strstrip(clientid);
-	}
-
-	GSocketConnection * connection = g_socket_client_connect_to_host_finish(source_object,res,NULL);
-	g_object_unref(source_object);
-
-	if(!connection)
-		return make_response(msg,SERVER_NO_RESPONSE,0);
-
-	GSocket * sock = g_object_ref(g_socket_connection_get_socket(connection));
-
-	gchar * usr = g_strdup_printf("USER %s\n\n",clientid);
-
-	g_socket_send(sock,usr,strlen(usr),0,0);
-
-	g_socket_add_watch(sock,G_IO_IN,(GSockIOFunc)sms_read_ready,msg);
-
-	g_free(usr);
-	return ;
-}
-
 //向远程server发起请求一个鉴证码
 void SoupServer_path_getverifycode(SoupServer *_server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
@@ -122,6 +89,5 @@ void SoupServer_path_getverifycode(SoupServer *_server, SoupMessage *msg,
 	soup_server_pause_message(server,msg);
 
 	//发起异步连接到短信服务器
-	GSocketClient * clienter = g_socket_client_new();
-	g_socket_client_connect_to_host_async(clienter,smshost,25720,0,(GAsyncReadyCallback)sms_host_connected,msg);
+	smsserver_getcode(send_getcode,msg,path,query,client,user_data);
 }

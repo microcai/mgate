@@ -17,26 +17,159 @@
 #include <string.h>
 #include <glib.h>
 #include <libsoup/soup.h>
+#include <libxml/parser.h>
 #include "global.h"
 #include "smsserver_connector.h"
 
-typedef void (*smsserver_readycallback)
-		(smsserver_result*, SoupMessage *msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data);
+typedef struct smscbdata{
+	smsserver_readycallback cb;
+	gpointer data;
+	SoupMessage * msg;
+	const char *path;
+	GHashTable *query;
+	SoupClientContext *client;
+	GSocketConnection * connec;
+	gchar	readbuffer[512];
+}smscbdata;
+
+#define CALL_USER_CB(psmscbdata,pstatus)	\
+	psmscbdata->cb(pstatus,psmscbdata->msg,psmscbdata->path,\
+		psmscbdata->query,psmscbdata->client,psmscbdata->data)
+
+
+
+static GSocketClient	* connector;
+static gchar *			  smshost;
+static gushort			  smsport = 25720;
+static gchar * 			  user_login;
+static gboolean			  isonline = 1;
+static gchar * 			  getcode;
 
 void smsserver_pinger_start()
 {
 	//获得 smshost
 	//开始空白连接，哦哈哈
+	gchar * hid=g_strstrip(g_key_file_get_string(gkeyfile,"kpolice","HotelID",0));
+	user_login = g_strdup_printf("USER %s\n\n",hid);
+	getcode = g_strdup_printf("GET /gencode?ID=%s\n\n",hid);
+	g_free(hid);
+
+	smshost = g_strstrip(g_key_file_get_string(gkeyfile,"sms","smshost",0));
+
+	connector = g_socket_client_new();
 }
 
 gboolean smsserver_is_online()
 {
-	return FALSE;
+	return isonline;
 }
 
-void smsserver_getcode( )
+static void smsserver_recv_getcode_ready(GInputStream *source_object,GAsyncResult *res, smscbdata* user_data)
 {
+	gssize ret = g_input_stream_read_finish(source_object,res,0);
 
+	if(ret <=0)
+	{
+		CALL_USER_CB(user_data,0);
+		g_object_unref(user_data->connec);
+		g_slice_free(smscbdata,user_data);
+		return ;
+	}
+	//	好了，我们读取返回的东西了，呵呵,用 XML就可以了
+	xmlReadMemory(user_data->readbuffer,ret,0,0,0);
+}
+
+static void smsserver_send_getcode_ready(GOutputStream *source_object,GAsyncResult *res, smscbdata* user_data)
+{
+	gssize ret = g_output_stream_write_finish(source_object,res,0);
+
+	if(ret<=0)
+	{
+		CALL_USER_CB(user_data,0);
+		g_object_unref(user_data->connec);
+		g_slice_free(smscbdata,user_data);
+		return ;
+	}
+	memset(user_data->readbuffer,0,sizeof(user_data->readbuffer));
+	g_input_stream_read_async(g_io_stream_get_input_stream(G_IO_STREAM(user_data->connec)),
+			user_data->readbuffer,sizeof(user_data->readbuffer),0,0,(GAsyncReadyCallback)smsserver_recv_getcode_ready,user_data);
+}
+
+static void smsserver_recv_user_login_ready(GInputStream *source_object,GAsyncResult *res, smscbdata* user_data)
+{
+	gssize ret = g_input_stream_read_finish(source_object,res,0);
+
+	if(ret <=0)
+	{
+		CALL_USER_CB(user_data,0);
+		g_object_unref(user_data->connec);
+		g_slice_free(smscbdata,user_data);
+		return ;
+	}
+	//解析服务器返回内容。当下为一个 200 OK
+	gint	status;
+	sscanf(user_data->readbuffer,"%d %*s\n\n",&status);
+	switch (status)
+	{
+		case 200: //恩，可以开始发送Login 代码了，
+			g_output_stream_write_async(g_io_stream_get_output_stream(G_IO_STREAM(user_data->connec)),
+					getcode,strlen(getcode),0,0,(GAsyncReadyCallback)smsserver_send_getcode_ready,user_data);
+
+		break;
+		case 401: //TODO:发送MD5密码
+
+		default:
+			CALL_USER_CB(user_data,0);
+			g_object_unref(user_data->connec);
+			g_slice_free(smscbdata,user_data);
+			break;
+	}
+}
+
+static void smsserver_send_user_login_ready(GOutputStream *source_object,GAsyncResult *res, smscbdata* user_data)
+{
+	gssize ret = g_output_stream_write_finish(source_object,res,0);
+
+	if(ret <=0)
+	{
+		CALL_USER_CB(user_data,0);
+		g_object_unref(user_data->connec);
+		g_slice_free(smscbdata,user_data);
+		return ;
+	}
+	g_input_stream_read_async(g_io_stream_get_input_stream(G_IO_STREAM(user_data->connec)),
+			user_data->readbuffer,sizeof(user_data->readbuffer),0,0,(GAsyncReadyCallback)smsserver_recv_user_login_ready,user_data);
+
+}
+
+static void smsserver_connected(GSocketClient *source_object,GAsyncResult *res, smscbdata* user_data)
+{
+	GSocketConnection * connec =  g_socket_client_connect_to_host_finish(source_object,res,NULL);
+	if(!connec) // NOT connecteable
+	{
+		CALL_USER_CB(user_data,0);
+		g_slice_free(smscbdata,user_data);
+		return ;
+	}
+	user_data->connec = connec;
+	/*FixME, maybe not need*/
+	g_object_ref(connec);
+	//发送登录口令
+	g_output_stream_write_async(g_io_stream_get_output_stream(G_IO_STREAM(connec)),user_login,strlen(user_login),0,0,(GAsyncReadyCallback)smsserver_send_user_login_ready,user_data);
+}
+
+void smsserver_getcode(smsserver_readycallback usercb,SoupMessage * msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data)
+{
+	smscbdata * data = g_slice_new0(smscbdata);
+
+	data->cb = usercb;
+	data->data  = user_data;
+	data->msg = msg;
+	data->client = client;
+	data->path = path;
+	data->query = query;
+	//开始连接到服务器
+	g_socket_client_connect_to_host_async(connector,smshost,smsport,0,(GAsyncReadyCallback)smsserver_connected,data);
 }
 
 
