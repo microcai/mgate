@@ -78,7 +78,7 @@ AC_SUBST(http_server)
 AC_SUBST(http_server_lib)
 
 AS_IF([test x${enable_http_server} = xyes] ,[
-	libsoup="libsoup-2.4 libxml-2.0"
+	libsoup="libsoup-2.4 "
 	http_server="http_server"
 	http_server_lib='$(builddir)/http_server/libhttp_server.a'
 	PKG_CHECK_MODULES(LIBSOUP, [${libsoup}])
@@ -93,7 +93,7 @@ PKG_CHECK_MODULES(NEED_ALL, [ ${libsoup} glib-2.0 >= 2.18 gthread-2.0 gobject-2.
 AC_CHECK_LIB([pthread], [main])
 AC_CHECK_LIB([pcap], [main],[],[AC_MSG_ERROR(need libpcap)])
 AC_CHECK_LIB([pcap], [main],[AC_CHECK_HEADER(pcap.h)],[AC_MSG_ERROR(need libpcap)])
-
+AC_CHECK_LIB([z],[main])
 AC_ARG_ENABLE(http-redirect,
 		[AC_HELP_STRING([--disable-http-redirect],[disable build http_redirect, then libnet is not required])],
 		[enable_http_redirect=$enableval],[enable_http_redirect=yes])
