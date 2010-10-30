@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([monitor], [2.0.0-rc], [BUG-REPORT-ADDRESS])
+AC_INIT([mgate], [2.0.0-rc2], [microcai@fedoraproject.org])
 
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -169,12 +169,12 @@ AC_CHECK_DECL(_SC_NPROCESSORS_ONLN,[],[AC_MSG_FAILURE(_SC_NPROCESSORS_ONLN not f
 
 #AC_CONFIG_FILES([modules/Makefile])
 AC_CONFIG_FILES( [					
-					monitor.spec
+					mgate.spec
 					src/misc/Makefile
 					src/sqlclient/Makefile
 					src/http_server/Makefile
 					src/Makefile
-					src/monitord
+					src/mgated
 					modules/Makefile
 					po/Makefile.in
 					Makefile

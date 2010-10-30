@@ -10,10 +10,6 @@ src/sqlclient/sqlbackend.c
 src/clientmgr.c
 src/utils.c
 src/ksql.c
-src/http_server/sms/smsthread.c
-src/http_server/sms/at_modem.c
-src/http_server/sms/sms.c
-src/http_server/sms/smsapi.c
 src/http_server/htmlnode.c
 src/http_server/html_path_info.c
 src/http_server/html_path_login.c

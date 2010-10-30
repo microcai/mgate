@@ -12,28 +12,28 @@ STATIC_LIBS = 	$(builddir)/sqlclient/libsqlclient.a \
 
 LIBS += @NEED_ALL_LIBS@ @MYSQL_LIBS@ @SQLITE3_LIBS@ 
 
-DISTCLEANFILES = monitord
+DISTCLEANFILES = mgated
 
 sbindir=/etc/init.d/
 
-bin_PROGRAMS = monitor 
-sbin_SCRIPTS = monitord
+bin_PROGRAMS = mgate 
+sbin_SCRIPTS = mgated
 
-EXTRA_DIST =  monitord.in
+EXTRA_DIST =  mgated.in
 
-monitor_SOURCES =main.c global.h i18n.h
+mgate_SOURCES =main.c global.h i18n.h
 
-monitor_SOURCES += pcap_thread.c  pcap_thread.h 
-monitor_SOURCES += pcap_hander.c pcap_hander.h
-monitor_SOURCES += clientmgr.c clientmgr.h
-monitor_SOURCES += utils.c utils.h
-monitor_SOURCES += module.c module.h
-monitor_SOURCES += kpolice.c kpolice.h
-monitor_SOURCES += g_socket_client_proxy.c g_socket_client_proxy.h
+mgate_SOURCES += pcap_thread.c  pcap_thread.h 
+mgate_SOURCES += pcap_hander.c pcap_hander.h
+mgate_SOURCES += clientmgr.c clientmgr.h
+mgate_SOURCES += utils.c utils.h
+mgate_SOURCES += module.c module.h
+mgate_SOURCES += kpolice.c kpolice.h
+mgate_SOURCES += g_socket_client_proxy.c g_socket_client_proxy.h
 
-monitor_SOURCES += ksql.h ksql.c
-monitor_SOURCES += traffic_status.c traffic_status.h
+mgate_SOURCES += ksql.h ksql.c
+mgate_SOURCES += traffic_status.c traffic_status.h
 
-monitor_LDADD =  ${STATIC_LIBS}
+mgate_LDADD =  ${STATIC_LIBS}
 
-monitor_DEPENDENCIES = ${STATIC_LIBS}
+mgate_DEPENDENCIES = ${STATIC_LIBS}

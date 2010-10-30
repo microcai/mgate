@@ -3,13 +3,11 @@ ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = src modules po
 dist_doc_DATA = README 
-EXTRA_DIST = @PACKAGE_NAME@.spec.in monitor.cfg readme.pdf
+EXTRA_DIST = @PACKAGE_NAME@.spec.in mgate.cfg
 
-DISTCLEANFILES = @PACKAGE_NAME@.spec readme.pdf
+DISTCLEANFILES = @PACKAGE_NAME@.spec
 
-CLEANFILES =  readme.aux  readme.log  readme.out readme.xeltex
-
-rpm: dist @PACKAGE_NAME@-hotel.spec @PACKAGE_NAME@-cafe.spec
+rpm: dist @PACKAGE_NAME@.spec
 	rpmbuild -bb \
 			--define "_sourcedir `pwd`" \
 			--define "_builddir `pwd`" \
@@ -29,10 +27,10 @@ srpm: dist @PACKAGE_NAME@.spec
 
 sysconfigdir = /etc
 
-sysconfig_DATA = monitor.cfg
+sysconfig_DATA = mgate.cfg
 
-test : $(top_builddir)/src/monitor /tmp/${prefix}/share/locale/
-	@	$(top_builddir)/src/monitor --module_dir=$(top_builddir)/modules  --config=$(top_srcdir)/monitor.cfg --locale=/tmp/${prefix}/share/locale/  ${ARG}
+test : $(top_builddir)/src/mgate /tmp/${prefix}/share/locale/
+	@	$(top_builddir)/src/mgate --module_dir=$(top_builddir)/modules  --config=$(top_srcdir)/mgate.cfg --locale=/tmp/${prefix}/share/locale/  ${ARG}
 
 /tmp/${prefix}/share/locale/ : po/zh_CN.gmo
 	cd po && $(MAKE) DESTDIR=/tmp install
@@ -40,15 +38,8 @@ test : $(top_builddir)/src/monitor /tmp/${prefix}/share/locale/
 po/zh_CN.gmo: po/zh_CN.po
 	cd po && $(MAKE) zh_CN.gmo
 	
-$(top_builddir)/src/monitor :
+$(top_builddir)/src/mgate :
 	cd src && $(MAKE)
 
-gdb : $(top_builddir)/src/monitor /tmp/${prefix}/share/locale/
-	gdbserver localhost:5000 $(top_builddir)/src/monitor --module_dir=$(top_builddir)/modules  --config=$(top_srcdir)/monitor.cfg --locale=/tmp/${prefix}/share/locale/  ${ARG}
-
-
-readme.xeltex : README README.xetex
-	echo '\end{document}' | cat README.xetex README - > $@
-
-readme.pdf:readme.xeltex
-	xelatex $<
+gdb : $(top_builddir)/src/mgate /tmp/${prefix}/share/locale/
+	gdbserver localhost:5000 $(top_builddir)/src/mgate --module_dir=$(top_builddir)/modules  --config=$(top_srcdir)/mgate.cfg --locale=/tmp/${prefix}/share/locale/  ${ARG}

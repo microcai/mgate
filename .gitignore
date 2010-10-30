@@ -14,7 +14,6 @@ depcomp
 install-sh
 missing
 ABOUT-NLS
-monitor-*.spec
 *.so
 *.a
 *.la
@@ -42,3 +41,6 @@ src/http_server/resource.zip
 src/http_server/sym_404.h
 build*/
 *test.*
+src/mgate
+src/mgated
+*.spec
