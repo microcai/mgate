@@ -49,7 +49,7 @@ static void myLog(const gchar *log_domain, GLogLevelFlags log_level,
 static gboolean do_daemon(gpointer user_data);
 static void check_pid(gboolean) ;
 
-const gchar * config_file_name = "/etc/monitor.cfg";
+const gchar * config_file_name = "/etc/mgate.cfg";
 
 static void copyright_notice()
 {
