@@ -1,8 +1,22 @@
 /*
- * html_path_get_code.c
+ * html_path_get_code.c -- 实现短信验证
  *
- *  Created on: 2010-10-24
- *      Author: cai
+ *      Copyright 2010 薇菜工作室
+ *
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License as published by
+ *      the Free Software Foundation; either version 2 of the License, or
+ *      (at your option) any later version.
+ *
+ *      This program is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *      GNU General Public License for more details.
+ *
+ *      You should have received a copy of the GNU General Public License
+ *      along with this program; if not, write to the Free Software
+ *      Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *      MA 02110-1301, USA.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -110,6 +124,7 @@ static void sms_getcode_response(smsserver_result* rst, SoupMessage *msg,const c
 	}
 	return 	soup_server_unpause_message(server,msg);
 }
+
 //向远程server发起请求一个鉴证码
 void SoupServer_path_getverifycode(SoupServer *_server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
@@ -127,4 +142,30 @@ void SoupServer_path_getverifycode(SoupServer *_server, SoupMessage *msg,
 	soup_server_pause_message(server,msg);
 	//发起异步连接到短信服务器
 	smsserver_getcode(sms_getcode_response,msg,path,query,client,user_data);
+}
+
+static void sms_verifycode_response(smsserver_result* rst, SoupMessage *msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data)
+{
+	soup_server_unpause_message(server,msg);
+
+
+
+
+}
+
+//向远程server发起请求鉴证获得对应的返回值，(*^__^*) 嘻嘻……
+void SoupServer_path_verifycode(SoupServer *_server, SoupMessage *msg,
+		const char *path, GHashTable *query, SoupClientContext *client,
+		gpointer user_data)
+{
+	server = _server;
+	if(!smsserver_is_online())
+	{
+		//TODO:大哥，不在线啊!
+	}
+	//先暂停掉服务器
+	soup_message_set_status(msg,SOUP_STATUS_BAD_REQUEST);
+	soup_server_pause_message(server,msg);
+	//发起异步连接到短信服务器
+	smsserver_verifycode(sms_verifycode_response,g_hash_table_lookup(query,"code"),msg,path,query,client,user_data);
 }

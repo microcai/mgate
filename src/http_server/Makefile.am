@@ -26,10 +26,13 @@ resource.zip :
 	$(RESTOOBJ)	 $< $@
 	
 sym_404.h:404.o
+	echo '/*' > $@
+	cat	$(top_srcdir)/COPYING >> $@
+	echo '*/' >> $@
 	( objdump  -t  $< | grep _start |(read a b c d e ; echo "extern char $$e[];" ; echo "#define _binary_404_html_start $$e") \
 	 && objdump  -t  $< | grep _end |(read a b c d e ; echo "extern char $$e[];" ; echo "#define _binary_404_html_end $$e") \
 	 && objdump  -t  $< | grep _size |(read a b c d e ; echo "extern char $$e[];" ;echo "#define _binary_404_html_size $$e" ) \
-	 ) > $@
+	 ) >> $@
 		
 if BUILD_HTTP_SERVER
 

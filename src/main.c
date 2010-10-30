@@ -1,7 +1,7 @@
 /*
  *      main.c
  *
- *      Copyright 2009 MicroCai <microcai@sina.com>
+ *      Copyright 2009-2010 薇菜工作室
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by

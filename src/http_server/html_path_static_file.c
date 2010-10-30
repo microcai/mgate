@@ -1,11 +1,24 @@
 /*
- * html_path_static_file.c
+ * html_path_static_file.c  --
+ * 	这个文件用来向用户返回静态的文件，图片啊，js脚本啊，全静态页面啊，等等
  *
- *  Created on: 2010-10-22
- *      Author: cai
+ *      Copyright 2010 薇菜工作室
  *
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License as published by
+ *      the Free Software Foundation; either version 2 of the License, or
+ *      (at your option) any later version.
  *
- * 这个文件用来向用户返回静态的文件，图片啊，js脚本啊，全静态页面啊，等等
+ *      This program is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *      GNU General Public License for more details.
+ *
+ *      You should have received a copy of the GNU General Public License
+ *      along with this program; if not, write to the Free Software
+ *      Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *      MA 02110-1301, USA.
+ *
  */
 
 #ifdef HAVE_CONFIG_H

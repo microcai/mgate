@@ -1,8 +1,22 @@
 /*
- * smsserver_connector.c
+ * smsserver_connector.c -- 短信服务器客户端
  *
- *  Created on: 2010-10-27
- *      Author: cai
+ *      Copyright 2010 薇菜工作室
+ *
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License as published by
+ *      the Free Software Foundation; either version 2 of the License, or
+ *      (at your option) any later version.
+ *
+ *      This program is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *      GNU General Public License for more details.
+ *
+ *      You should have received a copy of the GNU General Public License
+ *      along with this program; if not, write to the Free Software
+ *      Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *      MA 02110-1301, USA.
  */
 
 
@@ -28,6 +42,7 @@ typedef struct smscbdata{
 	GHashTable *query;
 	SoupClientContext *client;
 	GSocketConnection * connec;
+	gchar	code[30]; // set for verify
 	gchar	readbuffer[512];
 }smscbdata;
 
@@ -43,6 +58,7 @@ static gushort			  smsport = 25720;
 static gchar * 			  user_login;
 static gboolean			  isonline ;
 static gchar * 			  getcode;
+static gchar * 			  verify_code;
 
 
 static gint loop_connect;
@@ -80,6 +96,7 @@ void smsserver_pinger_start()
 	gchar * hid=g_strstrip(g_key_file_get_string(gkeyfile,"kpolice","HotelID",0));
 	user_login = g_strdup_printf("USER %s\n\n",hid);
 	getcode = g_strdup_printf("GET /gencode?ID=%s\n\n",hid);
+	verify_code = g_strdup_printf("GET /verifycode?ID=%s",hid);
 	g_free(hid);
 
 	smshost = g_strstrip(g_key_file_get_string(gkeyfile,"sms","smshost",0));
@@ -95,7 +112,7 @@ gboolean smsserver_is_online()
 	return isonline;
 }
 
-static void smsserver_recv_getcode_ready(GInputStream *source_object,GAsyncResult *res, smscbdata* user_data)
+static void smsserver_recv_getX_ready(GInputStream *source_object,GAsyncResult *res, smscbdata* user_data)
 {
 	gssize ret = g_input_stream_read_finish(source_object,res,0);
 
@@ -125,20 +142,14 @@ static void smsserver_recv_getcode_ready(GInputStream *source_object,GAsyncResul
 		CALL_USER_CB(user_data,&rst);
 	}else
 	{
-#ifdef DEBUG
-		rst.buffer = "<phone>1234567890</phone>";
-		rst.length = sizeof("<phone>1234567890</phone>");
-		CALL_USER_CB(user_data,&rst);
-#else
 		CALL_USER_CB(user_data,0);
-#endif
 	}
 
 	g_object_unref(user_data->connec);
 	g_slice_free(smscbdata,user_data);
 }
 
-static void smsserver_send_getcode_ready(GOutputStream *source_object,GAsyncResult *res, smscbdata* user_data)
+static void smsserver_send_getX_ready(GOutputStream *source_object,GAsyncResult *res, smscbdata* user_data)
 {
 	gssize ret = g_output_stream_write_finish(source_object,res,0);
 
@@ -151,7 +162,7 @@ static void smsserver_send_getcode_ready(GOutputStream *source_object,GAsyncResu
 	}
 	memset(user_data->readbuffer,0,sizeof(user_data->readbuffer));
 	g_input_stream_read_async(g_io_stream_get_input_stream(G_IO_STREAM(user_data->connec)),
-			user_data->readbuffer,sizeof(user_data->readbuffer),0,0,(GAsyncReadyCallback)smsserver_recv_getcode_ready,user_data);
+			user_data->readbuffer,sizeof(user_data->readbuffer),0,0,(GAsyncReadyCallback)smsserver_recv_getX_ready,user_data);
 }
 
 static void smsserver_recv_user_login_ready(GInputStream *source_object,GAsyncResult *res, smscbdata* user_data)
@@ -171,9 +182,18 @@ static void smsserver_recv_user_login_ready(GInputStream *source_object,GAsyncRe
 	switch (status)
 	{
 		case 200: //恩，可以开始发送Login 代码了，
-			g_output_stream_write_async(g_io_stream_get_output_stream(G_IO_STREAM(user_data->connec)),
-					getcode,strlen(getcode),0,0,(GAsyncReadyCallback)smsserver_send_getcode_ready,user_data);
-
+			if(!user_data->code[0])
+			{
+				//get code
+				g_output_stream_write_async(g_io_stream_get_output_stream(G_IO_STREAM(user_data->connec)),
+					getcode,strlen(getcode),0,0,(GAsyncReadyCallback)smsserver_send_getX_ready,user_data);
+			}
+			else{
+				//verify code
+				gchar * verify = g_strdup_printf("%s&code=%s\n\n",verify_code,user_data->code);
+				g_output_stream_write_async(g_io_stream_get_output_stream(G_IO_STREAM(user_data->connec)),
+						verify,strlen(verify),0,0,(GAsyncReadyCallback)smsserver_send_getX_ready,user_data);
+			}
 		break;
 		case 401: //TODO:发送MD5密码
 
@@ -236,5 +256,21 @@ void smsserver_getcode(smsserver_readycallback usercb,SoupMessage * msg,const ch
 	//开始连接到服务器
 	g_socket_client_connect_to_host_async(connector,smshost,smsport,0,(GAsyncReadyCallback)smsserver_connected,data);
 }
+
+void smsserver_verifycode(smsserver_readycallback usercb,const char * code,SoupMessage * msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data)
+{
+	smscbdata * data = g_slice_new0(smscbdata);
+
+	data->cb = usercb;
+	data->data  = user_data;
+	data->msg = msg;
+	data->client = client;
+	data->path = path;
+	data->query = query;
+	strncpy(data->code,code,29);
+	//开始连接到服务器
+	g_socket_client_connect_to_host_async(connector,smshost,smsport,0,(GAsyncReadyCallback)smsserver_connected,data);
+}
+
 
 
