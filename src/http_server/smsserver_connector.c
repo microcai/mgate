@@ -33,6 +33,7 @@
 #include <libsoup/soup.h>
 #include "global.h"
 #include "smsserver_connector.h"
+#include "g_socket_client_proxy.h"
 
 typedef struct smscbdata{
 	smsserver_readycallback cb;
