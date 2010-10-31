@@ -123,7 +123,7 @@ void *pcap_thread_func(void * thread_param)
 
 	}else
 	{
-		gchar * nic = g_key_file_get_string(gkeyfile,"monitor","nic",NULL);
+		gchar * nic = g_key_file_get_string(gkeyfile,PACKAGE_NAME,"nic",NULL);
 		if(nic)
 			g_strchomp(g_strchug(nic));
 		else
