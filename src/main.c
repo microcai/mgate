@@ -54,13 +54,12 @@ const gchar * config_file_name = "/etc/mgate.cfg";
 static void copyright_notice()
 {
 	g_printf("%s Version %s\n",PACKAGE_NAME,PACKAGE_VERSION);
-	g_printf("Copyright %s %s %d-%d\n","©",_("MicroAppliyLab"),2008,2010);
+	g_printf("Copyright %s %s %d-%d\n",_("©"),_("MicroAppliyLab"),2008,2010);
 	g_printf("All rights reserved\n");
 }
 
 int main(int argc, char*argv[], char*env[])
 {
-	time_t t;
 	GMainLoop * loop;
 	GError* err = NULL;
 	gboolean createdb = FALSE;
@@ -82,13 +81,15 @@ int main(int argc, char*argv[], char*env[])
 	textdomain(GETTEXT_PACKAGE);
 	bindtextdomain(GETTEXT_PACKAGE,GETTEXT_LOCALE_PATH);
 #ifdef DEBUG
-	bindtextdomain(GETTEXT_PACKAGE,"/tmp//usr/local/share/locale/");
+	bindtextdomain(GETTEXT_PACKAGE,"/tmp/usr/local/share/locale/");
 #endif
 
 	g_thread_init(NULL);
 	g_type_init();
 	g_set_prgname(PACKAGE_NAME);
-	g_set_application_name(_("monitor - A monitor tool"));
+	g_set_application_name(_("mgate - A monitoring gateway"));
+
+	g_log_set_default_handler(myLog,NULL);
 
 	GOptionEntry args[] =
 	{
@@ -107,8 +108,6 @@ int main(int argc, char*argv[], char*env[])
 			{"pcapfile",0,0,G_OPTION_ARG_FILENAME,&pcapfile,N_("using dumped file other that live capture. - for stdin"),N_("pcapsavefile")},
 			{0}
 	};
-
-	time(&t);
 
 	copyright_notice();
 
@@ -236,6 +235,13 @@ static void check_pid(gboolean force)
 void myLog(const gchar *log_domain, GLogLevelFlags log_level,
 		const gchar *message, gpointer user_data)
 {
+	FILE * logfd;
+
+	if (user_data)
+		logfd = user_data;
+	else
+		logfd = stdout;
+
 	const char * level = "info";
 
 	if(log_level & G_LOG_LEVEL_USER_SHIFT)
@@ -271,7 +277,15 @@ void myLog(const gchar *log_domain, GLogLevelFlags log_level,
 		level = "error";
 	}
 
-	fprintf(user_data,"%s (%d) **%s** : %s\n",PACKAGE_NAME,getpid(),
+	if(log_level & G_LOG_FLAG_FATAL)
+	{
+		if (user_data)
+			logfd = user_data;
+		else
+			logfd = stderr;
+	}
+
+	fprintf(logfd,"%s (%d) **%s** : %s\n",PACKAGE_NAME,getpid(),
 			level,
 			message);
 	fflush(user_data);
