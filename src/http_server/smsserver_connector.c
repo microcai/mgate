@@ -133,8 +133,9 @@ static void smsserver_recv_getX_ready(GInputStream *source_object,GAsyncResult *
 
 	switch(status)
 	{
-	case 200:
-	case 404:
+	case SOUP_STATUS_OK:
+	case SOUP_STATUS_NOT_FOUND:
+	case SOUP_STATUS_PROCESSING:
 		break;
 	default:
 		CALL_USER_CB(user_data,0);

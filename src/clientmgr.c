@@ -363,8 +363,8 @@ void clientmgr_insert_client_by_mac(guchar * mac, Client * client)
 
 	Client* old = clientmgr_get_client_by_mac_internal(mac);
 
-	if(old && clientmgr_reomve_client_internal(old))
-			g_object_unref(old);
+	if(old)
+		clientmgr_reomve_client_internal(old);
 
 	guchar * mac_ = g_memdup(mac,6);
 	g_tree_insert(client_tree, mac_, client);

@@ -22,6 +22,11 @@
 #ifndef HTML_PATHS_H_
 #define HTML_PATHS_H_
 
+#include <glib.h>
+#include <libsoup/soup.h>
+
+G_BEGIN_DECLS
+
 void soup_message_body_appender(const gchar * txt, SoupMessageBody * body) G_GNUC_INTERNAL;
 gboolean celect_usage(gpointer msg) G_GNUC_INTERNAL;
 
@@ -56,5 +61,7 @@ void SoupServer_path_static_file(SoupServer *server, SoupMessage *msg,
 
 void SoupServer_path_keep_alive(SoupServer *server, SoupMessage *msg,const char *path,
 		GHashTable *query, SoupClientContext *client,gpointer user_data)G_GNUC_INTERNAL;
+
+G_END_DECLS
 
 #endif /* HTML_PATHS_H_ */

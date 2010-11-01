@@ -1,9 +1,24 @@
 /*
- * html_path_login.c
+ * html_path_login.c -- 短信验证登录功能
  *
- *  Created on: 2010-10-22
- *      Author: cai
+ *      Copyright 2010 薇菜工作室
+ *
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License as published by
+ *      the Free Software Foundation; either version 2 of the License, or
+ *      (at your option) any later version.
+ *
+ *      This program is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *      GNU General Public License for more details.
+ *
+ *      You should have received a copy of the GNU General Public License
+ *      along with this program; if not, write to the Free Software
+ *      Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *      MA 02110-1301, USA.
  */
+
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -76,7 +91,7 @@ static void sms_verify_code_ready(smsserver_result* rst, SoupServer *server,Soup
 	}
 	switch (rst->statuscode)
 	{
-		case 200: //恩，好
+		case SOUP_STATUS_OK: //恩，好
 		{
 			//首先解析出 phone 号码
 			context = g_markup_parse_context_new(&parser,0,phone,0);
@@ -121,8 +136,14 @@ static void sms_verify_code_ready(smsserver_result* rst, SoupServer *server,Soup
 			}
 		}
 		break;
-		case 404: //验证码没发现
+		case SOUP_STATUS_PROCESSING:
 		{
+			return SoupServer_path_static_file(server,msg,"/processing.html",query,client,user_data);
+		}break;
+		case SOUP_STATUS_NOT_FOUND: //验证码没发现
+		{
+			return SoupServer_path_static_file(server,msg,"/err",query,client,user_data);
+
 			// 没发现啊没发现，
 		}break;
 		default: //显示失败信息，要求重试
