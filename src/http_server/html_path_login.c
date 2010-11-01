@@ -63,70 +63,73 @@ void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path
 
 	int sockclient = soup_socket_get_fd(soup_client_context_get_socket(client));
 
-	if (g_strcmp0(msg->method, "POST") == 0 )
+	if (g_strcmp0(msg->method, "POST"))
+		return ;
+
+	//这个时候我们应该向服务器发起认证，获得对应的手机号码
+
+	soup_message_set_status(msg, SOUP_STATUS_OK);
+
+	soup_message_headers_set_content_type(msg->response_headers, "text/html; charset=UTF-8",
+			NULL);
+	soup_message_headers_set_encoding(msg->response_headers,
+			SOUP_ENCODING_CHUNKED);
+
+	HtmlNode * html = htmlnode_new(NULL,"html",NULL);
+
+	char code[32] =
+	{ 0 };
+
+	if (smsserver_is_online())
+		sscanf(msg->request_body->data, "code=%31[0123456789]", code);
+	else
+		strcpy(code,ip);
+
+	HtmlNode *head =  htmlnode_new_head(html,NULL);
+
+	htmlnode_new_jssrc(head,"jquery-1.4.3.js");
+	htmlnode_new_jssrc(head,"jheartbeat.js");
+
+	HtmlNode * body = htmlnode_new_body(html,NULL);
+
+	HtmlNode * p = htmlnode_new(body,"p",NULL);
+
+	if(arp_ip2mac(inet_addr(ip),mac,sockclient))
 	{
-		soup_message_set_status(msg, SOUP_STATUS_OK);
+		Client * client = client_new(code,code,"990",mac);
+		g_object_set(client,"ipstr", ip, "enable",TRUE,NULL);
 
-		soup_message_headers_set_content_type(msg->response_headers, "text/html; charset=UTF-8",
-				NULL);
-		soup_message_headers_set_encoding(msg->response_headers,
-				SOUP_ENCODING_CHUNKED);
+		//TODO ; check if it is self owned computer
+		client->remove_outdate = TRUE;
 
-		HtmlNode * html = htmlnode_new(NULL,"html",NULL);
+		clientmgr_insert_client_by_mac(mac,client);
 
-		char phone[32] =
-		{ 0 };
+		HtmlNode * div = htmlnode_new(body,"div","id=\"test_div\"",0);
 
-		if (smsserver_is_online())
-			sscanf(msg->request_body->data, "phone=%31[0123456789]", phone);
+		p = htmlnode_new(div,"p",NULL);
+
+		if(smsserver_is_online())
+			htmlnode_new_text(p,"手机号:");
 		else
-			strcpy(phone,ip);
+			htmlnode_new_text(p,"IP地址:");
+		htmlnode_new_text(p,code);
+		htmlnode_new_text(p,"登录成功，你现在起可以自由访问网络了:)");
+		htmlnode_new_text(htmlnode_new(div,"p",NULL),"请不要关闭本页。如果您关闭了本页面，您将立即断网");
+		htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录成功!");
 
-		HtmlNode *head =  htmlnode_new_head(html,NULL);
+		gchar * keep_aliveurl = g_strdup_printf("/keep_alive?phone=%s",code);
 
-		htmlnode_new_jssrc(head,"jquery-1.4.3.js");
-		htmlnode_new_jssrc(head,"jheartbeat.js");
+		htmlnode_new_iframe(body,keep_aliveurl,"height=\"-1\"","width=\"-1\"",0);
 
-		HtmlNode * body = htmlnode_new_body(html,NULL);
+		g_free(keep_aliveurl);
 
-		HtmlNode * p = htmlnode_new(body,"p",NULL);
-
-		if(arp_ip2mac(inet_addr(ip),mac,sockclient))
-		{
-			Client * client = client_new(phone,phone,"990",mac);
-			g_object_set(client,"ipstr", ip, "enable",TRUE,NULL);
-
-			//TODO ; check if it is self owned computer
-			client->remove_outdate = TRUE;
-
-			clientmgr_insert_client_by_mac(mac,client);
-
-			HtmlNode * div = htmlnode_new(body,"div","id=\"test_div\"",0);
-
-			p = htmlnode_new(div,"p",NULL);
-
-			if(smsserver_is_online())
-				htmlnode_new_text(p,"手机号:");
-			else
-				htmlnode_new_text(p,"IP地址:");
-			htmlnode_new_text(p,phone);
-			htmlnode_new_text(p,"登录成功，你现在起可以自由访问网络了:)");
-			htmlnode_new_text(htmlnode_new(div,"p",NULL),"请不要关闭本页。如果您关闭了本页面，您将立即断网");
-			htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录成功!");
-
-			gchar * keep_aliveurl = g_strdup_printf("/keep_alive?phone=%s",phone);
-
-			htmlnode_new_iframe(body,keep_aliveurl,"height=\"-1\"","width=\"-1\"",0);
-
-			g_free(keep_aliveurl);
-
-		}else
-		{
-			htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录失败!");
-			htmlnode_new_text(p,"登录失败，失败啊!你的 手机 是 ");
-			htmlnode_new_text(p,phone);
-		}
-		htmlnode_to_plane_text_and_free(html,(htmlnode_appender)soup_message_body_appender,msg->response_body);
-		soup_message_body_complete(msg->response_body);
+	}else
+	{
+		htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录失败!");
+		htmlnode_new_text(p,"登录失败，失败啊!你的 手机 是 ");
+		htmlnode_new_text(p,code);
 	}
+	htmlnode_to_plane_text_and_free(html,(htmlnode_appender)soup_message_body_appender,msg->response_body);
+	soup_message_body_complete(msg->response_body);
+
 }

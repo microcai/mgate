@@ -104,6 +104,8 @@ void smsserver_pinger_start()
 
 	connector = g_socket_client_new();
 
+	lets_loop_connect(connector);
+
 	//开始不停的连接吧，哈哈
 	g_timeout_add_seconds(30,lets_loop_connect,connector);
 }
@@ -127,6 +129,14 @@ static void smsserver_recv_getX_ready(GInputStream *source_object,GAsyncResult *
 	gint	status;
 	//	好了，我们读取返回的东西了。读取第一行先
 	sscanf(user_data->readbuffer,"%d %*s\n\n",&status);
+
+	if(status!=200)
+	{
+		CALL_USER_CB(user_data,0);
+		g_object_unref(user_data->connec);
+		g_slice_free(smscbdata,user_data);
+		return ;
+	}
 
 	smsserver_result rst;
 	rst.statuscode = status;
@@ -166,8 +176,12 @@ static void smsserver_send_getX_ready(GOutputStream *source_object,GAsyncResult 
 			user_data->readbuffer,sizeof(user_data->readbuffer),0,0,(GAsyncReadyCallback)smsserver_recv_getX_ready,user_data);
 }
 
+static void smsserver_send_ready(GOutputStream *source_object,GAsyncResult *res, smscbdata* user_data);
+
 static void smsserver_recv_user_login_ready(GInputStream *source_object,GAsyncResult *res, smscbdata* user_data)
 {
+	char * seed;
+
 	gssize ret = g_input_stream_read_finish(source_object,res,0);
 
 	if(ret <=0)
@@ -179,7 +193,7 @@ static void smsserver_recv_user_login_ready(GInputStream *source_object,GAsyncRe
 	}
 	//解析服务器返回内容。当下为一个 200 OK
 	gint	status;
-	sscanf(user_data->readbuffer,"%d %*s\n\n",&status);
+	sscanf(user_data->readbuffer,"%d %*s",&status);
 	switch (status)
 	{
 		case 200: //恩，可以开始发送Login 代码了，
@@ -197,7 +211,19 @@ static void smsserver_recv_user_login_ready(GInputStream *source_object,GAsyncRe
 			}
 		break;
 		case 401: //TODO:发送MD5密码
-
+			seed = strstr(user_data->readbuffer,"\n");
+			if(seed)
+			{
+				char seedcode[12]={0};
+				seed ++;
+				sscanf(seed,"SEED:%11s\n\n",seedcode);
+				{
+					//开始加密密码
+					g_output_stream_write_async(g_io_stream_get_output_stream(G_IO_STREAM(user_data->connec)),
+						"PASSWD 123123\n\n",strlen("PASSWD 123123\n\n"),0,0,(GAsyncReadyCallback)smsserver_send_ready,user_data);
+					break;
+				}
+			}
 		default:
 			CALL_USER_CB(user_data,0);
 			g_object_unref(user_data->connec);
@@ -206,7 +232,7 @@ static void smsserver_recv_user_login_ready(GInputStream *source_object,GAsyncRe
 	}
 }
 
-static void smsserver_send_user_login_ready(GOutputStream *source_object,GAsyncResult *res, smscbdata* user_data)
+static void smsserver_send_ready(GOutputStream *source_object,GAsyncResult *res, smscbdata* user_data)
 {
 	gssize ret = g_output_stream_write_finish(source_object,res,0);
 
@@ -217,6 +243,8 @@ static void smsserver_send_user_login_ready(GOutputStream *source_object,GAsyncR
 		g_slice_free(smscbdata,user_data);
 		return ;
 	}
+	memset(user_data->readbuffer,0,sizeof(user_data->readbuffer));
+
 	g_input_stream_read_async(g_io_stream_get_input_stream(G_IO_STREAM(user_data->connec)),
 			user_data->readbuffer,sizeof(user_data->readbuffer),0,0,(GAsyncReadyCallback)smsserver_recv_user_login_ready,user_data);
 
@@ -237,7 +265,7 @@ static void smsserver_connected(GSocketClient *source_object,GAsyncResult *res, 
 //	int use_auth = 0;
 //	if(use_auth){
 	//发送登录口令
-	g_output_stream_write_async(g_io_stream_get_output_stream(G_IO_STREAM(connec)),user_login,strlen(user_login),0,0,(GAsyncReadyCallback)smsserver_send_user_login_ready,user_data);
+	g_output_stream_write_async(g_io_stream_get_output_stream(G_IO_STREAM(connec)),user_login,strlen(user_login),0,0,(GAsyncReadyCallback)smsserver_send_ready,user_data);
 //	}else{
 		//或则直接使用?
 //		g_output_stream_write_async(g_io_stream_get_output_stream(G_IO_STREAM(user_data->connec)),getcode,strlen(getcode),0,0,(GAsyncReadyCallback)smsserver_send_getcode_ready,user_data);

@@ -235,6 +235,12 @@ static void check_pid(gboolean force)
 void myLog(const gchar *log_domain, GLogLevelFlags log_level,
 		const gchar *message, gpointer user_data)
 {
+	const gchar *prg_name = g_get_prgname();
+
+	if (!prg_name)
+		prg_name = "process";
+
+	const char * level;
 	FILE * logfd;
 
 	if (user_data)
@@ -242,39 +248,29 @@ void myLog(const gchar *log_domain, GLogLevelFlags log_level,
 	else
 		logfd = stdout;
 
-	const char * level = "info";
-
-	if(log_level & G_LOG_LEVEL_USER_SHIFT)
+	switch (log_level & G_LOG_LEVEL_MASK)
 	{
-		level = "user";
-	}
-	if(log_level & G_LOG_LEVEL_MASK)
-	{
-		level = "mask";
-	}
-	if(log_level & G_LOG_LEVEL_INFO)
-	{
-		level = "info";
-	}
-	if(log_level & G_LOG_LEVEL_DEBUG)
-	{
-		level = "DEBUG";
-	}
-	if(log_level & G_LOG_LEVEL_CRITICAL)
-	{
-		level = "critical";
-	}
-	if(log_level & G_LOG_LEVEL_MESSAGE)
-	{
-		level = "message";
-	}
-	if(log_level & G_LOG_LEVEL_WARNING)
-	{
-		level = "warning";
-	}
-	if(log_level & G_LOG_LEVEL_ERROR)
-	{
-		level = "error";
+		case G_LOG_LEVEL_ERROR:
+			level = "ERROR";
+			break;
+		case G_LOG_LEVEL_CRITICAL:
+			level = "CRITICAL";
+			break;
+		case G_LOG_LEVEL_WARNING:
+			level = "WARNING";
+			break;
+		case G_LOG_LEVEL_MESSAGE:
+			level = "Message";
+			break;
+		case G_LOG_LEVEL_INFO:
+			level = "INFO";
+			break;
+		case G_LOG_LEVEL_DEBUG:
+			level = "DEBUG";
+			break;
+		default:
+			level = "LOG";
+			break;
 	}
 
 	if(log_level & G_LOG_FLAG_FATAL)
@@ -285,12 +281,12 @@ void myLog(const gchar *log_domain, GLogLevelFlags log_level,
 			logfd = stderr;
 	}
 
-	fprintf(logfd,"%s (%d) **%s** : %s\n",PACKAGE_NAME,getpid(),
-			level,
-			message);
-	fflush(user_data);
-}
+	fprintf(logfd,"(%s:%lu) **%s** : %s\n",prg_name,(gulong)getpid(),
+			level,message);
 
+	if(user_data)
+		fflush(user_data);
+}
 
 gboolean do_daemon(gpointer user_data)
 {
