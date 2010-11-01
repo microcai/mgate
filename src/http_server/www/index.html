@@ -19,6 +19,13 @@
 		var childHtml = document.getElementById("getcode").contentWindow;
 		document.getElementById("codename").value = childHtml.document.getElementById("codename").value;
 	}
+	
+	function getchildcodename()
+	{
+		var childHtml = document.getElementById("getcode").contentWindow;
+		document.getElementById("codename").value = childHtml.document.getElementById("codename").value;
+	}
+
 	//-->
 </script>
  </head>
@@ -31,7 +38,7 @@
 	</tr>
 	<tr>
 	<td width="70%">
-		<iframe frameborder="0"  src="getcode.html" width="50%" id="getcode" name="getcode"></iframe>
+		<iframe frameborder="0"  src="getcode.html" width="50%" id="getcode" name="getcode" onload="getchildcodename()"></iframe>
 		<button type="button" onclick=refreshcode()>重新获得验证码</button>
 	</td>
 	</tr>
@@ -47,8 +54,3 @@
   </form>
  </body>
 </html>
-
-<script language="javascript">
-	var childHtml = document.getElementById("getcode").contentWindow;
-	document.getElementById("codename").value = childHtml.document.getElementById("codename").value;
-</script>
