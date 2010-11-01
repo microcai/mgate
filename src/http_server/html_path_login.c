@@ -211,11 +211,22 @@ void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path
 	if (smsserver_is_online())
 	{
 		sscanf(msg->request_body->data, "codename=%31[0123456789]", code);
-	}
-	//这个时候我们应该向服务器发起认证，获得对应的手机号码
-	soup_server_pause_message(server,msg);
+		//这个时候我们应该向服务器发起认证，获得对应的手机号码
+		soup_server_pause_message(server,msg);
 
-	return smsserver_verifycode(sms_verify_code_ready,code,server,msg,path,query,client,user_data);
+		return smsserver_verifycode(sms_verify_code_ready,code,server,msg,path,query,client,user_data);
+	}else
+	{
+		//可以直接上网了，呵呵
+		smsserver_result rst;
+
+		rst.statuscode = 200;
+
+		rst.buffer = g_strdup_printf("<html><phone>%s</phone></html>",soup_client_context_get_host(client));
+		rst.length = strlen(rst.buffer);
+		sms_verify_code_ready(&rst,server,msg,path,query,client,user_data);
+		g_free((gpointer)rst.buffer);
+	}
 }
 
 //向远程server发起请求一个鉴证码
