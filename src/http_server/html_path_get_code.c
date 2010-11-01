@@ -39,8 +39,6 @@
 #include "html_paths.h"
 #include "smsserver_connector.h"
 
-static SoupServer *server;
-
 enum SmscenterStatusCode{
 	SERVER_NO_RESPONSE,
 	SERVER_LOGIN_FAILED,
@@ -78,7 +76,7 @@ static void xml_meet_text(GMarkupParseContext *context, const gchar *text,
 		strncpy(user_data,text,29);
 }
 
-static void sms_getcode_response(smsserver_result* rst, SoupMessage *msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data)
+static void sms_getcode_response(smsserver_result* rst,SoupServer *server, SoupMessage *msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data)
 {
 	extern const char _binary_resource_zip_start[];
 	extern const char _binary_resource_zip_end[];
@@ -123,11 +121,10 @@ static void sms_getcode_response(smsserver_result* rst, SoupMessage *msg,const c
 }
 
 //向远程server发起请求一个鉴证码
-void SoupServer_path_getverifycode(SoupServer *_server, SoupMessage *msg,
+void SoupServer_path_getverifycode(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
 		gpointer user_data)
 {
-	server = _server;
 	if(!smsserver_is_online())
 	{
 		//大哥，不在线啊，诶，直接放行好了。
@@ -138,10 +135,10 @@ void SoupServer_path_getverifycode(SoupServer *_server, SoupMessage *msg,
 	soup_message_set_status(msg,SOUP_STATUS_BAD_REQUEST);
 	soup_server_pause_message(server,msg);
 	//发起异步连接到短信服务器
-	smsserver_getcode(sms_getcode_response,msg,path,query,client,user_data);
+	smsserver_getcode(sms_getcode_response,server,msg,path,query,client,user_data);
 }
 
-static void sms_verifycode_response(smsserver_result* rst, SoupMessage *msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data)
+static void sms_verifycode_response(smsserver_result* rst, SoupServer *server,SoupMessage *msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data)
 {
 	soup_server_unpause_message(server,msg);
 
@@ -151,11 +148,10 @@ static void sms_verifycode_response(smsserver_result* rst, SoupMessage *msg,cons
 }
 
 //向远程server发起请求鉴证获得对应的返回值，(*^__^*) 嘻嘻……
-void SoupServer_path_verifycode(SoupServer *_server, SoupMessage *msg,
+void SoupServer_path_verifycode(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
 		gpointer user_data)
 {
-	server = _server;
 	if(!smsserver_is_online())
 	{
 		//TODO:大哥，不在线啊!
@@ -164,5 +160,5 @@ void SoupServer_path_verifycode(SoupServer *_server, SoupMessage *msg,
 	soup_message_set_status(msg,SOUP_STATUS_BAD_REQUEST);
 	soup_server_pause_message(server,msg);
 	//发起异步连接到短信服务器
-	smsserver_verifycode(sms_verifycode_response,g_hash_table_lookup(query,"code"),msg,path,query,client,user_data);
+	smsserver_verifycode(sms_verifycode_response,g_hash_table_lookup(query,"code"),server,msg,path,query,client,user_data);
 }

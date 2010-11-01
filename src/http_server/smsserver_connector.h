@@ -28,7 +28,7 @@ typedef struct smsserver_result{
 	gssize		 length;
 } smsserver_result;
 typedef void (*smsserver_readycallback)
-		(smsserver_result*, SoupMessage *msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data);
+		(smsserver_result*,SoupServer *server,SoupMessage *msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data);
 
 /*读取配置文件，并开始检测短信服务器是否在线*/
 void smsserver_pinger_start();
@@ -37,9 +37,9 @@ void smsserver_pinger_start();
 gboolean smsserver_is_online();
 
 /*到服务器获取验证码*/
-void smsserver_getcode(smsserver_readycallback usercb,SoupMessage * msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data);
+void smsserver_getcode(smsserver_readycallback usercb,SoupServer *server,SoupMessage * msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data);
 
 /*获取使用此验证码的手机号码*/
-void smsserver_verifycode(smsserver_readycallback usercb,const char * code,SoupMessage * msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data);
+void smsserver_verifycode(smsserver_readycallback usercb,const char * code,SoupServer *server,SoupMessage * msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data);
 
 #endif /* SMSSERVER_CONNECTOR_H_ */

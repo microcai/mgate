@@ -38,6 +38,7 @@
 typedef struct smscbdata{
 	smsserver_readycallback cb;
 	gpointer data;
+	SoupServer *server;
 	SoupMessage * msg;
 	const char *path;
 	GHashTable *query;
@@ -48,7 +49,7 @@ typedef struct smscbdata{
 }smscbdata;
 
 #define CALL_USER_CB(psmscbdata,pstatus)	\
-	psmscbdata->cb(pstatus,psmscbdata->msg,psmscbdata->path,\
+	psmscbdata->cb(pstatus,psmscbdata->server,psmscbdata->msg,psmscbdata->path,\
 		psmscbdata->query,psmscbdata->client,psmscbdata->data)
 
 
@@ -107,7 +108,7 @@ void smsserver_pinger_start()
 	lets_loop_connect(connector);
 
 	//开始不停的连接吧，哈哈
-	g_timeout_add_seconds(30,lets_loop_connect,connector);
+	g_timeout_add_seconds(5,lets_loop_connect,connector);
 }
 
 gboolean smsserver_is_online()
@@ -272,12 +273,13 @@ static void smsserver_connected(GSocketClient *source_object,GAsyncResult *res, 
 //	}
 }
 
-void smsserver_getcode(smsserver_readycallback usercb,SoupMessage * msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data)
+void smsserver_getcode(smsserver_readycallback usercb,SoupServer *server,SoupMessage * msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data)
 {
 	smscbdata * data = g_slice_new0(smscbdata);
 
 	data->cb = usercb;
 	data->data  = user_data;
+	data->server = server;
 	data->msg = msg;
 	data->client = client;
 	data->path = path;
@@ -286,12 +288,13 @@ void smsserver_getcode(smsserver_readycallback usercb,SoupMessage * msg,const ch
 	g_socket_client_connect_to_host_async(connector,smshost,smsport,0,(GAsyncReadyCallback)smsserver_connected,data);
 }
 
-void smsserver_verifycode(smsserver_readycallback usercb,const char * code,SoupMessage * msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data)
+void smsserver_verifycode(smsserver_readycallback usercb,const char * code,SoupServer *server,SoupMessage * msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data)
 {
 	smscbdata * data = g_slice_new0(smscbdata);
 
 	data->cb = usercb;
 	data->data  = user_data;
+	data->server = server;
 	data->msg = msg;
 	data->client = client;
 	data->path = path;

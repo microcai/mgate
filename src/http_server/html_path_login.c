@@ -55,9 +55,23 @@ void SoupServer_path_keep_alive(SoupServer *server, SoupMessage *msg,const char 
 	soup_message_set_response(msg,"text/html",SOUP_MEMORY_STATIC,keep,sizeof(keep));
 }
 
+static void sms_verify_code_ready(smsserver_result* rst, SoupServer *server,SoupMessage *msg,const char *path, GHashTable *query, SoupClientContext *client,gpointer user_data)
+{
+	if(rst) //需要根据服务器的结果生成通知页面了，(*^__^*) 嘻嘻……
+	{
+//		soup_
+
+	}
+	soup_server_unpause_message(server,msg);
+}
+
 void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path,
 		GHashTable *query, SoupClientContext *client,gpointer user_data)
 {
+	char code[32] =
+	{ 0 };
+
+
 	guchar mac[6];
 	const gchar * ip = soup_client_context_get_host(client);
 
@@ -66,7 +80,17 @@ void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path
 	if (g_strcmp0(msg->method, "POST"))
 		return ;
 
+	strcpy(code,ip);
+	if (smsserver_is_online())
+	{
+		sscanf(msg->request_body->data, "codename=%31[0123456789]", code);
+	}
 	//这个时候我们应该向服务器发起认证，获得对应的手机号码
+
+	soup_server_pause_message(server,msg);
+
+	return smsserver_verifycode(sms_verify_code_ready,code,server,msg,path,query,client,user_data);
+
 
 	soup_message_set_status(msg, SOUP_STATUS_OK);
 
@@ -77,13 +101,6 @@ void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path
 
 	HtmlNode * html = htmlnode_new(NULL,"html",NULL);
 
-	char code[32] =
-	{ 0 };
-
-	if (smsserver_is_online())
-		sscanf(msg->request_body->data, "code=%31[0123456789]", code);
-	else
-		strcpy(code,ip);
 
 	HtmlNode *head =  htmlnode_new_head(html,NULL);
 
