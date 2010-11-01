@@ -5,8 +5,9 @@
 
 <body>
 <input type="hidden" name="codename" id="codename" value="%s"></input>
-<p>您的验证码是</p> %s
-<p>请用手机发送此验证码到</p> %s
+<p>您的验证码是 %s </p> 
+<p>请用手机发送此验证码到 %s , 普通短信资费，不收取额外费用。</p> 
+<p>稍候片刻点击验证就可以上网了</p>
 </body>
 
 </html>

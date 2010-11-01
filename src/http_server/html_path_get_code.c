@@ -74,7 +74,7 @@ static void make_response(SoupMessage * msg, int smscenter_status_code,const cha
 static void xml_meet_text(GMarkupParseContext *context, const gchar *text,
 		gsize text_len, gpointer user_data, GError **error)
 {
-	if(!g_strcmp0(text,user_data))
+	if(!g_strcmp0(g_markup_parse_context_get_element(context),user_data))
 		strncpy(user_data,text,29);
 }
 
@@ -83,7 +83,7 @@ static void sms_getcode_response(smsserver_result* rst, SoupMessage *msg,const c
 	extern const char _binary_resource_zip_start[];
 	extern const char _binary_resource_zip_end[];
 
-	char code[30]="phone";
+	char code[30]="code";
 	char smsc[30]="smsc";
 
 	GMarkupParseContext * context;
@@ -111,12 +111,9 @@ static void sms_getcode_response(smsserver_result* rst, SoupMessage *msg,const c
 		const zipRecord * ziprc = zipbuffer_search(_binary_resource_zip_start,_binary_resource_zip_end,"getcode.xml");
 		char dst[ziprc->size_orig];
 		gsize dstlen  =  sizeof(dst);
-		g_debug("TODO");
 		unzip_buffer(dst,&dstlen,ziprc);
 		dst[dstlen]=0;
-
 		gchar * html = g_strdup_printf(dst,code,code,smsc);
-
 		soup_message_body_append(msg->response_body,SOUP_MEMORY_TAKE,html,strlen(html));
 		soup_message_headers_set_content_type(msg->response_headers,"text/html",0);
 
