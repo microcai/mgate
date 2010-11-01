@@ -108,7 +108,7 @@ void SoupServer_path_info(SoupServer *server, SoupMessage *msg,
 	div = htmlnode_new(htmlbody, "div", "id=\"compiletimeinfo\"", NULL);
 
 
-	tr = g_strdup_printf("",cpu_usage);
+	tr = g_strdup_printf("%d",cpu_usage);
 
 	htmlnode_new_text(htmlnode_new(div, "dd", NULL), tr);
 
