@@ -24,83 +24,44 @@
 #include "htmlnode.h"
 #include "html_paths.h"
 #include "smsserver_connector.h"
+#include "unzip.h"
 
-gboolean remove_outdated_inactive_client(gpointer data)
+
+static void xml_meet_text(GMarkupParseContext *context, const gchar *text,
+		gsize text_len, gpointer user_data, GError **error);
+
+static GMarkupParser parser ={
+		.text = xml_meet_text
+};
+
+static void xml_meet_text(GMarkupParseContext *context, const gchar *text,
+		gsize text_len, gpointer user_data, GError **error)
 {
-	clientmgr_reomve_outdate_client(GPOINTER_TO_SIZE(data));//只有60秒允许啊
-	return TRUE;
+	if(!g_strcmp0(g_markup_parse_context_get_element(context),user_data))
+		strncpy(user_data,text,29);
 }
 
-//登录完成后的页面将不停的刷新本页面(每15s)，如果他在一分钟内没有刷新，那么就判断为下线。
-void SoupServer_path_keep_alive(SoupServer *server, SoupMessage *msg,const char *path,
-		GHashTable *query, SoupClientContext *soupclient,gpointer user_data)
-{
-	static char keep[]=""
-			"<html>\n\t<head>\n\t\t<meta http-equiv=\"Refresh\"content=\"5\">\n"
-			"\t</head>\n</html>\n";
-
-	//使用 GET 的方法啦。
-	// GET /keep_alive?phone=xxxxxxx
-	const char * phone = g_hash_table_lookup(query,"phone");
-
-	const gchar * ip = soup_client_context_get_host(soupclient);
-
-	Client * client = clientmgr_get_client_by_ip(inet_addr(ip));
-
-	if(client && !g_strcmp0(client->id,phone))
-		return SoupServer_path_404(server,msg,path,query,soupclient,user_data);
-
-	time(&client->last_active_time);
-	soup_message_set_status(msg,SOUP_STATUS_OK);
-	soup_message_set_response(msg,"text/html",SOUP_MEMORY_STATIC,keep,sizeof(keep));
-}
 
 static void sms_verify_code_ready(smsserver_result* rst, SoupServer *server,SoupMessage *msg,const char *path, GHashTable *query, SoupClientContext *client,gpointer user_data)
 {
-	if(rst) //需要根据服务器的结果生成通知页面了，(*^__^*) 嘻嘻……
-	{
-//		soup_
-
-	}
-	soup_server_unpause_message(server,msg);
-}
-
-void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path,
-		GHashTable *query, SoupClientContext *client,gpointer user_data)
-{
-	char code[32] =
-	{ 0 };
-
-
 	guchar mac[6];
-	const gchar * ip = soup_client_context_get_host(client);
+	gchar	 phone[31]="phone";
+	GMarkupParseContext * context;
+	const gchar * ip;
+
+	ip = soup_client_context_get_host(client);
 
 	int sockclient = soup_socket_get_fd(soup_client_context_get_socket(client));
 
-	if (g_strcmp0(msg->method, "POST"))
-		return ;
-
-	strcpy(code,ip);
-	if (smsserver_is_online())
-	{
-		sscanf(msg->request_body->data, "codename=%31[0123456789]", code);
-	}
-	//这个时候我们应该向服务器发起认证，获得对应的手机号码
-
-	soup_server_pause_message(server,msg);
-
-	return smsserver_verifycode(sms_verify_code_ready,code,server,msg,path,query,client,user_data);
-
-
+	soup_server_unpause_message(server,msg);
 	soup_message_set_status(msg, SOUP_STATUS_OK);
 
 	soup_message_headers_set_content_type(msg->response_headers, "text/html; charset=UTF-8",
 			NULL);
 	soup_message_headers_set_encoding(msg->response_headers,
-			SOUP_ENCODING_CHUNKED);
+			SOUP_ENCODING_CONTENT_LENGTH);
 
 	HtmlNode * html = htmlnode_new(NULL,"html",NULL);
-
 
 	HtmlNode *head =  htmlnode_new_head(html,NULL);
 
@@ -109,44 +70,147 @@ void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path
 
 	HtmlNode * body = htmlnode_new_body(html,NULL);
 
-	HtmlNode * p = htmlnode_new(body,"p",NULL);
-
-	if(arp_ip2mac(inet_addr(ip),mac,sockclient))
+	if(!rst) //需要根据服务器的结果生成通知页面了，(*^__^*) 嘻嘻……
 	{
-		Client * client = client_new(code,code,"990",mac);
-		g_object_set(client,"ipstr", ip, "enable",TRUE,NULL);
-
-		//TODO ; check if it is self owned computer
-		client->remove_outdate = TRUE;
-
-		clientmgr_insert_client_by_mac(mac,client);
-
-		HtmlNode * div = htmlnode_new(body,"div","id=\"test_div\"",0);
-
-		p = htmlnode_new(div,"p",NULL);
-
-		if(smsserver_is_online())
-			htmlnode_new_text(p,"手机号:");
-		else
-			htmlnode_new_text(p,"IP地址:");
-		htmlnode_new_text(p,code);
-		htmlnode_new_text(p,"登录成功，你现在起可以自由访问网络了:)");
-		htmlnode_new_text(htmlnode_new(div,"p",NULL),"请不要关闭本页。如果您关闭了本页面，您将立即断网");
-		htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录成功!");
-
-		gchar * keep_aliveurl = g_strdup_printf("/keep_alive?phone=%s",code);
-
-		htmlnode_new_iframe(body,keep_aliveurl,"height=\"-1\"","width=\"-1\"",0);
-
-		g_free(keep_aliveurl);
-
-	}else
-	{
-		htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录失败!");
-		htmlnode_new_text(p,"登录失败，失败啊!你的 手机 是 ");
-		htmlnode_new_text(p,code);
+		return SoupServer_path_static_file(server,msg,"/err",query,client,user_data);
 	}
+	switch (rst->statuscode)
+	{
+		case 200: //恩，好
+		{
+			//首先解析出 phone 号码
+			context = g_markup_parse_context_new(&parser,0,phone,0);
+			g_markup_parse_context_parse(context,rst->buffer,rst->length,0);
+			g_markup_parse_context_free(context);
+			HtmlNode * p = htmlnode_new(body,"p",NULL);
+
+			if(arp_ip2mac(inet_addr(ip),mac,sockclient))
+			{
+				Client * client = client_new(phone,phone,"990",mac);
+				g_object_set(client,"ipstr", ip, "enable",TRUE,NULL);
+
+				//TODO ; check if it is self owned computer
+				client->remove_outdate = TRUE;
+
+				clientmgr_insert_client_by_mac(mac,client);
+
+				HtmlNode * div = htmlnode_new(body,"div","id=\"test_div\"",0);
+
+				p = htmlnode_new(div,"p",NULL);
+
+				if(smsserver_is_online())
+					htmlnode_new_text(p,"手机号:");
+				else
+					htmlnode_new_text(p,"IP地址:");
+				htmlnode_new_text(p,phone);
+				htmlnode_new_text(p,"登录成功，你现在起可以自由访问网络了:)");
+				htmlnode_new_text(htmlnode_new(div,"p",NULL),"请不要关闭本页。如果您关闭了本页面，您将立即断网");
+				htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录成功!");
+
+				gchar * keep_aliveurl = g_strdup_printf("/keep_alive?phone=%s",phone);
+
+				htmlnode_new_iframe(body,keep_aliveurl,"height=\"-1\"","width=\"-1\"",0);
+
+				g_free(keep_aliveurl);
+
+			}else
+			{
+				htmlnode_new_text(htmlnode_new(htmlnode_new_head(html,NULL),"title",NULL),"登录失败!");
+				htmlnode_new_text(p,"登录失败，请在局域网环境中使用!你的 手机 是 ");
+				htmlnode_new_text(p,phone);
+			}
+		}
+		break;
+		case 404: //验证码没发现
+		{
+			// 没发现啊没发现，
+		}break;
+		default: //显示失败信息，要求重试
+			break;
+	}
+
 	htmlnode_to_plane_text_and_free(html,(htmlnode_appender)soup_message_body_appender,msg->response_body);
 	soup_message_body_complete(msg->response_body);
+}
 
+static void sms_getcode_response(smsserver_result* rst,SoupServer *server, SoupMessage *msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data)
+{
+	extern const char _binary_resource_zip_start[];
+	extern const char _binary_resource_zip_end[];
+
+	char code[30]="code";
+	char smsc[30]="smsc";
+
+	GMarkupParseContext * context;
+
+	if (!rst || rst->statuscode!=200)
+	{
+		//连接错误
+		SoupServer_path_static_file(server,msg,path,query,client,user_data);
+		soup_message_set_status(msg, SOUP_STATUS_BAD_REQUEST);
+	}
+	else
+	{
+		soup_message_set_status(msg,rst->statuscode);
+
+		//接下来，进行 XML 解析来搞到文本，(*^__^*) 嘻嘻……
+		context = g_markup_parse_context_new(&parser,0,code,0);
+		g_markup_parse_context_parse(context,rst->buffer,rst->length,0);
+		g_markup_parse_context_free(context);
+
+		context = g_markup_parse_context_new(&parser,0,smsc,0);
+		g_markup_parse_context_parse(context,rst->buffer,rst->length,0);
+		g_markup_parse_context_free(context);
+		//然后根据搞到的验证码，生成页面
+		//通过解压内置的 resource.zip 来获得模板。文件名是 getcode.xml
+		const zipRecord * ziprc = zipbuffer_search(_binary_resource_zip_start,_binary_resource_zip_end,"getcode.xml");
+		char dst[ziprc->size_orig];
+		gsize dstlen  =  sizeof(dst);
+		unzip_buffer(dst,&dstlen,ziprc);
+		dst[dstlen]=0;
+		gchar * html = g_strdup_printf(dst,code,code,smsc);
+		soup_message_body_append(msg->response_body,SOUP_MEMORY_TAKE,html,strlen(html));
+		soup_message_headers_set_content_type(msg->response_headers,"text/html",0);
+
+		soup_message_body_complete(msg->response_body);
+	}
+	return 	soup_server_unpause_message(server,msg);
+}
+
+//向远程server请求一个鉴证码对应的手机号码
+void SoupServer_path_login(SoupServer *server, SoupMessage *msg,const char *path,
+		GHashTable *query, SoupClientContext *client,gpointer user_data)
+{
+	char code[32] =
+	{ 0 };
+
+	if (g_strcmp0(msg->method, "POST"))
+		return ;
+
+	if (smsserver_is_online())
+	{
+		sscanf(msg->request_body->data, "codename=%31[0123456789]", code);
+	}
+	//这个时候我们应该向服务器发起认证，获得对应的手机号码
+	soup_server_pause_message(server,msg);
+
+	return smsserver_verifycode(sms_verify_code_ready,code,server,msg,path,query,client,user_data);
+}
+
+//向远程server发起请求一个鉴证码
+void SoupServer_path_getverifycode(SoupServer *server, SoupMessage *msg,
+		const char *path, GHashTable *query, SoupClientContext *client,
+		gpointer user_data)
+{
+	if(!smsserver_is_online())
+	{
+		//大哥，不在线啊，诶，直接放行好了。
+		return SoupServer_path_static_file(server,msg,path,query,client,user_data);
+	}
+
+	//先暂停掉服务器
+	soup_message_set_status(msg,SOUP_STATUS_BAD_REQUEST);
+	soup_server_pause_message(server,msg);
+	//发起异步连接到短信服务器
+	smsserver_getcode(sms_getcode_response,server,msg,path,query,client,user_data);
 }

@@ -131,8 +131,12 @@ static void smsserver_recv_getX_ready(GInputStream *source_object,GAsyncResult *
 	//	好了，我们读取返回的东西了。读取第一行先
 	sscanf(user_data->readbuffer,"%d %*s\n\n",&status);
 
-	if(status!=200)
+	switch(status)
 	{
+	case 200:
+	case 404:
+		break;
+	default:
 		CALL_USER_CB(user_data,0);
 		g_object_unref(user_data->connec);
 		g_slice_free(smscbdata,user_data);

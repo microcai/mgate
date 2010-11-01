@@ -45,7 +45,7 @@ libhttp_server_a_SOURCES += html_path_info.c
 libhttp_server_a_SOURCES += html_path_login.c
 libhttp_server_a_SOURCES += html_path_static_file.c
 libhttp_server_a_SOURCES += html_path_404.c
-libhttp_server_a_SOURCES += html_path_get_code.c
+libhttp_server_a_SOURCES += html_path_keepalive.c
 libhttp_server_a_SOURCES += smsserver_connector.c smsserver_connector.h
 
 
