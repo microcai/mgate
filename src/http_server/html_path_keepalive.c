@@ -48,7 +48,7 @@ void SoupServer_path_keep_alive(SoupServer *server, SoupMessage *msg,const char 
 
 	Client * client = clientmgr_get_client_by_ip(inet_addr(ip));
 
-	if(client && !g_strcmp0(client->id,phone))
+	if(!client || g_strcmp0(client->id,phone))
 		return SoupServer_path_404(server,msg,path,query,soupclient,user_data);
 
 	time(&client->last_active_time);
