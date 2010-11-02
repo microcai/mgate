@@ -34,6 +34,7 @@
 #include "global.h"
 #include "smsserver_connector.h"
 #include "g_socket_client_proxy.h"
+#include "md5.h"
 
 typedef struct smscbdata{
 	smsserver_readycallback cb;
@@ -57,11 +58,11 @@ typedef struct smscbdata{
 static GSocketClient	* connector;
 static gchar *			  smshost;
 static gushort			  smsport = 25720;
-static gchar * 			  user_login;
-static gboolean			  isonline ;
-static gchar * 			  getcode;
-static gchar * 			  verify_code;
-
+static gchar * 			user_login;
+static gboolean			isonline ;
+static gchar * 			getcode;
+static gchar * 			verify_code;
+static const gchar *				passwd = "123456";
 
 static gint loop_connect;
 
@@ -187,6 +188,8 @@ static void smsserver_send_ready(GOutputStream *source_object,GAsyncResult *res,
 static void smsserver_recv_user_login_ready(GInputStream *source_object,GAsyncResult *res, smscbdata* user_data)
 {
 	char * seed;
+	u_char	digest[16];
+	gchar * compass;
 
 	gssize ret = g_input_stream_read_finish(source_object,res,0);
 
@@ -222,11 +225,20 @@ static void smsserver_recv_user_login_ready(GInputStream *source_object,GAsyncRe
 			{
 				char seedcode[12]={0};
 				seed ++;
-				sscanf(seed,"SEED:%11s\n\n",seedcode);
+				if(sscanf(seed,"SEED%*[ :]%11[0-9a-fA-F]\n\n",seedcode)==1)
 				{
 					//开始加密密码
+					compass = g_strdup_printf("%s%s",passwd,seedcode);
+
+					Computehash((guchar*)compass,strlen(compass),digest);
+					g_free(compass);
+
+					int len = snprintf(user_data->readbuffer,sizeof(user_data->readbuffer),"PASSWD %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n\n",
+							digest[0],digest[1],digest[2],digest[3],digest[4],digest[5],digest[6],digest[7],
+							digest[8],digest[9],digest[10],digest[11],digest[12],digest[13],digest[14],digest[15]);
+
 					g_output_stream_write_async(g_io_stream_get_output_stream(G_IO_STREAM(user_data->connec)),
-						"PASSWD 123123\n\n",strlen("PASSWD 123123\n\n"),0,0,(GAsyncReadyCallback)smsserver_send_ready,user_data);
+						user_data->readbuffer,len,0,0,(GAsyncReadyCallback)smsserver_send_ready,user_data);
 					break;
 				}
 			}
