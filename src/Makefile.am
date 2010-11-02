@@ -29,7 +29,7 @@ mgate_SOURCES += clientmgr.c clientmgr.h
 mgate_SOURCES += utils.c utils.h
 mgate_SOURCES += module.c module.h
 mgate_SOURCES += kpolice.c kpolice.h
-mgate_SOURCES += g_socket_client_proxy.c g_socket_client_proxy.h
+mgate_SOURCES += socket/g_socket_client_proxy.c socket/g_socket_client_proxy.h
 
 mgate_SOURCES += ksql.h ksql.c
 mgate_SOURCES += traffic_status.c traffic_status.h

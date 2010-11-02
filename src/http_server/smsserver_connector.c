@@ -33,7 +33,7 @@
 #include <libsoup/soup.h>
 #include "global.h"
 #include "smsserver_connector.h"
-#include "g_socket_client_proxy.h"
+#include "socket/g_socket_client_proxy.h"
 #include "md5.h"
 
 typedef struct smscbdata{
