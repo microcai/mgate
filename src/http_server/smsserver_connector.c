@@ -74,6 +74,8 @@ static void smsserver_loop_connected(GSocketClient *source_object,GAsyncResult *
 
 	isonline = (connec!=NULL);
 
+	g_object_unref(connec);
+
 #ifdef DEBUG
 	g_debug("短信服务器 %s 目前%s",smshost,isonline?"在线":"不在线");
 #endif
@@ -278,12 +280,11 @@ static void smsserver_connected(GSocketClient *source_object,GAsyncResult *res, 
 		return ;
 	}
 	user_data->connec = connec;
-	g_object_ref(connec);
 
 //	int use_auth = 0;
 //	if(use_auth){
 	//发送登录口令
-	g_output_stream_write_async(g_io_stream_get_output_stream(G_IO_STREAM(connec)),user_login,strlen(user_login),0,0,(GAsyncReadyCallback)smsserver_send_ready,user_data);
+	g_output_stream_write_async(g_io_stream_get_output_stream(G_IO_STREAM(user_data->connec)),user_login,strlen(user_login),0,0,(GAsyncReadyCallback)smsserver_send_ready,user_data);
 //	}else{
 		//或则直接使用?
 //		g_output_stream_write_async(g_io_stream_get_output_stream(G_IO_STREAM(user_data->connec)),getcode,strlen(getcode),0,0,(GAsyncReadyCallback)smsserver_send_getcode_ready,user_data);
