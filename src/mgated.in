@@ -31,7 +31,7 @@ depend()
 start () {
 	echo -n $"Starting $prog: "
 
-	monitor --daemon --module_dir=@libexecdir@/@PACKAGE_NAME@
+	@PACKAGE_NAME@ --daemon --module_dir=@libexecdir@/@PACKAGE_NAME@
 	
 	echo "OK"
 	return 0
