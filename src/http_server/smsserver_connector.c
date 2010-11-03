@@ -34,6 +34,7 @@
 #include "global.h"
 #include "smsserver_connector.h"
 #include "socket/g_socket_client_proxy.h"
+#include "g_socket_source.h"
 #include "md5.h"
 
 typedef struct smscbdata{
@@ -54,9 +55,7 @@ typedef struct smscbdata{
 		psmscbdata->query,psmscbdata->client,psmscbdata->data)
 
 
-
-static GSocketClient	* connector;
-static gchar *			  smshost;
+static gchar 			  smshost[255];
 static gushort			  smsport = 25720;
 static gchar * 			user_login;
 static gboolean			isonline ;
@@ -64,17 +63,18 @@ static gchar * 			getcode;
 static gchar * 			verify_code;
 static const gchar *				passwd = "123456";
 
-static gint loop_connect;
+static gint loop_connect ;
 
-static void smsserver_loop_connected(GSocketClient *source_object,GAsyncResult *res, smscbdata* user_data)
+static void smsserver_loop_connected(GSocket *source,GAsyncResult * res,gpointer user_data)
 {
 	loop_connect = 0;
 
-	GSocketConnection * connec =  g_socket_client_connect_to_host_finish(source_object,res,NULL);
+	GSocketConnection * con = g_socket_connect_to_host_finish(source,res);
 
-	isonline = (connec!=NULL);
+	isonline = con?1:0;
 
-	g_object_unref(connec);
+	if(con)
+		g_object_unref(con);
 
 #ifdef DEBUG
 	g_debug("短信服务器 %s 目前%s",smshost,isonline?"在线":"不在线");
@@ -86,7 +86,8 @@ static gboolean lets_loop_connect(gpointer user_data)
 	if(!loop_connect)
 	{
 		loop_connect =1 ;
-		g_socket_client_connect_to_host_async(user_data,smshost,smsport,0,(GAsyncReadyCallback)smsserver_loop_connected,NULL);
+		g_socket_connect_to_host_async(smshost,smsport,(GAsyncReadyCallback)smsserver_loop_connected,NULL);
+
 	}
 #ifdef DEBUG
 	else{ g_debug("重连的时候还没超时"); }
@@ -104,14 +105,16 @@ void smsserver_pinger_start()
 	verify_code = g_strdup_printf("GET /verifycode?ID=%s",hid);
 	g_free(hid);
 
-	smshost = g_strstrip(g_key_file_get_string(gkeyfile,"sms","smshost",0));
 
-	connector = g_socket_client_new();
 
-	lets_loop_connect(connector);
+	gchar * sms_host = g_strstrip(g_key_file_get_string(gkeyfile,"sms","smshost",0));
+
+	sscanf(sms_host,"%[^:]:%"G_GUINT16_FORMAT,smshost,&smsport);
+
+	lets_loop_connect(0);
 
 	//开始不停的连接吧，哈哈
-	g_timeout_add_seconds(5,lets_loop_connect,connector);
+	g_timeout_add_seconds(5,lets_loop_connect,0);
 }
 
 gboolean smsserver_is_online()
@@ -270,9 +273,9 @@ static void smsserver_send_ready(GOutputStream *source_object,GAsyncResult *res,
 
 }
 
-static void smsserver_connected(GSocketClient *source_object,GAsyncResult *res, smscbdata* user_data)
+static void smsserver_connected(GSocket *source_object,GAsyncResult *res, smscbdata* user_data)
 {
-	GSocketConnection * connec =  g_socket_client_connect_to_host_finish(source_object,res,NULL);
+	GSocketConnection * connec =  g_socket_connect_to_host_finish(source_object,res);
 	if(!connec) // NOT connecteable
 	{
 		CALL_USER_CB(user_data,0);
@@ -303,7 +306,8 @@ void smsserver_getcode(smsserver_readycallback usercb,SoupServer *server,SoupMes
 	data->path = path;
 	data->query = query;
 	//开始连接到服务器
-	g_socket_client_connect_to_host_async(connector,smshost,smsport,0,(GAsyncReadyCallback)smsserver_connected,data);
+	g_socket_connect_to_host_async(smshost,smsport,(GAsyncReadyCallback)smsserver_connected,data);
+
 }
 
 void smsserver_verifycode(smsserver_readycallback usercb,const char * code,SoupServer *server,SoupMessage * msg,const char *path,GHashTable *query, SoupClientContext *client,gpointer user_data)
@@ -318,8 +322,9 @@ void smsserver_verifycode(smsserver_readycallback usercb,const char * code,SoupS
 	data->path = path;
 	data->query = query;
 	strncpy(data->code,code,29);
+
 	//开始连接到服务器
-	g_socket_client_connect_to_host_async(connector,smshost,smsport,0,(GAsyncReadyCallback)smsserver_connected,data);
+	g_socket_connect_to_host_async(smshost,smsport,(GAsyncReadyCallback)smsserver_connected,data);
 }
 
 
