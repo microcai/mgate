@@ -15,13 +15,14 @@ AC_ARG_ENABLE(debug,
                CFLAGS+=" -g2 -DDEBUG -Wall -O0"
                  ]
               )
+AC_CANONICAL_TARGET
+AC_CANONICAL_SYSTEM
+
 # Checks for programs.
 AC_GNU_SOURCE
 AC_PROG_CC_C99
 AC_PROG_CXX
 AC_PROG_RANLIB
-AC_CANONICAL_TARGET
-AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall -Werror])
 
 # define GETTEXT_* variables
