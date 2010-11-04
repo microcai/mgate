@@ -15,7 +15,7 @@
 
 解压后进入解压后的目录
 
-执行 ./configure
+执行 ./configure --prefix=/usr
 
 如果需要的软件包都有的话，这一步应该很快就会通过。
 
@@ -34,9 +34,9 @@
 
 配置指导
 
-需要配置的文件在 /etc/monitor.cfg
+需要配置的文件在 /etc/mgate.cfg
 请详细阅读注释，相信可以很快完成配置
 
 配置好后运行 mysql 和 monitor (用 root 执行)
 /etc/init.d/mysqld start (如果编译进了mysql支持的话)
-/etc/init.d/monitord start
+/etc/init.d/mgated start

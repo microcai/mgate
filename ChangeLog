@@ -1,5 +1,5 @@
-version	2.0.0
-	NEW: rewite with C and glib
+version 2.0.0
+	NEW: rewite with C and glib, support sms verification
 
 version 1.2.0
 	NEW: support sqlite database back-end
