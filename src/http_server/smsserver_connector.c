@@ -35,7 +35,6 @@
 #include "smsserver_connector.h"
 #include "socket/g_socket_client_proxy.h"
 #include "socket/g_socket_source.h"
-#include "md5.h"
 
 typedef struct smscbdata{
 	smsserver_readycallback cb;
@@ -193,7 +192,6 @@ static void smsserver_send_ready(GOutputStream *source_object,GAsyncResult *res,
 static void smsserver_recv_user_login_ready(GInputStream *source_object,GAsyncResult *res, smscbdata* user_data)
 {
 	char * seed;
-	u_char	digest[16];
 	gchar * compass;
 
 	gssize ret = g_input_stream_read_finish(source_object,res,0);
@@ -235,12 +233,15 @@ static void smsserver_recv_user_login_ready(GInputStream *source_object,GAsyncRe
 					//开始加密密码
 					compass = g_strdup_printf("%s%s",passwd,seedcode);
 
-					Computehash((guchar*)compass,strlen(compass),digest);
+					GChecksum * gmd5 = g_checksum_new(G_CHECKSUM_MD5);
+
+					g_checksum_update(gmd5,(guchar*)compass,strlen(compass));
+
 					g_free(compass);
 
-					int len = snprintf(user_data->readbuffer,sizeof(user_data->readbuffer),"PASSWD %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n\n",
-							digest[0],digest[1],digest[2],digest[3],digest[4],digest[5],digest[6],digest[7],
-							digest[8],digest[9],digest[10],digest[11],digest[12],digest[13],digest[14],digest[15]);
+					int len = snprintf(user_data->readbuffer,sizeof(user_data->readbuffer),"PASSWD %s\n\n",g_checksum_get_string(gmd5));
+
+					g_checksum_free(gmd5);
 
 					g_output_stream_write_async(g_io_stream_get_output_stream(G_IO_STREAM(user_data->connec)),
 						user_data->readbuffer,len,0,0,(GAsyncReadyCallback)smsserver_send_ready,user_data);
