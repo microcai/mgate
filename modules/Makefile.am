@@ -6,7 +6,7 @@ AM_CPPFLAGS = @GLIB2_CFLAGS@ -I$(top_srcdir)/src -fpic
 
 LIBS = @GLIB2_LIBS@ -shared -Wl,--as-needed
 
-EXTRA_PROGRAMS= libkqq.so libkurl.so libkmsn.so libredirect.so klz.so kjincheng.so 
+EXTRA_PROGRAMS= libkqq.so libkurl.so libkmsn.so libredirect.so klz.so
 
 libexec_PROGRAMS = $(NULL)
 
@@ -34,12 +34,7 @@ libkqq_so_SOURCES = kqq.c
 libkurl_so_SOURCES = kurl.cpp
 libkmsn_so_SOURCES = kmsn.cpp
 
-#libexec_PROGRAMS +=   klz.so kjincheng.so
-#AM_CPPFLAGS += -DENABLE_HOTEL 
-
 klz_so_SOURCES = klz.cpp
-
-kjincheng_so_SOURCES = kServer.cpp kServer.hpp
 
 
 
