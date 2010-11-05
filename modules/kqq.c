@@ -153,7 +153,7 @@ G_MODULE_EXPORT gchar * g_module_check_init(GModule *module)
     return 0;
 }
 
-G_MODULE_EXPORT void g_module_unload()
+G_MODULE_EXPORT void g_module_unload(GModule *module)
 {
 	// here, we need to
 	for ( int i=0; i< 3;++i )
