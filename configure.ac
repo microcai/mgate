@@ -40,7 +40,7 @@ AC_ARG_WITH(mysql-libs,[AC_HELP_STRING([--with-mysql-libs],[supply non-default L
 		[ MYSQL_LIBS=$withval ])
 
 AC_ARG_WITH(mysql-cflags,[AC_HELP_STRING([--with-mysql-cflags],[supply non-default CPP flags for mysql])],
-		[ MYSQL_CFLAGS=$withval ])
+		[ MYSQL_CFLAGS=$withval ])		
 		
 AC_ARG_WITH(sqlite3,
 	[AC_HELP_STRING([--with-sqlite3],[build with sqlite3 backend])],
@@ -52,9 +52,10 @@ AC_ARG_WITH(sqlite3,
 AC_ARG_WITH(jincheng,
 	[AC_HELP_STRING([--without-jincheng],[disable jincheng module])],[],[with_jincheng="yes"])
 
-AC_ARG_WITH(kqq, [AC_HELP_STRING([--with-kqq], [enable kqq module (default)])],[with_kqq=$withval],[with_kqq="yes"])
-AC_ARG_WITH(kurl,[AC_HELP_STRING([--with-kurl],[enable kkurl module (default)])],[with_kurl=$withval],[with_kurl="yes"])
-AC_ARG_WITH(kmsn,[AC_HELP_STRING([--with-kmsn],[enable kmsn module (default)])],[with_kmsn-$withval],[with_kmsn="yes"])
+AC_ARG_WITH(kqq, [AC_HELP_STRING([--without-kqq], [disable kqq module (default is enable)])],[with_kqq=$withval],[with_kqq="yes"])
+AC_ARG_WITH(kurl,[AC_HELP_STRING([--without-kurl],[disable kkurl module (default is enable)])],[with_kurl=$withval],[with_kurl="yes"])
+AC_ARG_WITH(kmsn,[AC_HELP_STRING([--without-kmsn],[disable kmsn module (default is enable)])],[with_kmsn=$withval],[with_kmsn="yes"])
+AC_ARG_WITH(klz,[AC_HELP_STRING([--without-klz],[disable klz module (default is enable)])],[with_klz=$withval],[with_klz="yes"])
 
 AC_ARG_ENABLE(http-server,[AC_HELP_STRING([--disable-http-server],[disable the built-in http server[default is enable.Depends on libsoup-2.4]])],
 	[enable_http_server=$enableval],[enable_http_server=yes])
@@ -62,7 +63,7 @@ AC_ARG_ENABLE(http-server,[AC_HELP_STRING([--disable-http-server],[disable the b
 AM_CONDITIONAL([WITH_KQQ],[test x$with_kqq=xyes])
 AM_CONDITIONAL([WITH_KURL],[test x$with_kurl=xyes])
 AM_CONDITIONAL([WITH_KMSN],[test x$with_kmsn=xyes])
-
+AM_CONDITIONAL([WITH_KLZ],[test x$with_klz=xyes])
 AC_SUBST(MODULES_PATH,/usr/libexec/)
 
 AC_CONFIG_HEADERS([config.h])

@@ -6,7 +6,7 @@ AM_CPPFLAGS = @GLIB2_CFLAGS@ -I$(top_srcdir)/src -fpic
 
 LIBS = @GLIB2_LIBS@ -shared -Wl,--as-needed
 
-EXTRA_PROGRAMS= libkqq.so libkurl.so libkmsn.so libredirect.so klz.so
+EXTRA_PROGRAMS= libkqq.so libkurl.so libkmsn.so libredirect.so libklz.so
 
 libexec_PROGRAMS = $(NULL)
 
@@ -22,6 +22,10 @@ if WITH_KMSN
 libexec_PROGRAMS += libkmsn.so
 endif
 
+if WITH_KLZ
+libexec_PROGRAMS += libklz.so
+endif
+
 if BUILD_HTTPREDIRECT
 libexec_PROGRAMS += libredirect.so
 endif
@@ -34,7 +38,7 @@ libkqq_so_SOURCES = kqq.c
 libkurl_so_SOURCES = kurl.cpp
 libkmsn_so_SOURCES = kmsn.cpp
 
-klz_so_SOURCES = klz.cpp
+libklz_so_SOURCES = klz.c
 
 
 

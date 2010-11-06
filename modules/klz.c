@@ -9,7 +9,6 @@
  *
  */
 
-#include <iostream>
 #include <string.h>
 #include <stdlib.h>
 
@@ -18,14 +17,15 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 
-#include "libdreamtop.h"
+#include <gmodule.h>
 
+#include "pcap_hander.h"
 
 #define MAX_LZ_PORT 3999
 #define MIN_LZ_PORT 2000
 
 
-static bool CheckAccout(char *pAccount, int nLen)
+static gboolean CheckAccout(char *pAccount, int nLen)
 {
 	for (int n=0;n<nLen;n++)
 	{
@@ -57,16 +57,13 @@ static int RecordLZ(char*LZ,u_char*packet,in_addr_t ip)
 	return 1;
 }
 #endif
-static int GetLZAccount(struct so_data*,u_char *packet)
+static gboolean GetLZAccount(pcap_process_thread_param * param , gpointer user_data,Kpolice * police)
 {
-    /**************************************************
-     *IP数据包通常就在以太网数据头的后面。以太网头的大小为14字节*
-     **************************************************/
-    struct iphdr * ip_head = (struct iphdr*) (packet + ETH_HLEN);
+    struct iphdr * ip_head = (struct iphdr*)  param->packet_ip_contents;
     /**************************************************
      *TCP头也就在IP头的后面。IP头的大小为20字节，不过最好从头里读取
      **************************************************/
-    struct tcphdr * tcp_head = (struct tcphdr*) (packet + ETH_HLEN + ip_head->ihl * 4);
+    struct tcphdr * tcp_head = (struct tcphdr*) (param->packet_ip_contents+ ip_head->ihl * 4);
     /**************************************************
      *TCP数据现对于tcp头的偏移由doff给出。这个也是tcp头的大小**
      **************************************************/
@@ -77,7 +74,8 @@ static int GetLZAccount(struct so_data*,u_char *packet)
 
 
 	const int nSize=80;
-	char strLZ[nSize]={0};
+	char strLZ[nSize];
+
 	memset(strLZ,0,nSize);
 
 	short dport = ntohs(tcp_head->dest);
@@ -117,22 +115,14 @@ static int GetLZAccount(struct so_data*,u_char *packet)
 }
 
 static void * hander;
-extern "C" int __module_init(struct so_data*so)
+G_MODULE_EXPORT gchar * g_module_check_init(GModule *module)
 {
-	hander = register_protocol_handler(GetLZAccount, 0, IPPROTO_TCP);
+	hander = pcap_hander_register(GetLZAccount, 0, IPPROTO_TCP,0);
 	return 0;
 }
 
-extern "C" int	so_can_unload(  )
+G_MODULE_EXPORT void g_module_unload(GModule*module)
 {
-	return 1;
+	pcap_hander_unregister(hander);
 }
-
-static void __attribute__((destructor)) so__unload(void)
-{
-	un_register_protocol_handler(hander);
-	sleep(4);
-}
-
-char module_name[]="联众帐号监视";
 
