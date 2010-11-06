@@ -1,8 +1,10 @@
 AUTOMAKE_OPTIONS = foreign
 
-EXTRA_DIST = www
+EXTRA_DIST = www 
 
 BUILT_SOURCES = sym_404.h
+
+CLEANFILES = sym_404.h resource.zip
 
 AM_CPPFLAGS = @NEED_ALL_CFLAGS@ \
 				 -I$(srcdir)/../sqlclient \

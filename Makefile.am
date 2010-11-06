@@ -25,7 +25,7 @@ srpm: dist @PACKAGE_NAME@.spec
 			--define "_specdir `pwd`" \
 			$(spec)
 
-sysconfigdir = /etc
+sysconfigdir = @sysconfdir@
 
 sysconfig_DATA = mgate.cfg
 

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
-"POT-Creation-Date: 2010-10-31 18:48+0800\n"
+"POT-Creation-Date: 2010-11-06 14:18+0800\n"
 "PO-Revision-Date: 2010-10-31 18:48+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
@@ -16,27 +16,27 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: UTF-8\n"
 
-#: src/pcap_thread.c:132
+#: src/pcap_thread.c:131
 #, c-format
 msgid "using %s as capturing interface"
 msgstr "使用网卡 %s 抓包"
 
-#: src/pcap_thread.c:142
+#: src/pcap_thread.c:141
 #, c-format
 msgid "ERROR:can not open %s for capturing!\n"
 msgstr "错误：无法打开 %s 进行抓包\n"
 
-#: src/pcap_thread.c:149
+#: src/pcap_thread.c:148
 #, c-format
 msgid "ERROR:%s is not an ethernet adapter\n"
 msgstr "错误：%s不是一个有效的网卡\n"
 
-#: src/pcap_thread.c:209
+#: src/pcap_thread.c:208
 #, c-format
 msgid "[monitor]:[threads] not set, using 2x cpu (%d) threads"
 msgstr "[monitor]:[threads] 未设置，默认使用2倍 CPU 个数 (%d) "
 
-#: src/pcap_thread.c:219
+#: src/pcap_thread.c:218
 #, c-format
 msgid "Too many thread will exclude the resource limite, reduce to %d"
 msgstr "设置的线程数目太多，超过系统限制，减少到 %d"

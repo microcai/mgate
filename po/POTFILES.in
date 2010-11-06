@@ -15,5 +15,4 @@ src/http_server/html_path_info.c
 src/http_server/html_path_login.c
 src/http_server/http_server.c
 src/main.c
-src/g_socket_client_proxy.c
 src/kpolice.c

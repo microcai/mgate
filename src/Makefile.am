@@ -14,7 +14,7 @@ LIBS += @NEED_ALL_LIBS@ @MYSQL_LIBS@ @SQLITE3_LIBS@
 
 DISTCLEANFILES = mgated
 
-sbindir=/etc/init.d/
+sbindir=@sysconfdir@/init.d/
 
 bin_PROGRAMS = mgate 
 sbin_SCRIPTS = mgated
