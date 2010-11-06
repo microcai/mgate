@@ -38,7 +38,6 @@
 #include <syslog.h>
 #include <string.h>
 #include <glib.h>
-#include "i18n.h"
 
 #include "pcap_hander.h"
 
@@ -164,7 +163,7 @@ int pcap_hander_get(guint16 port, guint16 protocol,pcap_hander_callback_trunk ou
 
 	pcap_hander * hr = &pcap_hander_list;
 
-	while (hr = hr->next)
+	while ((hr = hr->next))
 	{
 		if (hr->port == 0 || hr->port == port)
 		{
@@ -190,7 +189,7 @@ int pcap_hander_get_all(pcap_hander_callback_trunk out[])
 
 	pcap_hander * hr = &pcap_hander_list;
 
-	while (hr = hr->next)
+	while ((hr = hr->next))
 	{
 		out[count].func = hr->FUNC;
 		out[count].user_data = hr->user_data;

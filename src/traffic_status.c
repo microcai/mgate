@@ -30,10 +30,10 @@
 
 #include <glib.h>
 #include <gio/gio.h>
+#include <glib/gi18n.h>
 
 #include "global.h"
 #include "clientmgr.h"
-#include "i18n.h"
 #include "traffic_status.h"
 
 enum directions{

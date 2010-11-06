@@ -21,7 +21,7 @@ sbin_SCRIPTS = mgated
 
 EXTRA_DIST =  mgated.in
 
-mgate_SOURCES =main.c global.h i18n.h
+mgate_SOURCES =main.c global.h
 
 mgate_SOURCES += pcap_thread.c  pcap_thread.h 
 mgate_SOURCES += pcap_hander.c pcap_hander.h

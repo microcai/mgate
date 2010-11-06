@@ -29,11 +29,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <glib.h>
+#include <glib/gi18n.h>
 #include <libsoup/soup.h>
 #include "clientmgr.h"
 #include "utils.h"
 #include "http_server.h"
-#include "i18n.h"
 #include "global.h"
 #include "htmlnode.h"
 #include "traffic_status.h"

@@ -39,7 +39,7 @@
 #include <glib.h>
 #include <glib-object.h>
 
-#include "i18n.h"
+#include <glib/gi18n.h>
 #include "gsqlconnect.h"
 
 static void dumy_func(){}

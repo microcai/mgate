@@ -24,7 +24,7 @@
 #include <glib.h>
 #include <gmodule.h>
 #include <pthread.h>
-#include "i18n.h"
+#include <glib/gi18n.h>
 #include "pcap_hander.h"
 #include "utils.h"
 

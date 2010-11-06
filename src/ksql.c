@@ -39,10 +39,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <glib.h>
+#include <glib/gi18n.h>
 
 
 #include "utils.h"
-#include "i18n.h"
 #include "global.h"
 #include "ksql.h"
 #include "gsqlconnect.h"

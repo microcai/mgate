@@ -39,7 +39,8 @@
 #include <string.h>
 #include <errno.h>
 #include <glib.h>
-#include "i18n.h"
+#include <glib/gi18n.h>
+
 #include "utils.h"
 #include "kpolice.h"
 #include "ksql.h"

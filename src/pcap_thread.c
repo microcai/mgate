@@ -39,8 +39,7 @@
 #include <pthread.h>
 #include <glib.h>
 #include <sys/resource.h>
-
-#include "i18n.h"
+#include <glib/gi18n.h>
 
 #include "utils.h"
 #include "pcap_thread.h"

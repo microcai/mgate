@@ -29,13 +29,13 @@
 #include <unistd.h>
 #include <sys/signal.h>
 #include <sys/stat.h>
-#include <pcap/pcap.h>
 #include <errno.h>
+#include <locale.h>
 #include <glib.h>
+#include <glib/gi18n.h>
 #include <glib/gprintf.h>
 #include <fcntl.h>
 
-#include "i18n.h"
 #include "global.h"
 #include "pcap_thread.h"
 #include "clientmgr.h"

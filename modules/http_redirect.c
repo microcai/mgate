@@ -19,11 +19,11 @@
 #include <glib.h>
 #include <gio/gio.h>
 #include <gmodule.h>
+#include <glib/gi18n.h>
 
 #include "global.h"
 #include "pcap_hander.h"
 #include "clientmgr.h"
-#include "i18n.h"
 
 static void init_thread_libnet();
 static void redirector_host_resove_by_dns(GObject *source_object, GAsyncResult *res,gpointer user_data);

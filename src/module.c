@@ -29,8 +29,7 @@
 #include <glob.h>
 #include <glib.h>
 #include <gmodule.h>
-
-#include "i18n.h"
+#include <glib/gi18n.h>
 
 gboolean module_change(GIOChannel *source, GIOCondition condition,gpointer data)
 {

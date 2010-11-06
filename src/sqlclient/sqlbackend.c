@@ -24,7 +24,7 @@
 #endif
 
 
-#include "i18n.h"
+#include <glib/gi18n.h>
 #include "gsqlconnect.h"
 #include "gsqlconnect_mysql.h"
 #include "gsqlconnect_sqlite3.h"

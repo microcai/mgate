@@ -38,8 +38,7 @@
 #include <stdio.h>
 #include <glib.h>
 #include <gio/gio.h>
-
-#include "i18n.h"
+#include <glib/gi18n.h>
 
 #include "g_socket_client_proxy.h"
 
