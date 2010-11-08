@@ -73,7 +73,8 @@ static void smsserver_loop_connected(GSocketClient *source_object,GAsyncResult *
 
 	isonline = (connec!=NULL);
 
-	g_object_unref(connec);
+	if(connec)
+		g_object_unref(connec);
 
 #ifdef DEBUG
 	g_debug("短信服务器 %s 目前%s",smshost,isonline?"在线":"不在线");
@@ -190,8 +191,10 @@ static void smsserver_recv_user_login_ready(GInputStream *source_object,GAsyncRe
 {
 	char * seed;
 	gchar * compass;
+	GChecksum * gmd5;
+	gssize ret;
 
-	gssize ret = g_input_stream_read_finish(source_object,res,0);
+	ret = g_input_stream_read_finish(source_object,res,0);
 
 	if(ret <=0)
 	{
@@ -230,7 +233,7 @@ static void smsserver_recv_user_login_ready(GInputStream *source_object,GAsyncRe
 					//开始加密密码
 					compass = g_strdup_printf("%s%s",passwd,seedcode);
 
-					GChecksum * gmd5 = g_checksum_new(G_CHECKSUM_MD5);
+					gmd5 = g_checksum_new(G_CHECKSUM_MD5);
 
 					g_checksum_update(gmd5,(guchar*)compass,strlen(compass));
 
