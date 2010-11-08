@@ -108,6 +108,9 @@ void smsserver_pinger_start()
 
 	connector = g_socket_client_new();
 
+	//只给你 10s 的时间完成连接，否则，嘿嘿
+	g_socket_client_set_timeout(connector,10);
+
 	lets_loop_connect(connector);
 
 	//开始不停的连接吧，哈哈
