@@ -34,7 +34,7 @@
 #include "global.h"
 #include "smsserver_connector.h"
 #include "socket/g_socket_client_proxy.h"
-#include "socket/g_socket_source.h"
+#include "g_socket_source.h"
 
 typedef struct smscbdata{
 	smsserver_readycallback cb;
