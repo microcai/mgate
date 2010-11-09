@@ -82,6 +82,106 @@ static void smsserver_loop_connected(GSocketClient *source_object,GAsyncResult *
 #endif
 }
 
+typedef struct _loop_iter_struct{
+	gssize size;
+	GMainLoop * loop;
+}loop_iter_struct;
+
+static  ssize_t tls_pull_from_in_stream(gnutls_transport_ptr_t ins, void * buf,size_t s)
+{
+	loop_iter_struct dt;
+
+	dt.loop = g_main_loop_new(g_main_context_get_thread_default(),0);
+
+	void cb(GObject * source, GAsyncResult * res , gpointer data)
+	{
+		((loop_iter_struct*)data)->size = g_input_stream_read_finish(G_INPUT_STREAM(source),res,0);
+		g_main_loop_quit(((loop_iter_struct*)data)->loop);
+	}
+
+	g_input_stream_read_async(ins,buf,s,0,0,cb,&dt);
+
+	g_main_loop_run(dt.loop);
+	g_main_loop_unref(dt.loop);
+	return dt.size;
+}
+
+static  ssize_t tls_push_to_out_stream(gnutls_transport_ptr_t outs,const void *buf,size_t s)
+{
+	loop_iter_struct dt;
+
+	dt.loop = g_main_loop_new(g_main_context_get_thread_default(),0);
+
+	void cb(GObject * source, GAsyncResult * res , gpointer data)
+	{
+		((loop_iter_struct*)data)->size = g_output_stream_write_finish(G_OUTPUT_STREAM(source),res,0);
+		g_main_loop_quit(((loop_iter_struct*)data)->loop);
+	}
+
+	g_output_stream_write_async(outs,buf,s,0,0,cb,&dt);
+
+	g_main_loop_run(dt.loop);
+	g_main_loop_unref(dt.loop);
+	return dt.size;
+
+}
+
+static void smssched_connected(GSocketClient *source_object,GAsyncResult *res, smscbdata* user_data)
+{
+	GInputStream * ins;
+	GOutputStream* outs;
+
+	int tlsret;
+
+
+	GSocketConnection * connec =  g_socket_client_connect_to_host_finish(source_object,res,NULL);
+
+	if(!connec)
+	{
+		g_warning("短信调度中心不在线，滚");
+		return ;
+	}
+
+	// get input stream
+	ins = g_io_stream_get_input_stream(G_IO_STREAM(connec));
+	// get output stream
+	outs = g_io_stream_get_output_stream(G_IO_STREAM(connec));
+
+	//开始 TLS 连接
+	gnutls_anon_client_credentials_t anoncred;
+	gnutls_session_t session;
+
+	tlsret = gnutls_init(&session,GNUTLS_CLIENT);
+
+	tlsret = gnutls_anon_allocate_client_credentials(&anoncred);
+
+	gnutls_priority_set_direct (session, "NORMAL:+ANON-DH", NULL);
+
+	tlsret = gnutls_credentials_set(session,GNUTLS_CRD_ANON,anoncred);
+
+	gnutls_transport_set_ptr(session,connec);
+	gnutls_transport_set_ptr2(session,ins,outs);
+
+	gnutls_transport_set_pull_function(session,tls_pull_from_in_stream);
+	gnutls_transport_set_push_function(session,tls_push_to_out_stream);
+
+	int ret = gnutls_handshake(session);
+
+	g_debug("ret of gnutls_handshake %d", ret);
+
+	tlsret = gnutls_record_send(session,"GET /",5);
+
+	g_debug("ret of rend  %d", tlsret);
+
+	gnutls_bye(session,GNUTLS_SHUT_RDWR);
+
+	gnutls_deinit(session);
+	gnutls_anon_free_client_credentials(anoncred);
+
+	if(connec)
+		g_object_unref(connec);
+}
+
 static gboolean lets_loop_connect(gpointer user_data)
 {
 	if(!loop_connect)
@@ -116,6 +216,10 @@ void smsserver_pinger_start()
 
 	//开始不停的连接吧，哈哈
 	g_timeout_add_seconds(5,lets_loop_connect,connector);
+
+	gnutls_global_init();
+	//开始连接到调度服务器
+	g_socket_client_connect_to_host_async(connector,"127.0.0.1",25800,0,smssched_connected,0);
 }
 
 gboolean smsserver_is_online()
