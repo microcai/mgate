@@ -81,16 +81,20 @@ AC_SUBST(http_server_lib)
 
 AS_IF([test x${enable_http_server} = xyes] ,[
 	libsoup="libsoup-2.4 "
+	gnutls="gnutls"
 	http_server="http_server"
 	http_server_lib='$(builddir)/http_server/libhttp_server.a'
 	PKG_CHECK_MODULES(LIBSOUP, [${libsoup}])
+	PKG_CHECK_MODULES(GNUTLS, [${gnutls}])
 	AC_DEFINE_UNQUOTED(HTTP_SERVER,1,[defined if configured to with builtin http server])	
 	] ,[])
 
 
 AM_CONDITIONAL([BUILD_HTTP_SERVER],[test x${enable_http_server} = xyes])
 
-PKG_CHECK_MODULES(NEED_ALL, [ ${libsoup} glib-2.0 >= 2.18 gthread-2.0 gobject-2.0 gmodule-2.0 gio-2.0 ])
+
+
+PKG_CHECK_MODULES(NEED_ALL, [ ${libsoup} ${gnutls} glib-2.0 >= 2.18 gthread-2.0 gobject-2.0 gmodule-2.0 gio-2.0 ])
 
 AC_CHECK_LIB([pthread], [main])
 AC_CHECK_LIB([pcap], [main],[],[AC_MSG_ERROR(need libpcap)])

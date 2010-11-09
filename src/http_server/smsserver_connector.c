@@ -31,6 +31,7 @@
 #include <string.h>
 #include <glib.h>
 #include <libsoup/soup.h>
+#include <gnutls/gnutls.h>
 #include "global.h"
 #include "smsserver_connector.h"
 #include "socket/g_socket_client_proxy.h"
