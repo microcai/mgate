@@ -54,33 +54,19 @@ typedef struct smscbdata{
 		psmscbdata->query,psmscbdata->client,psmscbdata->data)
 
 
+#define smsport 25720
 
 static GSocketClient	* connector;
-static gchar *			  smshost;
-static gushort			  smsport = 25720;
+static gchar			  smshost[180];
 static gchar * 			user_login;
 static gboolean			isonline ;
 static gchar * 			getcode;
+static gchar * 			getsmsc; //获得 smsd 的地址
 static gchar * 			verify_code;
-static const gchar *				passwd = "123456";
+static gchar				passwd[160] = "123456";
+static gchar * smssched;
 
-static gint loop_connect;
-
-static void smsserver_loop_connected(GSocketClient *source_object,GAsyncResult *res, smscbdata* user_data)
-{
-	loop_connect = 0;
-
-	GSocketConnection * connec =  g_socket_client_connect_to_host_finish(source_object,res,NULL);
-
-	isonline = (connec!=NULL);
-
-	if(connec)
-		g_object_unref(connec);
-
-#ifdef DEBUG
-	g_debug("短信服务器 %s 目前%s",smshost,isonline?"在线":"不在线");
-#endif
-}
+static void smsserver_loop_connected(GSocketClient *source_object,GAsyncResult *res, smscbdata* user_data);
 
 typedef struct _loop_iter_struct{
 	gssize size;
@@ -126,6 +112,15 @@ static  ssize_t tls_push_to_out_stream(gnutls_transport_ptr_t outs,const void *b
 
 }
 
+static gboolean lets_loop_connect(gpointer user_data)
+{
+	g_socket_client_connect_to_host_async(connector,smshost,smsport,0,(GAsyncReadyCallback)smsserver_loop_connected,NULL);
+	return FALSE;
+}
+
+
+static gboolean connect_sched(gpointer pointer);
+
 static void smssched_connected(GSocketClient *source_object,GAsyncResult *res, smscbdata* user_data)
 {
 	GInputStream * ins;
@@ -133,12 +128,14 @@ static void smssched_connected(GSocketClient *source_object,GAsyncResult *res, s
 
 	int tlsret;
 
-
 	GSocketConnection * connec =  g_socket_client_connect_to_host_finish(source_object,res,NULL);
 
 	if(!connec)
 	{
+#ifdef DEBUG
 		g_warning("短信调度中心不在线，滚");
+#endif
+		g_timeout_add_seconds(5,connect_sched,0);
 		return ;
 	}
 
@@ -165,16 +162,54 @@ static void smssched_connected(GSocketClient *source_object,GAsyncResult *res, s
 	gnutls_transport_set_pull_function(session,tls_pull_from_in_stream);
 	gnutls_transport_set_push_function(session,tls_push_to_out_stream);
 
-	int ret = gnutls_handshake(session);
+	if (gnutls_handshake(session))
+	{
 
-	g_debug("ret of gnutls_handshake %d", ret);
+#ifdef DEBUG
+		g_warning("短信调度TLS握手错误");
+#endif
+		g_timeout_add_seconds(5,connect_sched,0);
+		goto disconnect;
+	}
 
-	tlsret = gnutls_record_send(session,"GET /",5);
+	tlsret = gnutls_record_send(session,getsmsc,strlen(getsmsc));
 
-	g_debug("ret of rend  %d", tlsret);
+	if(tlsret != strlen(getsmsc))
+	{
+		g_timeout_add_seconds(5,connect_sched,0);
+		goto disconnect;
+	}
 
+	char data[512];
+	gnutls_record_recv(session,data,sizeof(data));
+	data[511] = 0;
+
+	gint status;
+
+	gboolean prase_data(gint * status, char smshost[], char passwd[])
+	{
+		return sscanf(data,"%d%*[^\n]%*[^:]%*[ :]%[^\n]\npasswd:%[^\n]\n",status,smshost,passwd)==3;
+	}
+
+	if(!prase_data(&status,smshost,passwd))
+	{
+		g_timeout_add_seconds(5,connect_sched,0);
+		goto disconnect;
+	}
+
+	if(status != 200)
+	{
+		g_timeout_add_seconds(5,connect_sched,0);
+		goto disconnect;
+	}
+
+	g_message("使用短信中心:%s",smshost);
+
+ 	lets_loop_connect(connector);
+ 	//开始不停的连接吧，哈哈
+// 	g_timeout_add_seconds(5,lets_loop_connect,connector);
+disconnect:
 	gnutls_bye(session,GNUTLS_SHUT_RDWR);
-
 	gnutls_deinit(session);
 	gnutls_anon_free_client_credentials(anoncred);
 
@@ -182,44 +217,56 @@ static void smssched_connected(GSocketClient *source_object,GAsyncResult *res, s
 		g_object_unref(connec);
 }
 
-static gboolean lets_loop_connect(gpointer user_data)
+static void smsserver_loop_connected(GSocketClient *source_object,GAsyncResult *res, smscbdata* user_data)
 {
-	if(!loop_connect)
+	GSocketConnection * connec =  g_socket_client_connect_to_host_finish(source_object,res,NULL);
+
+	isonline = (connec!=NULL);
+
+	if (connec)
 	{
-		loop_connect =1 ;
-		g_socket_client_connect_to_host_async(user_data,smshost,smsport,0,(GAsyncReadyCallback)smsserver_loop_connected,NULL);
+		g_object_unref(connec);
+		g_timeout_add_seconds(5,lets_loop_connect,connector);
 	}
+	else
+	{
+		//重新连接到调度中心
+		g_timeout_add_seconds(5,connect_sched,0);
+	}
+
 #ifdef DEBUG
-	else{ g_debug("重连的时候还没超时"); }
+	g_debug("短信服务器 %s 目前%s",smshost,isonline?"在线":"不在线");
 #endif
-	return TRUE;
+
+}
+
+static gboolean connect_sched(gpointer pointer)
+{
+	//开始连接到调度服务器
+	g_socket_client_connect_to_host_async(connector,smssched,25800,0,(GAsyncReadyCallback)smssched_connected,0);
+	return FALSE;
 }
 
 void smsserver_pinger_start()
 {
+	gnutls_global_init();
 	//获得 smshost
 	//开始空白连接，哦哈哈
 	gchar * hid=g_strstrip(g_key_file_get_string(gkeyfile,"kpolice","HotelID",0));
 	user_login = g_strdup_printf("USER %s\n\n",hid);
 	getcode = g_strdup_printf("GET /gencode?ID=%s\n\n",hid);
+	getsmsc = g_strdup_printf("GET /smsc?ID=%s\n\n",hid);
 	verify_code = g_strdup_printf("GET /verifycode?ID=%s",hid);
 	g_free(hid);
 
-	smshost = g_strstrip(g_key_file_get_string(gkeyfile,"sms","smshost",0));
+	//调度中心地址
+	smssched = g_strstrip(g_key_file_get_string(gkeyfile,"sms","smssched",0));
 
 	connector = g_socket_client_new();
-
 	//只给你 10s 的时间完成连接，否则，嘿嘿
 	g_socket_client_set_timeout(connector,10);
 
-	lets_loop_connect(connector);
-
-	//开始不停的连接吧，哈哈
-	g_timeout_add_seconds(5,lets_loop_connect,connector);
-
-	gnutls_global_init();
-	//开始连接到调度服务器
-	g_socket_client_connect_to_host_async(connector,"127.0.0.1",25800,0,smssched_connected,0);
+	g_timeout_add_seconds(0,connect_sched,0);
 }
 
 gboolean smsserver_is_online()
@@ -330,7 +377,7 @@ static void smsserver_recv_user_login_ready(GInputStream *source_object,GAsyncRe
 						verify,strlen(verify),0,0,(GAsyncReadyCallback)smsserver_send_getX_ready,user_data);
 			}
 		break;
-		case 401: //TODO:发送MD5密码
+		case 401:
 			seed = strstr(user_data->readbuffer,"\n");
 			if(seed)
 			{
