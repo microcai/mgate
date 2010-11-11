@@ -35,6 +35,7 @@
 #include <glib/gi18n.h>
 #include <glib/gprintf.h>
 #include <fcntl.h>
+#include <sys/time.h>
 
 #include "global.h"
 #include "pcap_thread.h"
@@ -44,6 +45,7 @@
 #include "ksql.h"
 #include "http_server/http_server.h"
 
+static	volatile time_t	start_time;
 static void myLog(const gchar *log_domain, GLogLevelFlags log_level,
 		const gchar *message, gpointer user_data);
 static gboolean do_daemon(gpointer user_data);
@@ -53,9 +55,10 @@ const gchar * config_file_name = "/etc/mgate.cfg";
 
 static void copyright_notice()
 {
-	g_printf("%s Version %s\n",PACKAGE_NAME,PACKAGE_VERSION);
-	g_printf("Copyright %s %s %d-%d\n",_("©"),_("MicroAppliyLab"),2008,2010);
-	g_printf("All rights reserved\n");
+	time(&start_time);
+	g_log(PACKAGE,G_LOG_LEVEL_INFO,"%s Version %s",PACKAGE_NAME,PACKAGE_VERSION);
+	g_log(PACKAGE,G_LOG_LEVEL_INFO,"Copyright %s %s %d-%d",_("©"),_("MicroAppliyLab"),2008,2010);
+	g_log(PACKAGE,G_LOG_LEVEL_INFO,"All rights reserved");
 }
 
 int main(int argc, char*argv[], char*env[])
@@ -76,6 +79,7 @@ int main(int argc, char*argv[], char*env[])
 	gint	thread_num = -1;
 
 	const gchar * module_dir = MODULES_PATH;
+
 
 	setlocale(LC_ALL,"");
 	textdomain(GETTEXT_PACKAGE);
@@ -281,7 +285,13 @@ void myLog(const gchar *log_domain, GLogLevelFlags log_level,
 			logfd = stderr;
 	}
 
-	fprintf(logfd,"(%s:%lu) **%s** : %s\n",prg_name,(gulong)getpid(),
+	struct timeval tv;
+
+	gettimeofday(&tv,0);
+
+	tv.tv_sec -= start_time;
+
+	fprintf(logfd,"[%06"G_GINT64_FORMAT".%04"G_GINT64_FORMAT"](%s:%lu) **%s** : %s\n",tv.tv_sec,tv.tv_usec,prg_name,(gulong)getpid(),
 			level,message);
 
 	if(user_data)
