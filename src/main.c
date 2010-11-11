@@ -45,7 +45,7 @@
 #include "ksql.h"
 #include "http_server/http_server.h"
 
-static	volatile time_t	start_time;
+static struct timeval	start_time;
 static void myLog(const gchar *log_domain, GLogLevelFlags log_level,
 		const gchar *message, gpointer user_data);
 static gboolean do_daemon(gpointer user_data);
@@ -55,7 +55,6 @@ const gchar * config_file_name = "/etc/mgate.cfg";
 
 static void copyright_notice()
 {
-	time(&start_time);
 	g_log(PACKAGE,G_LOG_LEVEL_INFO,"%s Version %s",PACKAGE_NAME,PACKAGE_VERSION);
 	g_log(PACKAGE,G_LOG_LEVEL_INFO,"Copyright %s %s %d-%d",_("©"),_("MicroAppliyLab"),2008,2010);
 	g_log(PACKAGE,G_LOG_LEVEL_INFO,"All rights reserved");
@@ -80,6 +79,7 @@ int main(int argc, char*argv[], char*env[])
 
 	const gchar * module_dir = MODULES_PATH;
 
+	gettimeofday(&start_time,0);
 
 	setlocale(LC_ALL,"");
 	textdomain(GETTEXT_PACKAGE);
@@ -87,13 +87,13 @@ int main(int argc, char*argv[], char*env[])
 #ifdef DEBUG
 	bindtextdomain(GETTEXT_PACKAGE,"/tmp/usr/local/share/locale/");
 #endif
+	g_log_set_default_handler(myLog,NULL);
 
 	g_thread_init(NULL);
 	g_type_init();
+
 	g_set_prgname(PACKAGE_NAME);
 	g_set_application_name(_("mgate - A monitoring gateway"));
-
-	g_log_set_default_handler(myLog,NULL);
 
 	GOptionEntry args[] =
 	{
@@ -113,8 +113,6 @@ int main(int argc, char*argv[], char*env[])
 			{0}
 	};
 
-	copyright_notice();
-
 	GOptionContext * context;
 	context = g_option_context_new("");
 	g_option_context_set_ignore_unknown_options(context,TRUE);
@@ -132,6 +130,8 @@ int main(int argc, char*argv[], char*env[])
 	{
 		bindtextdomain(GETTEXT_PACKAGE,domain_dir);
 	}
+
+	copyright_notice();
 
 	loop = g_main_loop_new(NULL,FALSE);
 
@@ -289,9 +289,20 @@ void myLog(const gchar *log_domain, GLogLevelFlags log_level,
 
 	gettimeofday(&tv,0);
 
-	tv.tv_sec -= start_time;
+	if( tv.tv_usec < start_time.tv_usec)
+	{
+		tv.tv_usec = 1000000 + tv.tv_usec - start_time.tv_usec;
+		tv.tv_sec -= start_time.tv_sec+1;
+	}
+	else
+	{
+		tv.tv_sec -= start_time.tv_sec;
+		tv.tv_usec -= start_time.tv_usec;
+	}
 
-	fprintf(logfd,"[%06"G_GINT64_FORMAT".%04"G_GINT64_FORMAT"](%s:%lu) **%s** : %s\n",tv.tv_sec,tv.tv_usec,prg_name,(gulong)getpid(),
+	fprintf(logfd,"[%06"G_GINT64_FORMAT".%04"G_GINT64_FORMAT"](%s:%lu) **%s** : %s\n",
+			tv.tv_sec,tv.tv_usec / 100,
+			prg_name,(gulong)getpid(),
 			level,message);
 
 	if(user_data)
