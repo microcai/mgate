@@ -300,7 +300,7 @@ void myLog(const gchar *log_domain, GLogLevelFlags log_level,
 		tv.tv_usec -= start_time.tv_usec;
 	}
 
-	fprintf(logfd,"[%06"G_GINT64_FORMAT".%04"G_GINT64_FORMAT"](%s:%lu) **%s** : %s\n",
+	fprintf(logfd,"[%06li.%04li](%s:%lu) **%s** : %s\n",
 			tv.tv_sec,tv.tv_usec / 100,
 			prg_name,(gulong)getpid(),
 			level,message);
