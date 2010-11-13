@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <glib.h>
+#include <glib/gi18n.h>
 #include <libsoup/soup.h>
 #include <gnutls/gnutls.h>
 #include "global.h"
@@ -243,6 +244,7 @@ static void smsserver_loop_connected(GSocketClient *source_object,GAsyncResult *
 static gboolean connect_sched(gpointer pointer)
 {
 	//开始连接到调度服务器
+	g_message(_("try connect to sms sched %s"),smssched);
 	g_socket_client_connect_to_host_async(connector,smssched,25800,0,(GAsyncReadyCallback)smssched_connected,0);
 	return FALSE;
 }
