@@ -33,7 +33,7 @@ test : $(top_builddir)/src/mgate /tmp/${prefix}/share/locale/
 	@	$(top_builddir)/src/mgate --module_dir=$(top_builddir)/modules  --config=$(top_srcdir)/mgate.cfg --locale=/tmp/${prefix}/share/locale/  ${ARG}
 
 /tmp/${prefix}/share/locale/ : po/zh_CN.gmo
-	cd po && $(MAKE) DESTDIR=/tmp install
+	@ ( cd po && $(MAKE) DESTDIR=/tmp install ) > /dev/null 2> /dev/null
 
 po/zh_CN.gmo: po/zh_CN.po
 	cd po && $(MAKE) zh_CN.gmo
