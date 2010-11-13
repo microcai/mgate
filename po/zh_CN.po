@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
-"POT-Creation-Date: 2010-11-06 14:18+0800\n"
+"POT-Creation-Date: 2010-11-13 23:34+0800\n"
 "PO-Revision-Date: 2010-10-31 18:48+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
@@ -73,95 +73,127 @@ msgstr "从端口%d 启动失败，将使用随机端口！"
 msgid "server started at port %u"
 msgstr "服务器在端口%u启动"
 
-#: src/main.c:57
+#: src/main.c:67
 msgid "©"
 msgstr "©"
 
-#: src/main.c:57
+#: src/main.c:67
 msgid "MicroAppliyLab"
 msgstr "薇菜工作室"
 
-#: src/main.c:90
+#: src/main.c:105
 msgid "mgate - A monitoring gateway"
 msgstr "mgate － 一个监控工具"
 
-#: src/main.c:96
+#: src/main.c:109
 msgid "run as daemon"
 msgstr "运行为守护进程"
 
-#: src/main.c:97
+#: src/main.c:110
 msgid "flash the db"
 msgstr "清空数据"
 
-#: src/main.c:98
+#: src/main.c:111
 msgid "Create database"
 msgstr "建立数据库"
 
-#: src/main.c:99
+#: src/main.c:112
 msgid "set domain dir root"
 msgstr "设置翻译目录"
 
-#: src/main.c:99 src/main.c:101
+#: src/main.c:112 src/main.c:114
 msgid "dir"
 msgstr "目录"
 
-#: src/main.c:100
+#: src/main.c:113
 msgid "set alternative config file"
 msgstr "制定配置文件"
 
-#: src/main.c:100
+#: src/main.c:113
 msgid "filename"
 msgstr "文件名"
 
-#: src/main.c:101
+#: src/main.c:114
 msgid "set alternative module dir"
 msgstr "设置 模块目录"
 
-#: src/main.c:102
+#: src/main.c:115
 msgid "override config, make monitor capturing on that interface"
 msgstr "覆盖config设置，使用这个接口"
 
-#: src/main.c:102
+#: src/main.c:115
 msgid "nic"
 msgstr "网卡"
 
-#: src/main.c:104
+#: src/main.c:117
 msgid "override config, make monitor listen on that port"
 msgstr "覆盖config设置，使用这个端口"
 
-#: src/main.c:104
+#: src/main.c:117
 msgid "port"
 msgstr "端口"
 
-#: src/main.c:106
+#: src/main.c:118
+msgid "override config, make monitor connect to that host"
+msgstr "覆盖config设置，连接到这个服务器"
+
+#: src/main.c:118
+msgid "host:[port]"
+msgstr "主机:[端口]"
+
+#: src/main.c:120
 msgid "override config, make monitor run with num threads"
 msgstr "覆盖config设置，使用这个端口"
 
-#: src/main.c:106
+#: src/main.c:120
 msgid "num"
 msgstr "数字"
 
-#: src/main.c:108
+#: src/main.c:122
 msgid "using dumped file other that live capture. - for stdin"
 msgstr "使用预先抓包的文件而不是直接抓取。- 表示使用标准输入"
 
-#: src/main.c:108
+#: src/main.c:122
 msgid "pcapsavefile"
 msgstr "pcap文件"
 
-#: src/main.c:140
+#: src/main.c:154
 msgid "Err opening config file"
 msgstr "打开配置文件发生错误"
 
-#: src/main.c:204
+#: src/main.c:224
 #, c-format
 msgid "unable to create pid file %s : %s"
 msgstr "无法创建 pid 文件 %s : %s"
 
-#: src/main.c:231
+#: src/main.c:251
 #, c-format
 msgid "pidfile exist, another one is running? pid(%d)"
 msgstr "pid文件存在，是否已经运行了一个？ pid(%d)"
+
+#: src/main.c:274
+msgid "ERROR"
+msgstr "错误"
+
+#: src/main.c:277
+msgid "CRITICAL"
+msgstr "很严重"
+
+#: src/main.c:280
+msgid "WARNING"
+msgstr "警告"
+
+#: src/main.c:283
+msgid "Message"
+msgstr "消息"
+
+#: src/main.c:286
+msgid "INFO"
+msgstr "资讯"
+
+#: src/main.c:289
+msgid "DEBUG"
+msgstr "调式"
 
 #: src/kpolice.c:106
 msgid "connection to police center lost, reconnect!"
