@@ -40,3 +40,4 @@ src/mgated
 mgate-*/
 *.tar.gz
 *.tar.bz2
+i386/
