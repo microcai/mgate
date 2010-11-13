@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
-"POT-Creation-Date: 2010-11-13 23:34+0800\n"
+"POT-Creation-Date: 2010-11-13 23:42+0800\n"
 "PO-Revision-Date: 2010-10-31 18:48+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
@@ -72,6 +72,11 @@ msgstr "从端口%d 启动失败，将使用随机端口！"
 #, c-format
 msgid "server started at port %u"
 msgstr "服务器在端口%u启动"
+
+#: src/http_server/smsserver_connector.c:247
+#, c-format
+msgid "try connect to sms sched %s"
+msgstr "尝试连接到调度中心 %s"
 
 #: src/main.c:67
 msgid "©"
@@ -177,7 +182,7 @@ msgstr "错误"
 
 #: src/main.c:277
 msgid "CRITICAL"
-msgstr "很严重"
+msgstr "严重"
 
 #: src/main.c:280
 msgid "WARNING"
@@ -242,8 +247,3 @@ msgstr "使用 socks5 代理 %s"
 msgid "Got message, %s"
 msgstr "获得消息 , %s"
 
-#~ msgid "how can I trust?"
-#~ msgstr "我怎么相信你啊?"
-
-#~ msgid "System busy, try later!"
-#~ msgstr "系统忙，稍候再试"
