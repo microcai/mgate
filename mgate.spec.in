@@ -18,7 +18,7 @@ Conflicts:		monitor-hotel monitor-cafe
 Vendor:			Kingstone Soft, Inc.  
 
 %description
-				monitor is a product of Kingstone Software,Inc. 
+				@PACKAGE_NAME@ is a product of Kingstone Software,Inc. 
 				It monitors the network and upload critical logs to the 
 				public security department. 
 
@@ -27,7 +27,7 @@ Vendor:			Kingstone Soft, Inc.
 %setup -q 
 %build 
 unset CFLAGS
-%configure 
+%configure --with-sqlite3 
 make %{?_smp_mflags}
 
 %install
