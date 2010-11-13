@@ -271,22 +271,22 @@ void myLog(const gchar *log_domain, GLogLevelFlags log_level,
 	switch (log_level & G_LOG_LEVEL_MASK)
 	{
 		case G_LOG_LEVEL_ERROR:
-			level = "ERROR";
+			level = _("ERROR");
 			break;
 		case G_LOG_LEVEL_CRITICAL:
-			level = "CRITICAL";
+			level = _("CRITICAL");
 			break;
 		case G_LOG_LEVEL_WARNING:
-			level = "WARNING";
+			level = _("WARNING");
 			break;
 		case G_LOG_LEVEL_MESSAGE:
-			level = "Message";
+			level = _("Message");
 			break;
 		case G_LOG_LEVEL_INFO:
-			level = "INFO";
+			level = _("INFO");
 			break;
 		case G_LOG_LEVEL_DEBUG:
-			level = "DEBUG";
+			level = _("DEBUG");
 			break;
 		default:
 			level = "LOG";
