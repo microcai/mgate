@@ -35,7 +35,9 @@
 #include <glib/gi18n.h>
 #include <glib/gprintf.h>
 #include <fcntl.h>
+#include <time.h>
 #include <sys/time.h>
+#include <sys/utsname.h>
 
 #include "global.h"
 #include "pcap_thread.h"
@@ -55,7 +57,13 @@ const gchar * config_file_name = "/etc/mgate.cfg";
 
 static void copyright_notice()
 {
-	g_log(PACKAGE,G_LOG_LEVEL_INFO,"%s Version %s",PACKAGE_NAME,PACKAGE_VERSION);
+	struct utsname utsname;
+	time_t starttime;
+
+	uname(&utsname);
+	time(&starttime);
+	g_log(PACKAGE,G_LOG_LEVEL_INFO,"%s version %s on os %s(%s.%s)",PACKAGE_NAME,PACKAGE_VERSION,utsname.sysname,utsname.release,utsname.machine);
+	g_log(PACKAGE,G_LOG_LEVEL_INFO,"Started at %s",ctime(&starttime));
 	g_log(PACKAGE,G_LOG_LEVEL_INFO,"Copyright %s %s %d-%d",_("©"),_("MicroAppliyLab"),2008,2010);
 	g_log(PACKAGE,G_LOG_LEVEL_INFO,"All rights reserved");
 }
@@ -73,6 +81,7 @@ int main(int argc, char*argv[], char*env[])
 
 #ifdef 	HTTP_SERVER
 	gint	httpport = 0 ;
+	gchar*	schedhost = NULL;
 #endif
 
 	gint	thread_num = -1;
@@ -106,6 +115,7 @@ int main(int argc, char*argv[], char*env[])
 			{"device",'d',0,G_OPTION_ARG_STRING,&device,N_("override config, make monitor capturing on that interface"),N_("nic")},
 #ifdef 	HTTP_SERVER
 			{"http-port",0,0,G_OPTION_ARG_INT,&httpport,N_("override config, make monitor listen on that port"),N_("port")},
+			{"sched-host",0,0,G_OPTION_ARG_STRING,&schedhost,N_("override config, make monitor connect to that host"),N_("host:[port]")},
 #endif
 			{"thread-num",0,0,G_OPTION_ARG_INT,&thread_num,N_("override config, make monitor run with num threads"),N_("num")},
 			//使用离线的抓包文件而不是在线抓包。调式的时候非常有用
@@ -161,6 +171,12 @@ int main(int argc, char*argv[], char*env[])
 	{
 		g_key_file_set_integer(gkeyfile,"http","port",httpport);
 	}
+
+	if(schedhost)
+	{
+		g_key_file_set_string(gkeyfile,"sms","smssched",schedhost);
+	}
+
 	//启用内建的 http server
 	start_server();
 #endif
