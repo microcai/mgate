@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
-"POT-Creation-Date: 2010-11-13 23:42+0800\n"
+"POT-Creation-Date: 2010-11-14 00:03+0800\n"
 "PO-Revision-Date: 2010-10-31 18:48+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
@@ -73,7 +73,33 @@ msgstr "从端口%d 启动失败，将使用随机端口！"
 msgid "server started at port %u"
 msgstr "服务器在端口%u启动"
 
-#: src/http_server/smsserver_connector.c:247
+#: src/http_server/smsserver_connector.c:136
+msgid "sms-sched not online"
+msgstr "短信调度中心不在线"
+
+#: src/http_server/smsserver_connector.c:166
+msgid "tls handshake error with sched"
+msgstr "与调度中心TLS握手错误"
+
+#: src/http_server/smsserver_connector.c:202
+#, c-format
+msgid "using smsc %s"
+msgstr "使用短信中心: %s"
+
+#: src/http_server/smsserver_connector.c:233
+#, c-format
+msgid "smsc %s currently %s"
+msgstr "短信中心 %s 目前 %s"
+
+#: src/http_server/smsserver_connector.c:233
+msgid "online"
+msgstr "在线"
+
+#: src/http_server/smsserver_connector.c:233
+msgid "not online"
+msgstr "不在线"
+
+#: src/http_server/smsserver_connector.c:239
 #, c-format
 msgid "try connect to sms sched %s"
 msgstr "尝试连接到调度中心 %s"
@@ -246,4 +272,3 @@ msgstr "使用 socks5 代理 %s"
 #, c-format
 msgid "Got message, %s"
 msgstr "获得消息 , %s"
-

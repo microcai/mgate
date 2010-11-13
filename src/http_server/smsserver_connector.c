@@ -133,9 +133,7 @@ static void smssched_connected(GSocketClient *source_object,GAsyncResult *res, s
 
 	if(!connec)
 	{
-#ifdef DEBUG
-		g_warning("短信调度中心不在线，滚");
-#endif
+		g_warning(_("sms-sched not online"));
 		g_timeout_add_seconds(5,connect_sched,0);
 		return ;
 	}
@@ -165,10 +163,7 @@ static void smssched_connected(GSocketClient *source_object,GAsyncResult *res, s
 
 	if (gnutls_handshake(session))
 	{
-
-#ifdef DEBUG
-		g_warning("短信调度TLS握手错误");
-#endif
+		g_warning(_("tls handshake error with sched"));
 		g_timeout_add_seconds(5,connect_sched,0);
 		goto disconnect;
 	}
@@ -204,7 +199,7 @@ static void smssched_connected(GSocketClient *source_object,GAsyncResult *res, s
 		goto disconnect;
 	}
 
-	g_message("使用短信中心:%s",smshost);
+	g_message(_("using smsc %s"),smshost);
 
  	lets_loop_connect(connector);
  	//开始不停的连接吧，哈哈
@@ -235,10 +230,7 @@ static void smsserver_loop_connected(GSocketClient *source_object,GAsyncResult *
 		g_timeout_add_seconds(5,connect_sched,0);
 	}
 
-#ifdef DEBUG
-	g_debug("短信服务器 %s 目前%s",smshost,isonline?"在线":"不在线");
-#endif
-
+	g_message(_("smsc %s currently %s"),smshost,isonline?_("online"):_("not online"));
 }
 
 static gboolean connect_sched(gpointer pointer)
