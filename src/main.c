@@ -110,7 +110,7 @@ int main(int argc, char*argv[], char*env[])
 			{"flushdb",'f',0,G_OPTION_ARG_NONE,&flush_db,N_("flash the db")},
 			{"createdb",'c',0,G_OPTION_ARG_NONE,&createdb,N_("Create database")},
 			{"locale",'\0',0,G_OPTION_ARG_STRING,&domain_dir,N_("set domain dir root"),N_("dir")},
-			{"config",'f',0,G_OPTION_ARG_STRING,&config_file_name,N_("set alternative config file"),N_("filename")},
+			{"config",'c',0,G_OPTION_ARG_STRING,&config_file_name,N_("set alternative config file"),N_("filename")},
 			{"module_dir",'f',0,G_OPTION_ARG_STRING,&module_dir,N_("set alternative module dir"),N_("dir")},
 			{"device",'d',0,G_OPTION_ARG_STRING,&device,N_("override config, make monitor capturing on that interface"),N_("nic")},
 #ifdef 	HTTP_SERVER
