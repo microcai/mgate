@@ -7,6 +7,8 @@ EXTRA_DIST = @PACKAGE_NAME@.spec.in mgate.cfg
 
 DISTCLEANFILES = @PACKAGE_NAME@.spec
 
+spec= @PACKAGE_NAME@.spec
+
 rpm: dist @PACKAGE_NAME@.spec
 	rpmbuild -bb \
 			--define "_sourcedir `pwd`" \

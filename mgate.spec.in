@@ -9,23 +9,18 @@ Summary:        The @PACKAGE_NAME@-version-%{version}
 Group:          Applications/Internet
 License:        Kingstone Lisence
 URL:            http://www.chuangyuan.net
-Source0:        monitor-%{version}.tar.bz2
+Source0:        @PACKAGE_NAME@-%{version}.tar.gz
 
-BuildRequires:  libpcap-devel libglib2-devel glibc-devel mysql-devel
+BuildRequires:  libpcap-devel glib2-devel glibc-devel sqlite-devel
 
-Requires:       libpcap libstdc++ mysql-libs glibc sqlite libglib2
-Conflicts:		monitor-hotel monitor-cafe
+Requires:       libpcap glibc sqlite glib2
+Conflicts:		monitor-hotel monitor-cafe 
 Vendor:			Kingstone Soft, Inc.  
 
 %description
 				monitor is a product of Kingstone Software,Inc. 
 				It monitors the network and upload critical logs to the 
 				public security department. 
-
-%package 
-Summary:        The cafe-version of monitor
-Group:          Applications/Internet
-BuildRoot:      %{_tmppath}/monitor-hotel-%{version}-%{release}-root-%(%{__id_u} -n)
 
 
 %prep 
@@ -42,9 +37,11 @@ make install DESTDIR=$RPM_BUILD_ROOT
 %clean
 rm -rf $RPM_BUILD_ROOT
 
-%files cafe
+%files
 %defattr(-,root,root,-)
-/etc/init.d/monitord
-%{_prefix}/bin/monitor
-%{_prefix}/libexec/monitor/
-%{_docdir}/monitor/README
+/etc/init.d/mgated
+/etc/@PACKAGE_NAME@.cfg
+%{_prefix}/bin/mgate
+%{_prefix}/lib/mgate/modules
+%{_docdir}/mgate/README
+%{_datadir}/
