@@ -111,7 +111,7 @@ int main(int argc, char*argv[], char*env[])
 			{"createdb",'c',0,G_OPTION_ARG_NONE,&createdb,N_("Create database")},
 			{"locale",'\0',0,G_OPTION_ARG_STRING,&domain_dir,N_("set domain dir root"),N_("dir")},
 			{"config",'c',0,G_OPTION_ARG_STRING,&config_file_name,N_("set alternative config file"),N_("filename")},
-			{"module_dir",'f',0,G_OPTION_ARG_STRING,&module_dir,N_("set alternative module dir"),N_("dir")},
+			{"module_dir",'m',0,G_OPTION_ARG_STRING,&module_dir,N_("set alternative module dir"),N_("dir")},
 			{"device",'d',0,G_OPTION_ARG_STRING,&device,N_("override config, make monitor capturing on that interface"),N_("nic")},
 #ifdef 	HTTP_SERVER
 			{"http-port",0,0,G_OPTION_ARG_INT,&httpport,N_("override config, make monitor listen on that port"),N_("port")},
