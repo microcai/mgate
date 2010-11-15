@@ -177,7 +177,14 @@ static void smssched_connected(GSocketClient *source_object,GAsyncResult *res, s
 	}
 
 	char data[512];
-	gnutls_record_recv(session,data,sizeof(data));
+	tlsret = gnutls_record_recv(session,data,sizeof(data));
+
+	if(tlsret <=0)
+	{
+		g_timeout_add_seconds(5,connect_sched,0);
+		goto disconnect;
+	}
+
 	data[511] = 0;
 
 	gint status;
