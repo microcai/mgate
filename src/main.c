@@ -58,12 +58,16 @@ const gchar * config_file_name = "/etc/mgate.cfg";
 static void copyright_notice()
 {
 	struct utsname utsname;
-	time_t starttime;
+
+	char	* strtime;
 
 	uname(&utsname);
-	time(&starttime);
+
+	strtime = ctime(&start_time.tv_sec);
+	strchr(strtime,'\n')[0]=0;
+
 	g_log(PACKAGE,G_LOG_LEVEL_INFO,"%s version %s on os %s(%s.%s)",PACKAGE_NAME,PACKAGE_VERSION,utsname.sysname,utsname.release,utsname.machine);
-	g_log(PACKAGE,G_LOG_LEVEL_INFO,"Started at %s",ctime(&starttime));
+	g_log(PACKAGE,G_LOG_LEVEL_INFO,"Started at %s",strtime);
 	g_log(PACKAGE,G_LOG_LEVEL_INFO,"Copyright %s %s %d-%d",_("©"),_("MicroAppliyLab"),2008,2010);
 	g_log(PACKAGE,G_LOG_LEVEL_INFO,"All rights reserved");
 }
