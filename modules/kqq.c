@@ -70,7 +70,7 @@ static int record_QQ_number(u_int qq, in_addr_t ip,pcap_process_thread_param*pac
 
 	struct tcphdr* tcp = (struct tcphdr*)(packet->packet_ip_contents + sizeof(struct iphdr));
 
-	RecordAccout(Type_QQ,ip,* ( in_addr_t *) (packet +  28),(char*)packet + 6 ,"",qqnum, "",ntohs(tcp->dest),police);
+	RecordAccout(Type_QQ,ip,* ( in_addr_t *) (packet +  28),(guchar*)packet + 6 ,"",qqnum, "",ntohs(tcp->dest),police);
 
     return 1;
 
