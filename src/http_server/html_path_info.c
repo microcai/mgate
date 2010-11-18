@@ -40,22 +40,42 @@
 #include "html_paths.h"
 
 static int cpu_usage;
+static int cpu_usage_user;
+static int cpu_usage_kernel;
+static int mem_usage;
 
 
 gboolean celect_usage(gpointer msg)
 {
 	static struct rusage usage;
 	struct rusage cur_usage;
+	static GTimer * cpu_timer;
+	gdouble	ms;
+
+	if(!cpu_timer)
+		cpu_timer = g_timer_new();
 
 	getrusage(RUSAGE_SELF,&cur_usage);
 
-	cpu_usage = ((cur_usage.ru_utime.tv_sec + cur_usage.ru_stime.tv_sec - usage.ru_utime.tv_sec -usage.ru_stime.tv_sec)*1000
+	//逝去的毫秒数
+	ms = g_timer_elapsed(cpu_timer,NULL) * (G_USEC_PER_SEC / 100);
+	g_timer_reset(cpu_timer);
 
-		+ ( cur_usage.ru_utime.tv_usec + cur_usage.ru_stime.tv_usec -  usage.ru_utime.tv_usec - usage.ru_stime.tv_usec)/1000
+	gulong u_sec = (cur_usage.ru_utime.tv_sec - usage.ru_utime.tv_sec);
+	gulong u_msec = (cur_usage.ru_utime.tv_usec - usage.ru_utime.tv_usec);
 
-	)/(100);
+	gulong s_sec = (cur_usage.ru_stime.tv_sec - usage.ru_stime.tv_sec);
+	gulong s_msec = (cur_usage.ru_stime.tv_usec - usage.ru_stime.tv_usec);
+
+	cpu_usage =  ((u_sec+s_sec) * G_USEC_PER_SEC + (u_msec+s_msec) ) / ms;
+
+	cpu_usage_user =  ((u_sec) * G_USEC_PER_SEC + (u_msec) ) / ms;
+
+	cpu_usage_kernel =  ((s_sec) * G_USEC_PER_SEC + (s_msec) ) / ms;
 
 	usage = cur_usage;
+
+	mem_usage = cur_usage.ru_maxrss;
 
 	return TRUE;
 }
@@ -99,20 +119,20 @@ void SoupServer_path_info(SoupServer *server, SoupMessage *msg,
 	HtmlNode * div = htmlnode_new(htmlbody, "div", "id=\"info\"", NULL);
 
 
-	tr = g_strdup_printf("cpu usage %%%d",cpu_usage);
+	tr = g_strdup_printf("cpu usage %%%d ( %%%d kernel + %%%d user )",cpu_usage,cpu_usage_kernel,cpu_usage_user);
 
 	htmlnode_new_text(htmlnode_new(div, "dd", NULL), tr);
 
 	g_free(tr);
+
+	tr = g_strdup_printf("mem usage %dKiB ",mem_usage);
+
+	htmlnode_new_text(htmlnode_new(div, "dd", NULL), tr);
+
+	g_free(tr);
+
 
 	div = htmlnode_new(htmlbody, "div", "id=\"compiletimeinfo\"", NULL);
-
-
-	tr = g_strdup_printf("%d",cpu_usage);
-
-	htmlnode_new_text(htmlnode_new(div, "dd", NULL), tr);
-
-	g_free(tr);
 
 
 	HtmlNode * table = htmlnode_new_table(htmlbody,"align=center",NULL);

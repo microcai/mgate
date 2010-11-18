@@ -86,7 +86,7 @@ int start_server()
 
 	soup_server_run_async(server);
 
-	g_timeout_add_seconds(10,celect_usage,NULL);
+	g_timeout_add_seconds(1,celect_usage,NULL);
 
 	g_timeout_add_seconds(16,remove_outdated_inactive_client,GINT_TO_POINTER(30));
 
