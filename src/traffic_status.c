@@ -109,7 +109,7 @@ static gpointer update_ip_trafffic(gpointer  queue)
 			status  = g_tree_lookup(ipstatus,GUINT_TO_POINTER(data->ip));
 			if(!status)
 			{
-				g_debug("new ip %d",data->ip);
+				g_debug("new ip %s",inet_ntoa((struct in_addr){data->ip}));
 				status = g_slice_new0(struct ip_traffic_status);
 				status->ip = data->ip;
 				g_tree_insert(ipstatus,GUINT_TO_POINTER(data->ip),status);

@@ -280,6 +280,6 @@ void *pcap_thread_func(void * thread_param)
 	g_thread_pool_free(threadpool,FALSE,TRUE);
 
 	if(pcapfile)
-		exit(0);
+//		exit(0);
 	return 0;
 }
