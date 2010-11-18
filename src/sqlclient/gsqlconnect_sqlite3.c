@@ -148,13 +148,21 @@ gboolean	g_sql_connect_sqlite3_real_query(GSQLConnect*obj,const char * sql_stmt,
 
 	c = sqlite3_step(stmt);
 
+	if(c == SQLITE_ERROR)
+	{
+#ifdef DEBUG
+		g_debug("sql err :%s",sqlite3_errmsg(mobj->sqlite));
+#endif
+		return FALSE;
+	}
+
 	if(c == SQLITE_DONE)
 	{
 		obj->lastresult = NULL;
 		return TRUE;
 	}
 
-	if (c!=SQLITE_OK)
+	if (c!=SQLITE_OK && c!=SQLITE_ROW)
 	{
 		sqlite3_finalize(stmt);
 		return FALSE;
@@ -176,24 +184,33 @@ gboolean	g_sql_connect_sqlite3_real_query(GSQLConnect*obj,const char * sql_stmt,
 		g_sql_result_append_result_array(result,sqlite3_column_name(stmt,c));
 	}
 
+	result->currow = g_new0(char*,result->fields);
+
 	result->freerows = g_sql_connect_sqlite3_free_result ;
+
+	sqlite3_reset(stmt);
 
 	return TRUE;
 }
 
 gboolean	g_sql_connect_sqlite3_get_row(GSQLResult * obj)
 {
-	int c;
+	int c,i;
 	sqlite3_stmt	* stmt;
 	stmt = (sqlite3_stmt*)obj->result;
 
 	c = sqlite3_step(stmt);
 
-//	GStrv row = sqlite3_fetch_row(myres);
-
-//	obj->currow = row;
-
-	return c == SQLITE_OK;
+	if(c==SQLITE_ROW)
+	{
+		// step though fields
+		for(i=0;i < obj->fields;i++)
+		{
+			obj->currow[i]= (gchar*)sqlite3_column_text(stmt,i);
+		}
+		return TRUE;
+	}
+	return FALSE;
 }
 
 gboolean	g_sql_connect_sqlite3_seek_row(GSQLResult * obj,guint offset)
@@ -210,6 +227,7 @@ gboolean	g_sql_connect_sqlite3_seek_row(GSQLResult * obj,guint offset)
 
 void g_sql_connect_sqlite3_free_result(GSQLResult * obj)
 {
+	g_free(obj->currow);
 	sqlite3_finalize(obj->result);
 }
 

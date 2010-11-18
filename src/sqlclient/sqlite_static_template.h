@@ -25,32 +25,6 @@
 
 static const char * create_sql[] =
 {
-//			--
-//			-- 表的结构 `portmap`
-//			--
-		"CREATE TABLE IF NOT EXISTS `portmap` ("
-		"  `nIndex` IINTEGER PRIMARY KEY AUTOINCREMENT ,"
-		"  `protocol` TEXT ," //COMMENT 'tcp or udp',"
-		"  `wport` int(11) DEFAULT NULL ," // COMMENT \'外部端口\',"
-		"  `lport` int(11) DEFAULT NULL ," //COMMENT \'内部端口\',"
-		"  `IP_ADDR` varchar(32)  DEFAULT NULL," // COMMENT '映射的IP',"
-		"  `WAN_IP` varchar(32) DEFAULT '0.0.0.0' " //COMMENT '外部网络 IP (对于拥有多个外网 IP 的主机，如果希望不是映射所有的外网地址上的端口到局域网内部电脑需要填写本项目，否者为 0.0.0.0)',"
-		")",
-
-//				--
-//				-- 表的结构 `portmap_change`
-//				--
-
-		"CREATE TABLE IF NOT EXISTS `portmap_change` (\n"
-		"  `nIndex` INTEGER PRIMARY KEY AUTOINCREMENT,"
-		"  `Is_ADD` tinyint(4) DEFAULT NULL ," //COMMENT \'1 表示有新的端口映射要插入， 0 表示要删除\',\n"
-		"  `protocol` TEXT DEFAULT NULL ," //COMMENT \'tcp or udp\',\n"
-		"  `wport` int(11) DEFAULT NULL ," //COMMENT \'外部端口\',"
-		"  `lport` int(11) DEFAULT NULL ," //COMMENT \'内部端口\',"
-		"  `IP_ADDR` TEXT DEFAULT NULL ," //COMMENT \'映射的IP\',"
-		"  `WAN_IP` TEXT DEFAULT NULL " //COMMENT \'外部网络 IP (对于拥有多个外网 IP 的主机，如果希望不是映射所有的外网地址上的端口到局域网内部电脑需要填写本项目，否者为 0.0.0.0)\',\n"
-		") ",
-
 //				--
 //				-- 表的结构 `roomer_list`
 //				--
@@ -72,14 +46,6 @@ static const char * create_sql[] =
 		"  `IsDelete` tinyint(4) NOT NULL DEFAULT \'0\'"
 		") ",
 
-//				--
-//				-- 表的结构 `room_change`
-//				--
-		"CREATE TABLE IF NOT EXISTS `room_change` ("
-		"  `nIndex` INTEGER PRIMARY KEY AUTOINCREMENT,"
-		"  `RoomerId` int(32) NOT NULL DEFAULT 0,"
-		"  `ActionType` int(11) NOT NULL DEFAULT 3"
-		")",
 
 //				--
 //				-- 表的结构 `room_list`
