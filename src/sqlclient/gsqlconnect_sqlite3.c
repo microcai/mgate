@@ -215,14 +215,23 @@ gboolean	g_sql_connect_sqlite3_get_row(GSQLResult * obj)
 
 gboolean	g_sql_connect_sqlite3_seek_row(GSQLResult * obj,guint offset)
 {
-	int c;
+	int c,i;
 	sqlite3_stmt	* stmt;
 	stmt = (sqlite3_stmt*)obj->result;
 
 	while(offset--)
 		c  = sqlite3_step(stmt);
 
-	return (c==SQLITE_OK);
+	if(c==SQLITE_ROW)
+	{
+		// step though fields
+		for(i=0;i < obj->fields;i++)
+		{
+			obj->currow[i]= (gchar*)sqlite3_column_text(stmt,i);
+		}
+		return TRUE;
+	}
+	return FALSE;
 }
 
 void g_sql_connect_sqlite3_free_result(GSQLResult * obj)
