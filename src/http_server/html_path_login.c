@@ -40,7 +40,7 @@
 #include "html_paths.h"
 #include "smsserver_connector.h"
 #include "unzip.h"
-
+#include "ksql.h"
 
 static void xml_meet_text(GMarkupParseContext *context, const gchar *text,
 		gsize text_len, gpointer user_data, GError **error);
@@ -108,6 +108,11 @@ static void sms_verify_code_ready(smsserver_result* rst, SoupServer *server,Soup
 				client->remove_outdate = TRUE;
 
 				clientmgr_insert_client_by_mac(mac,client);
+
+				ksql_vquery_async(
+						"insert into roomer_list (RoomId,CustomerName,IDtype,ID,IP_ADDR,MAC_ADDR) values(0,'%s','%s','%s','%s','%s') ",
+						phone,"990",phone,ip,mac);
+
 
 				HtmlNode * div = htmlnode_new(body,"div","id=\"test_div\"",0);
 

@@ -61,7 +61,7 @@ static gpointer ksql_thread(gpointer user_data)
 	GError * err = NULL;
 	GSQLConnect * connector = (typeof(connector)) user_data;
 
-	//TODO : 首先是在 monitor.cfg 指示的 白名单 :)
+	//TODO : 首先是在 mgate 指示的 白名单 :)
 
 	while(!g_sql_connect_real_connect(connector,&err))
 	{
@@ -80,9 +80,19 @@ static gpointer ksql_thread(gpointer user_data)
 		sleep(2);
 	}
 
+	//为咖啡馆创建特别的 ... RoomId
+	res = ksql_query("select nIndex from room_list where nIndex=0 LIMIT 0,1000");
+	if(!res)
+	{
+		ksql_query("insert into room_list (nIndex,RoomBuild,RoomFloor,RoomNum) values (0,0,0,0)");
+	}else{
+		g_object_unref(res);
+	}
+
+
 	//load white list sqlite 数据库没有白名单制度，(*^__^*) 嘻嘻……
 	res = ksql_query("select MAC_ADDR from whitelist LIMIT 0,1000");
-	while(g_sql_result_fetch_row(res))
+	while(res && g_sql_result_fetch_row(res))
 	{
 		const gchar * mac = g_sql_result_colum_by_name(res,"MAC_ADDR");
 
