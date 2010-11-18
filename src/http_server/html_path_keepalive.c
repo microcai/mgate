@@ -24,11 +24,19 @@
 #include "global.h"
 #include "htmlnode.h"
 #include "html_paths.h"
+#include "ksql.h"
 
+static void remove_this(Client * client)
+{
+	g_debug("will remove client %p, id=%s, lastactivetime is %ld",client,client->id,client->last_active_time);
+
+	ksql_vquery_async("delete from roomer_list where ID='%s'",client->id);
+
+}
 
 gboolean remove_outdated_inactive_client(gpointer data)
 {
-	clientmgr_reomve_outdate_client(GPOINTER_TO_SIZE(data));//只有60秒允许啊
+	clientmgr_reomve_outdate_client(GPOINTER_TO_SIZE(data),remove_this);//只有60秒允许啊
 	return TRUE;
 }
 

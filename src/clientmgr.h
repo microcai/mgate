@@ -61,8 +61,7 @@ Client * clientmgr_get_client_by_mac(const guchar * mac);
 gboolean clientmgr_get_client_is_enable_by_mac(const guchar * mac);
 void clientmgr_insert_client_by_mac(guchar * mac,Client * client);
 gboolean clientmgr_reomve_client(Client * client);
-void clientmgr_reomve_outdate_client(gulong	inactive_time_allowed);
-
+void clientmgr_reomve_outdate_client(gulong	inactive_time_allowed, void (*removethis)(Client * client) );
 G_END_DECLS
 
 #endif /* CLIENTMGR_H_ */

@@ -316,7 +316,7 @@ gboolean clientmgr_reomve_client(Client * client)
 	return ret;
 }
 
-void clientmgr_reomve_outdate_client(gulong	inactive_time_allowed)
+void clientmgr_reomve_outdate_client(gulong	inactive_time_allowed, void (*removethis)(Client * client) )
 {
 	time_t cutime;
 	time(&cutime);
@@ -325,9 +325,7 @@ void clientmgr_reomve_outdate_client(gulong	inactive_time_allowed)
 	{
 		if( client->remove_outdate && ( (cutime - client->last_active_time) > inactive_time_allowed))
 		{
-			g_debug("will remove client %p, id=%s, lastactivetime is %d, now is %d, sub %d",
-					client,client->id,client->last_active_time,cutime,cutime - client->last_active_time
-					);
+			removethis(client);
 		}else
 		{
 			//add the unit to new tree
