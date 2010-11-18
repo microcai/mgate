@@ -87,7 +87,7 @@ static gpointer update_ip_trafffic(gpointer  queue)
 	GTimeVal endtime[1];
 
 	g_get_current_time(endtime);
-	g_time_val_add(endtime,1000000);
+	g_time_val_add(endtime,G_USEC_PER_SEC);
 
 	for(;;)
 	{
@@ -130,7 +130,7 @@ static gpointer update_ip_trafffic(gpointer  queue)
 
 		}else //过一秒了，可以那个了
 		{
-			g_time_val_add(endtime,1000000);
+			g_time_val_add(endtime,G_USEC_PER_SEC);
 			g_tree_foreach(ipstatus,(GTraverseFunc)mark_eclipsed,0);
 		}
 		g_static_mutex_unlock(&lock);
@@ -191,18 +191,20 @@ void traffic_packet_callback ( in_addr_t ip, in_addr_t mask , struct iphdr * ip_
 	gsize	content_lengh;
 	//获得 ip 头部, tcp 头部，udp 头部
 	struct tcphdr* tcp_head = (typeof(tcp_head))(( (char*)ip_head) + ip_head->ihl*4);
-	struct udphdr* ucp_head = (typeof(ucp_head))(( (char*)ip_head) + ip_head->ihl*4);
+	struct udphdr* udp_head = (typeof(udp_head))(( (char*)ip_head) + ip_head->ihl*4);
 
 	if(ip_head->protocol == IPPROTO_TCP)
 	{
 		//按照每个 TCP 的数据内容来算流量
-		content_lengh = (ip_head->tot_len - ip_head->ihl - tcp_head->doff);
+		content_lengh = (ntohs(ip_head->tot_len) - ip_head->ihl*4 - tcp_head->doff);
 
 	}else if(ip_head->protocol == IPPROTO_UDP)
 	{
 		//按照每个 UDP 的数据内容来算流量
-		content_lengh = (ip_head->tot_len - ip_head->ihl - sizeof(struct udphdr));
+		content_lengh = ntohs(udp_head->len) - 6;
 	}
+	else
+		return ;
 
 	//加入某个 ip 的流量中的上行还是下行呢？
 
