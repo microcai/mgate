@@ -160,11 +160,10 @@ void *pcap_thread_func(void * thread_param)
 		{
 
 		}
+
+		pcap_lookupnet(nic, &ip, &mask, errbuf);
+
 		g_free(nic);
-
-		char * net_interface = pcap_lookupdev(errbuf);
-
-		pcap_lookupnet(net_interface, &ip, &mask, errbuf);
 
 		int sock = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -200,7 +199,7 @@ void *pcap_thread_func(void * thread_param)
 	getrlimit(RLIMIT_NOFILE,&limit);
 
 	//解析出参数来
-	gint num_threads = g_key_file_get_integer(gkeyfile,"monitor","threads",&err);
+	gint num_threads = g_key_file_get_integer(gkeyfile,PACKAGE_NAME,"threads",&err);
 
 	if(err)
 	{
