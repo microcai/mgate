@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([mgate], [2.0.0], [microcai@fedoraproject.org])
+AC_INIT([mgate], [2.1], [microcai@fedoraproject.org])
 
 AC_CONFIG_MACRO_DIR([m4])
 

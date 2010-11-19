@@ -129,9 +129,11 @@ static gpointer ksql_thread(gpointer user_data)
 
 		g_object_set(client,"ip",g_sql_result_colum_by_name(res,"IP_ADDR"),NULL);
 
-		time(&client->last_active_time);
+		g_message(_("preload client %s"),g_sql_result_colum_by_name(res,"CustomerName"));
+
 		client->remove_outdate = TRUE;
 		client->enable = TRUE;
+		time(&client->last_active_time);
 
 		clientmgr_insert_client_by_mac(mac_addr,client);
 	}
