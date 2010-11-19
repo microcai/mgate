@@ -89,17 +89,19 @@ void SoupServer_path_info(SoupServer *server, SoupMessage *msg,
 
 	soup_message_set_status(msg,SOUP_STATUS_OK);
 
-	soup_server_pause_message(server,msg);
-
 	soup_message_headers_set_content_type(msg->response_headers,"text/html",NULL);
-	soup_message_headers_set_encoding(msg->response_headers,SOUP_ENCODING_CHUNKED);
+	soup_message_headers_set_encoding(msg->response_headers,SOUP_ENCODING_CONTENT_LENGTH);
 
 	HtmlNode * html = htmlnode_new(NULL, "html", NULL);
 
 	gchar * title = g_strdup_printf("Info of the running %s , pid %d",
 			PACKAGE_NAME, getpid());
 
-	htmlnode_new_text(htmlnode_new(htmlnode_new_head(html, NULL), "title", NULL), title);
+	HtmlNode * head = htmlnode_new_head(html, NULL);
+
+	htmlnode_new(head,"meta","http-equiv=\"content-type\"","content=\"text/html;charset=utf-8\"",NULL);
+
+	htmlnode_new_text(htmlnode_new(head, "title", NULL), title);
 
 	g_free(title);
 
@@ -157,6 +159,4 @@ void SoupServer_path_info(SoupServer *server, SoupMessage *msg,
 			(htmlnode_appender) soup_message_body_appender, msg->response_body);
 
 	soup_message_body_complete(body);
-	soup_server_unpause_message(server, msg);
-
 }

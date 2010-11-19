@@ -49,7 +49,7 @@ HtmlNode * htmlnode_new(HtmlNode * parent, const char * tag , ...)
 {
 	va_list v;
 
-	HtmlNode * node = g_new0(HtmlNode,1);
+	HtmlNode * node = g_slice_new0(HtmlNode);
 
 	node->parent = parent;
 
@@ -74,7 +74,7 @@ HtmlNode * htmlnode_new(HtmlNode * parent, const char * tag , ...)
 HtmlNode * htmlnode_newv(HtmlNode * parent, const char * tag, const char * attrlist, va_list v)
 {
 
-	HtmlNode * node = g_new0(HtmlNode,1);
+	HtmlNode * node = g_slice_new0(HtmlNode);
 
 
 //	va_copy(v,*vv);
@@ -344,5 +344,5 @@ void htmlnode_free(HtmlNode * rootnode)
 
 	if(rootnode->parent && rootnode->parent->children )
 		rootnode->parent->children = g_list_remove(rootnode->parent->children,rootnode);
-	g_free(rootnode);
+	g_slice_free(HtmlNode,rootnode);
 }
