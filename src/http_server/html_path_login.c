@@ -101,6 +101,8 @@ static void sms_verify_code_ready(smsserver_result* rst, SoupServer *server,Soup
 
 			if(arp_ip2mac(inet_addr(ip),mac,sockclient))
 			{
+				gchar	strmac[32];
+
 				Client * client = client_new(phone,phone,"990",mac);
 				g_object_set(client,"ipstr", ip, "enable",TRUE,NULL);
 
@@ -109,9 +111,11 @@ static void sms_verify_code_ready(smsserver_result* rst, SoupServer *server,Soup
 
 				clientmgr_insert_client_by_mac(mac,client);
 
+				formatMAC(mac,strmac);
+
 				ksql_vquery_async(
 						"insert into roomer_list (RoomId,CustomerName,IDtype,ID,IP_ADDR,MAC_ADDR) values(0,'%s','%s','%s','%s','%s') ",
-						phone,"990",phone,ip,mac);
+						phone,"990",phone,ip,strmac);
 
 
 				HtmlNode * div = htmlnode_new(body,"div","id=\"test_div\"",0);

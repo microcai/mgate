@@ -110,10 +110,34 @@ static gpointer ksql_thread(gpointer user_data)
 	}
 	if(res)
 		g_object_unref(res);
-	//还有呢！预先加载一些,目前是不需要了 :D
+
 	//预加载已经存在的客户端
+	res = ksql_query("select * from roomer_list r,room_list l where r.IsDelete=0 and l.nIndex=r.RoomId");
 
+	while( res && g_sql_result_fetch_row(res))
+	{
+		const gchar * mac = g_sql_result_colum_by_name(res,"MAC_ADDR");
 
+		u_char mac_addr[6];
+
+		convertMAC(mac_addr,mac);
+
+		//将 mac 加入许可范围 :)
+
+		Client * client = client_new(g_sql_result_colum_by_name(res,"CustomerName"),
+				g_sql_result_colum_by_name(res,"ID"),g_sql_result_colum_by_name(res,"IDtype"),mac_addr);
+
+		g_object_set(client,"ip",g_sql_result_colum_by_name(res,"IP_ADDR"),NULL);
+
+		time(&client->last_active_time);
+		client->remove_outdate = TRUE;
+		client->enable = TRUE;
+
+		clientmgr_insert_client_by_mac(mac_addr,client);
+	}
+
+	if(res)
+		g_object_unref(res);
 
 	gchar * sql;
 	for (;;)
