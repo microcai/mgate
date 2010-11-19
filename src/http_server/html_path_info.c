@@ -92,6 +92,8 @@ void SoupServer_path_info(SoupServer *server, SoupMessage *msg,
 	soup_message_headers_set_content_type(msg->response_headers,"text/html",NULL);
 	soup_message_headers_set_encoding(msg->response_headers,SOUP_ENCODING_CONTENT_LENGTH);
 
+	soup_message_body_set_accumulate(body,FALSE);
+
 	HtmlNode * html = htmlnode_new(NULL, "html", NULL);
 
 	gchar * title = g_strdup_printf("Info of the running %s , pid %d",
@@ -142,7 +144,6 @@ void SoupServer_path_info(SoupServer *server, SoupMessage *msg,
 	htmlnode_new_text(htmlnode_new(htmlnode_new(table,"tr","align=center",0),"td","align=center",0),"IP状态表");
 
 	gsize num;
-
 	IPStatus * ret = ip_traffic_get_status(&num);
 
 	while(num--)

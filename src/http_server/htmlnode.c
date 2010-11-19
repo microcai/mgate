@@ -221,15 +221,52 @@ HtmlNode * htmlnode_append_attr_take(HtmlNode * node, char * attr)
 	return node;
 }
 
-static gboolean htmlnode_to_plane_text_internal(HtmlNode * rootnode, htmlnode_appender appender, gpointer user_data , int depth,gboolean freenode)
+static gboolean htmlnode_to_plane_text_internal(HtmlNode * rootnode, htmlnode_appender appender, gpointer user_data , int depth);
+
+static void appendlist(char * attrstr, gpointer user_data)
 {
+	struct appendliststruct{
+		gpointer	user_data;
+		htmlnode_appender appender;
+	}*appendlist_data = user_data;
+
+	appendlist_data->appender(" ", appendlist_data->user_data);
+	appendlist_data->appender(attrstr, appendlist_data->user_data);
+}
+
+static void node_for(HtmlNode * node, gpointer user_data)
+{
+	struct {
+		gpointer	user_data;
+		htmlnode_appender appender;
+		gboolean * first_call;
+		gboolean * newline_close;
+		int depth;
+	}*node_for_data = user_data;
+
+	if(*(node_for_data->first_call))
+	{
+		*(node_for_data->first_call) = FALSE;
+		if (node->tag)
+		{
+			node_for_data->appender("\n", node_for_data->user_data);
+			*(node_for_data->newline_close) = TRUE;
+		}
+	}
+	htmlnode_to_plane_text_internal(node, node_for_data->appender, node_for_data->user_data, node_for_data->depth + 1);
+}
+
+static gboolean htmlnode_to_plane_text_internal(HtmlNode * rootnode, htmlnode_appender appender, gpointer user_data , int depth)
+{
+	gchar * kg = NULL ;
+
+	kg = g_malloc0(depth + 1);
+	memset(kg, ' ', depth);
+
 	if (rootnode->tag)
 	{
-		gchar * kg;
 		if (depth)
 		{
-			kg = g_malloc0(depth + 1);
-			memset(kg, ' ', depth);
 			appender(kg, user_data);
 		}
 
@@ -237,15 +274,16 @@ static gboolean htmlnode_to_plane_text_internal(HtmlNode * rootnode, htmlnode_ap
 
 		appender(rootnode->tag, user_data);
 
-		void appendlist(char * attrstr, gpointer user_data)
-		{
-			appender(" ", user_data);
-			appender(attrstr, user_data);
-		}
-
 		if (rootnode->attr)
 		{
-			g_list_foreach(rootnode->attr, (GFunc) appendlist, user_data);
+			struct {
+				gpointer	user_data;
+				htmlnode_appender appender;
+			}appendlist_data;
+			appendlist_data.user_data = user_data;
+			appendlist_data.appender = appender;
+
+			g_list_foreach(rootnode->attr, (GFunc) appendlist, &appendlist_data);
 		}
 
 		appender(">", user_data);
@@ -253,30 +291,28 @@ static gboolean htmlnode_to_plane_text_internal(HtmlNode * rootnode, htmlnode_ap
 		gboolean first_call =TRUE ;
 		gboolean newline_close = FALSE;
 
-		void node_for(HtmlNode * node, gpointer user_data)
-		{
-			if(first_call)
-			{
-				first_call = FALSE;
-				if (node->tag)
-				{
-					appender("\n", user_data);
-					newline_close = TRUE;
-				}
-			}
-			htmlnode_to_plane_text_internal(node, appender, user_data, depth + 1 , freenode);
-		}
-
 		if (rootnode->children)
 		{
-			g_list_foreach(rootnode->children, (GFunc) node_for, user_data);
+			struct {
+				gpointer	user_data;
+				htmlnode_appender appender;
+				gboolean * first_call;
+				gboolean * newline_close;
+				int depth;
+			}node_for_data;
+			node_for_data.user_data = user_data;
+			node_for_data.appender = appender;
+
+			node_for_data.first_call = & first_call;
+			node_for_data.newline_close = & newline_close;
+			node_for_data.depth = depth;
+
+			g_list_foreach(rootnode->children, (GFunc) node_for, &node_for_data);
 		}
 
 		if (newline_close && depth && !first_call)
 		{
 			appender(kg, user_data);
-
-			g_free(kg);
 		}
 
 		appender("</", user_data);
@@ -288,8 +324,8 @@ static gboolean htmlnode_to_plane_text_internal(HtmlNode * rootnode, htmlnode_ap
 		appender(rootnode->plane, user_data);
 	}
 
-	if(freenode)
-		htmlnode_free(rootnode);
+	g_free(kg);
+
 	return TRUE;
 }
 /**
@@ -304,7 +340,7 @@ static gboolean htmlnode_to_plane_text_internal(HtmlNode * rootnode, htmlnode_ap
  */
 gboolean htmlnode_to_plane_text(HtmlNode * rootnode, htmlnode_appender appender, gpointer user_data )
 {
-	return htmlnode_to_plane_text_internal(rootnode,appender,user_data,0,FALSE);
+	return htmlnode_to_plane_text_internal(rootnode,appender,user_data,0);
 }
 
 /**
@@ -319,7 +355,9 @@ gboolean htmlnode_to_plane_text(HtmlNode * rootnode, htmlnode_appender appender,
  */
 gboolean htmlnode_to_plane_text_and_free(HtmlNode * rootnode, htmlnode_appender appender , gpointer user_data )
 {
-	return htmlnode_to_plane_text_internal(rootnode,appender,user_data,0,TRUE);
+	gboolean ret = htmlnode_to_plane_text_internal(rootnode,appender,user_data,0);
+	htmlnode_free(rootnode);
+	return ret;
 }
 
 /**
@@ -339,10 +377,12 @@ void htmlnode_free(HtmlNode * rootnode)
 
 	g_list_foreach(rootnode->attr,(GFunc)g_free,NULL);
 	g_list_free(rootnode->attr);
-	g_list_foreach(children,(GFunc)htmlnode_free,NULL);
-	g_list_free(rootnode->children);
 
 	if(rootnode->parent && rootnode->parent->children )
 		rootnode->parent->children = g_list_remove(rootnode->parent->children,rootnode);
+
+	g_list_foreach(children,(GFunc)htmlnode_free,NULL);
+	g_list_free(children);
+
 	g_slice_free(HtmlNode,rootnode);
 }

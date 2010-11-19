@@ -84,7 +84,8 @@ static void pcap_process_thread_func(gpointer _thread_data, Kpolice* police)
 			break;
 	}
 	g_free((void*)(thread_data->packet_linklayer_hdr));
-	g_free(thread_data);
+
+	g_slice_free(pcap_process_thread_param,thread_data);
 }
 
 void *pcap_thread_func(void * thread_param)
@@ -259,7 +260,7 @@ void *pcap_thread_func(void * thread_param)
 
 //		ETH_HLEN
 
-		thread_data = g_new(pcap_process_thread_param,1);
+		thread_data = g_slice_new0(pcap_process_thread_param);
 
 		thread_data->linklayer_len = offset_skip_linklayer;
 
