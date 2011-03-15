@@ -53,4 +53,4 @@ GET /verifiycode\?clientid=xxx&code=xxx&ID=xxxxxxxx
 
 /info		这里可以查看系统的一些信息。包括实时CPU占有率和个个 ip 的流量显示
 
-
+/log		这里可以察看截获的网络日志。 
