@@ -65,10 +65,11 @@ GType	sqlconnect_get_backend()
 #ifdef HAVE_MYSQL
 		g_message(_("[database]:[backend] not set or invalid, default to mysql"));
 		backend = G_TYPE_SQL_CONNNECT_MYSQL;
-#endif
+#else
 #ifdef WITH_SQLITE3
 		g_message(_("[database]:[backend] not set or invalid, default to sqlite"));
 		backend = G_TYPE_SQL_CONNNECT_SQLITE;
+#endif
 #endif
 	}
 	return backend ;
