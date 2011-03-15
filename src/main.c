@@ -333,7 +333,7 @@ gboolean do_daemon(gpointer user_data)
 {
 	if(GPOINTER_TO_INT(user_data))
 	{
-		g_log_set_default_handler(myLog,fopen("/tmp/monitor.log","w"));
+		g_log_set_default_handler(myLog,fopen("/tmp/mgate.log","w"));
 		daemon(FALSE,TRUE);
 		sleep(0);
 	}

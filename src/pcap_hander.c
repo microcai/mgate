@@ -163,7 +163,7 @@ int pcap_hander_get(guint16 port, guint16 protocol,pcap_hander_callback_trunk ou
 
 	pcap_hander * hr = &pcap_hander_list;
 
-	while ((hr = hr->next))
+	while (hr != hr->next && (hr = hr->next))
 	{
 		if (hr->port == 0 || hr->port == port)
 		{
