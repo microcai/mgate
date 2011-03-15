@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
-"POT-Creation-Date: 2010-11-14 00:05+0800\n"
+"POT-Creation-Date: 2011-03-03 15:56+0800\n"
 "PO-Revision-Date: 2010-10-31 18:48+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
@@ -16,17 +16,17 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: UTF-8\n"
 
-#: src/pcap_thread.c:131
+#: src/pcap_thread.c:132
 #, c-format
 msgid "using %s as capturing interface"
 msgstr "使用网卡 %s 抓包"
 
-#: src/pcap_thread.c:141
+#: src/pcap_thread.c:142
 #, c-format
 msgid "ERROR:can not open %s for capturing!\n"
 msgstr "错误：无法打开 %s 进行抓包\n"
 
-#: src/pcap_thread.c:148
+#: src/pcap_thread.c:149
 #, c-format
 msgid "ERROR:%s is not an ethernet adapter\n"
 msgstr "错误：%s不是一个有效的网卡\n"
@@ -49,7 +49,7 @@ msgstr "[database]:[backend]未设置，将使用 mysql"
 msgid "[database]:[backend] not set or invalid, default to sqlite"
 msgstr "[database]:[backend]未设置，将使用 sqlite"
 
-#: src/ksql.c:69 src/ksql.c:143
+#: src/ksql.c:69 src/ksql.c:179
 #, c-format
 msgid "unable to connect to database server (%d): %s"
 msgstr "无法连接到数据库 (%d) : %s"
@@ -57,6 +57,11 @@ msgstr "无法连接到数据库 (%d) : %s"
 #: src/ksql.c:72
 msgid "sqlite backend not implemented, exiting!"
 msgstr "SQLite 数据库后端没有实现，退出!"
+
+#: src/ksql.c:132
+#, c-format
+msgid "preload client %s"
+msgstr ""
 
 #: src/http_server/http_server.c:60
 #, c-format
@@ -81,148 +86,148 @@ msgstr "短信调度中心不在线"
 msgid "tls handshake error with sched"
 msgstr "与调度中心TLS握手错误"
 
-#: src/http_server/smsserver_connector.c:202
+#: src/http_server/smsserver_connector.c:209
 #, c-format
 msgid "using smsc %s"
 msgstr "使用短信中心: %s"
 
-#: src/http_server/smsserver_connector.c:233
+#: src/http_server/smsserver_connector.c:240
 #, c-format
 msgid "smsc %s currently %s"
 msgstr "短信中心 %s 目前 %s"
 
-#: src/http_server/smsserver_connector.c:233
+#: src/http_server/smsserver_connector.c:240
 msgid "online"
 msgstr "在线"
 
-#: src/http_server/smsserver_connector.c:233
+#: src/http_server/smsserver_connector.c:240
 msgid "not online"
 msgstr "不在线"
 
-#: src/http_server/smsserver_connector.c:239
+#: src/http_server/smsserver_connector.c:246
 #, c-format
 msgid "try connect to sms sched %s"
 msgstr "尝试连接到调度中心 %s"
 
-#: src/main.c:67
+#: src/main.c:71
 msgid "©"
 msgstr "©"
 
-#: src/main.c:67
+#: src/main.c:71
 msgid "MicroAppliyLab"
 msgstr "薇菜工作室"
 
-#: src/main.c:105
+#: src/main.c:109
 msgid "mgate - A monitoring gateway"
 msgstr "mgate － 一个监控工具"
 
-#: src/main.c:109
+#: src/main.c:113
 msgid "run as daemon"
 msgstr "运行为守护进程"
 
-#: src/main.c:110
+#: src/main.c:114
 msgid "flash the db"
 msgstr "清空数据"
 
-#: src/main.c:111
+#: src/main.c:115
 msgid "Create database"
 msgstr "建立数据库"
 
-#: src/main.c:112
+#: src/main.c:116
 msgid "set domain dir root"
 msgstr "设置翻译目录"
 
-#: src/main.c:112 src/main.c:114
+#: src/main.c:116 src/main.c:118
 msgid "dir"
 msgstr "目录"
 
-#: src/main.c:113
+#: src/main.c:117
 msgid "set alternative config file"
 msgstr "制定配置文件"
 
-#: src/main.c:113
+#: src/main.c:117
 msgid "filename"
 msgstr "文件名"
 
-#: src/main.c:114
+#: src/main.c:118
 msgid "set alternative module dir"
 msgstr "设置 模块目录"
 
-#: src/main.c:115
+#: src/main.c:119
 msgid "override config, make monitor capturing on that interface"
 msgstr "覆盖config设置，使用这个接口"
 
-#: src/main.c:115
+#: src/main.c:119
 msgid "nic"
 msgstr "网卡"
 
-#: src/main.c:117
+#: src/main.c:121
 msgid "override config, make monitor listen on that port"
 msgstr "覆盖config设置，使用这个端口"
 
-#: src/main.c:117
+#: src/main.c:121
 msgid "port"
 msgstr "端口"
 
-#: src/main.c:118
+#: src/main.c:122
 msgid "override config, make monitor connect to that host"
 msgstr "覆盖config设置，连接到这个服务器"
 
-#: src/main.c:118
+#: src/main.c:122
 msgid "host:[port]"
 msgstr "主机:[端口]"
 
-#: src/main.c:120
+#: src/main.c:124
 msgid "override config, make monitor run with num threads"
 msgstr "覆盖config设置，使用这个端口"
 
-#: src/main.c:120
+#: src/main.c:124
 msgid "num"
 msgstr "数字"
 
-#: src/main.c:122
+#: src/main.c:126
 msgid "using dumped file other that live capture. - for stdin"
 msgstr "使用预先抓包的文件而不是直接抓取。- 表示使用标准输入"
 
-#: src/main.c:122
+#: src/main.c:126
 msgid "pcapsavefile"
 msgstr "pcap文件"
 
-#: src/main.c:154
+#: src/main.c:158
 msgid "Err opening config file"
 msgstr "打开配置文件发生错误"
 
-#: src/main.c:224
+#: src/main.c:228
 #, c-format
 msgid "unable to create pid file %s : %s"
 msgstr "无法创建 pid 文件 %s : %s"
 
-#: src/main.c:251
+#: src/main.c:255
 #, c-format
 msgid "pidfile exist, another one is running? pid(%d)"
 msgstr "pid文件存在，是否已经运行了一个？ pid(%d)"
 
-#: src/main.c:274
+#: src/main.c:278
 msgid "ERROR"
 msgstr "错误"
 
-#: src/main.c:277
+#: src/main.c:281
 msgid "CRITICAL"
 msgstr "严重"
 
-#: src/main.c:280
+#: src/main.c:284
 msgid "WARNING"
 msgstr "警告"
 
-#: src/main.c:283
+#: src/main.c:287
 msgid "Message"
 msgstr "消息"
 
-#: src/main.c:286
+#: src/main.c:290
 msgid "INFO"
 msgstr "资讯"
 
-#: src/main.c:289
+#: src/main.c:293
 msgid "DEBUG"
 msgstr "调式"
 
