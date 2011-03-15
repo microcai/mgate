@@ -76,6 +76,8 @@ int start_server()
 
 	soup_server_add_handler(server,"/info",SoupServer_path_info,NULL,NULL);
 
+	soup_server_add_handler(server,"/log",SoupServer_path_log,NULL,NULL);
+
 	soup_server_add_handler(server,"/favicon.ico",SoupServer_path_static_file,NULL,NULL);
 
 	soup_server_add_handler(server,"/",SoupServer_path_root,NULL,NULL);
