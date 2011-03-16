@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
-"POT-Creation-Date: 2011-03-03 15:56+0800\n"
+"POT-Creation-Date: 2011-03-16 23:50+0800\n"
 "PO-Revision-Date: 2010-10-31 18:48+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
@@ -41,11 +41,16 @@ msgstr "[monitor]:[threads] 未设置，默认使用2倍 CPU 个数 (%d) "
 msgid "Too many thread will exclude the resource limite, reduce to %d"
 msgstr "设置的线程数目太多，超过系统限制，减少到 %d"
 
-#: src/sqlclient/sqlbackend.c:66
+#: src/sqlclient/sqlbackend.c:59
+#, fuzzy
+msgid "Sqlite backend not compiled in"
+msgstr "SQLite 数据库后端没有实现，退出!"
+
+#: src/sqlclient/sqlbackend.c:70
 msgid "[database]:[backend] not set or invalid, default to mysql"
 msgstr "[database]:[backend]未设置，将使用 mysql"
 
-#: src/sqlclient/sqlbackend.c:70
+#: src/sqlclient/sqlbackend.c:74
 msgid "[database]:[backend] not set or invalid, default to sqlite"
 msgstr "[database]:[backend]未设置，将使用 sqlite"
 

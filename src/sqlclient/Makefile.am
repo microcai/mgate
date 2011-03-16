@@ -15,6 +15,7 @@ if WITH_MYSQL
 endif
 
 if WITH_SQLITE3
+  LIBS+= @SQLITE3_LIBS@
   libsqlclient_a_SOURCES += gsqlconnect_sqlite3.c	 gsqlconnect_sqlite3.h
   libsqlclient_a_SOURCES += sqlite_static_template.h
   AM_CPPFLAGS += -DWITH_SQLITE3
