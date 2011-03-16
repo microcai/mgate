@@ -53,7 +53,7 @@ GType	sqlconnect_get_backend()
 		if(g_strcmp0(g_strchomp(g_strchug(bk)), "sqlite") == 0)
 		{
 			g_free(bk);
-			//backend = "GSQLConnectSqlite";
+			backend = G_TYPE_SQL_CONNNECT_SQLITE;
 		}else
 		{
 			g_free(bk);
