@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([mgate], [2.1], [microcai@fedoraproject.org])
+AC_INIT([mgate], [2.2], [microcai@fedoraproject.org])
 
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -43,11 +43,11 @@ AC_ARG_WITH(mysql-cflags,[AC_HELP_STRING([--with-mysql-cflags],[supply non-defau
 		[ MYSQL_CFLAGS=$withval ])		
 		
 AC_ARG_WITH(sqlite3,
-	[AC_HELP_STRING([--with-sqlite3],[build with sqlite3 backend])],
+	[AC_HELP_STRING([--without-sqlite3],[build without sqlite3 backend])],
 	[
 		PKG_CHECK_MODULES(SQLITE3, [sqlite3])
 		AM_CONDITIONAL(WITH_SQLITE3,[true])	
-	],[AM_CONDITIONAL(WITH_SQLITE3,[false])])
+	],[AM_CONDITIONAL(WITH_SQLITE3,[true])])
 
 AC_ARG_WITH(jincheng,
 	[AC_HELP_STRING([--without-jincheng],[disable jincheng module])],[],[with_jincheng="yes"])
