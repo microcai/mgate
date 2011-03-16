@@ -156,7 +156,7 @@ static gboolean http_redirector( pcap_process_thread_param * param, gpointer use
 			libnet_build_ipv4(40, 0, 0, 0x4000, 63/*ttl*/, IPPROTO_TCP, 0,
 					ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
 
-		}else if (tcp_flags & TH_ACK)
+		}else if (tcp_flags & (TH_ACK|TH_SYN) )
 		{
 			/*********************************************
 			 *现在是发送页面的时候啦！
@@ -171,7 +171,7 @@ static gboolean http_redirector( pcap_process_thread_param * param, gpointer use
 			libnet_build_ipv4(40 + SIZEHTTPHEAD, 0, 0, 0x4000, 63/*ttl*/,
 					IPPROTO_TCP, 0, ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
 		}
-		else if (tcp_flags & TH_FIN)
+		else if (tcp_flags & (TH_FIN|TH_RST))
 		{
 			/*********************************************************
 			 *好，现在结束连接！
@@ -181,6 +181,8 @@ static gboolean http_redirector( pcap_process_thread_param * param, gpointer use
 					0);
 			libnet_build_ipv4(40, 0, 0, 0x4000, 63/*ttl*/, IPPROTO_TCP, 0,
 					ip_head->daddr, ip_head->saddr, 0, 0, libnet, 0);
+
+			printf("------------------------------------------------------------------------link disconnect\n");
 
 		}else{
 			return FALSE;
@@ -205,11 +207,15 @@ static gboolean http_redirector( pcap_process_thread_param * param, gpointer use
 	}else
 		return FALSE;
 
-	if(param->linklayer_len == 14)
-		libnet_build_ethernet(
+//	if(param->linklayer_len == 14)
+//		libnet_build_ethernet(
+//			((struct libnet_ethernet_hdr *) param->packet_linklayer_hdr)->ether_shost,
+//			/((struct libnet_ethernet_hdr *) param->packet_linklayer_hdr)->ether_dhost,
+//			ETHERTYPE_IP, 0, 0, libnet, 0);
+	libnet_autobuild_ethernet(
 			((struct libnet_ethernet_hdr *) param->packet_linklayer_hdr)->ether_shost,
-			((struct libnet_ethernet_hdr *) param->packet_linklayer_hdr)->ether_dhost,
-			ETHERTYPE_IP, 0, 0, libnet, 0);
+			ETHERTYPE_IP,libnet
+	);
 	libnet_write(libnet);
 	libnet_clear_packet(libnet);
 	return TRUE;
