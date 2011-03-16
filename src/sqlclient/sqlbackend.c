@@ -53,7 +53,11 @@ GType	sqlconnect_get_backend()
 		if(g_strcmp0(g_strchomp(g_strchug(bk)), "sqlite") == 0)
 		{
 			g_free(bk);
+#ifdef WITH_SQLITE3
 			backend = G_TYPE_SQL_CONNNECT_SQLITE;
+#else
+			g_warning(_("Sqlite backend not compiled in"));
+#endif
 		}else
 		{
 			g_free(bk);

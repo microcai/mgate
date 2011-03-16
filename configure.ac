@@ -45,9 +45,11 @@ AC_ARG_WITH(mysql-cflags,[AC_HELP_STRING([--with-mysql-cflags],[supply non-defau
 AC_ARG_WITH(sqlite3,
 	[AC_HELP_STRING([--without-sqlite3],[build without sqlite3 backend])],
 	[
+		AM_CONDITIONAL(WITH_SQLITE3,[false])
+	],[
+		AM_CONDITIONAL(WITH_SQLITE3,[true])
 		PKG_CHECK_MODULES(SQLITE3, [sqlite3])
-		AM_CONDITIONAL(WITH_SQLITE3,[true])	
-	],[AM_CONDITIONAL(WITH_SQLITE3,[true])])
+	])
 
 AC_ARG_WITH(jincheng,
 	[AC_HELP_STRING([--without-jincheng],[disable jincheng module])],[],[with_jincheng="yes"])
