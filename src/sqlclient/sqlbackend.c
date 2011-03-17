@@ -42,7 +42,7 @@ GType	sqlconnect_get_backend()
 
 	if (bk)
 	{
-#if HAVE_MYSQL
+#ifdef __HAVE_MYSQL
 		if (g_strcmp0(g_strchomp(g_strchug(bk)), "mysql") == 0)
 		{
 			g_free(bk);
@@ -55,6 +55,7 @@ GType	sqlconnect_get_backend()
 			g_free(bk);
 #ifdef WITH_SQLITE3
 			backend = G_TYPE_SQL_CONNNECT_SQLITE;
+			return backend;
 #else
 			g_warning(_("Sqlite backend not compiled in"));
 #endif
@@ -66,7 +67,7 @@ GType	sqlconnect_get_backend()
 	}
 	if(!bk)
 	{
-#ifdef HAVE_MYSQL
+#ifdef __HAVE_MYSQL
 		g_message(_("[database]:[backend] not set or invalid, default to mysql"));
 		backend = G_TYPE_SQL_CONNNECT_MYSQL;
 #else
