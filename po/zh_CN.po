@@ -1,14 +1,14 @@
 # Copyright (C) 2010 microcai <microcai@fedoraproject.org>
 # This file is distributed under the same license as the ibus-handwrite package.
 # FIRST AUTHOR <microcai@fedoraproject.org>, 2010.
-# microcai <microcai@fedoraproject.org>, 2010.
+# microcai <microcai@fedoraproject.org>, 2010, 2011.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
-"POT-Creation-Date: 2011-03-16 23:50+0800\n"
-"PO-Revision-Date: 2010-10-31 18:48+0800\n"
+"POT-Creation-Date: 2011-03-19 19:04+0800\n"
+"PO-Revision-Date: 2011-03-19 19:05+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
 "Language: \n"
@@ -31,26 +31,25 @@ msgstr "错误：无法打开 %s 进行抓包\n"
 msgid "ERROR:%s is not an ethernet adapter\n"
 msgstr "错误：%s不是一个有效的网卡\n"
 
-#: src/pcap_thread.c:208
+#: src/pcap_thread.c:210
 #, c-format
 msgid "[monitor]:[threads] not set, using 2x cpu (%d) threads"
 msgstr "[monitor]:[threads] 未设置，默认使用2倍 CPU 个数 (%d) "
 
-#: src/pcap_thread.c:218
+#: src/pcap_thread.c:220
 #, c-format
 msgid "Too many thread will exclude the resource limite, reduce to %d"
 msgstr "设置的线程数目太多，超过系统限制，减少到 %d"
 
-#: src/sqlclient/sqlbackend.c:59
-#, fuzzy
+#: src/sqlclient/sqlbackend.c:60
 msgid "Sqlite backend not compiled in"
-msgstr "SQLite 数据库后端没有实现，退出!"
+msgstr "SQLite 数据库后端没有编译"
 
-#: src/sqlclient/sqlbackend.c:70
+#: src/sqlclient/sqlbackend.c:71
 msgid "[database]:[backend] not set or invalid, default to mysql"
 msgstr "[database]:[backend]未设置，将使用 mysql"
 
-#: src/sqlclient/sqlbackend.c:74
+#: src/sqlclient/sqlbackend.c:75
 msgid "[database]:[backend] not set or invalid, default to sqlite"
 msgstr "[database]:[backend]未设置，将使用 sqlite"
 
@@ -66,7 +65,7 @@ msgstr "SQLite 数据库后端没有实现，退出!"
 #: src/ksql.c:132
 #, c-format
 msgid "preload client %s"
-msgstr ""
+msgstr "预加载客户端 %s"
 
 #: src/http_server/http_server.c:60
 #, c-format

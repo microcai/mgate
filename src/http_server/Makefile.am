@@ -18,7 +18,7 @@ RESTOOBJ=$(OBJCOPY) -I binary -B @obj_machine@ -O @obj_format@
 
 SUFFIXES = .ico  .zip .html
 
-resource.zip : 
+resource.zip : $(srcdir)/www/*
 	(cd $(srcdir)/www && zip -9 - `find .`) > $@
 	
 .zip.o:

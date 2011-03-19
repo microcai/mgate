@@ -1,0 +1,20 @@
+/*基本信息*/
+/*body {font:12px Tahoma;margin:0px;;background:#FFF;} */
+
+/*页面层容器*/
+#container {width:100%}
+
+/*页面头部*/
+#Header {width:100%;text-align: right ; margin:0 right;height:20pt;background:#FFCC99}
+
+/*页面主体*/
+#PageBody {width:99%;background:#CCFF00}
+
+/*页面底部*/
+#Footer {width:800px;margin:0 auto;height:50px;background:#00FFFF}
+
+#nIndex { width: 20px;text-align:left ; margin:1px auto;height:20px; background:#00FC00  }
+
+#Cname { width: 200pt  ;text-align:left ; margin:1px auto;height:20px; background:#FD0C00  }
+
+#URL {text-align:left ; margin:1px auto; background: 0  } 

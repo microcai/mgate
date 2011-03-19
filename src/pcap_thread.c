@@ -157,9 +157,6 @@ void *pcap_thread_func(void * thread_param)
 				g_free(nic);
 				return 0;
 			}
-		}else
-		{
-
 		}
 
 		pcap_lookupnet(nic, &ip, &mask, errbuf);
@@ -185,6 +182,11 @@ void *pcap_thread_func(void * thread_param)
 		}
 
 		close(sock);
+
+		g_message("setting filter %s",filterstr?filterstr:"tcp or udp");
+
+		pcap_setdirection(pcap_handle,PCAP_D_IN);
+
 		if(filterstr)
 			pcap_compile(pcap_handle, &bpf_filter, filterstr, 1, 0);
 		else
