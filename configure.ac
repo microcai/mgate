@@ -88,7 +88,18 @@ AS_IF([test x${enable_http_server} = xyes] ,[
 	http_server_lib='$(builddir)/http_server/libhttp_server.a'
 	PKG_CHECK_MODULES(LIBSOUP, [${libsoup}])
 	PKG_CHECK_MODULES(GNUTLS, [${gnutls}])
-	AC_DEFINE_UNQUOTED(HTTP_SERVER,1,[defined if configured to with builtin http server])	
+	AC_DEFINE_UNQUOTED(HTTP_SERVER,1,[defined if configured to with builtin http server])
+	
+	AC_ARG_ENABLE(js,[AS_HELP_STRING([--disable-js],[disable java script support. default : auto])],[enable_java=$enable_val],[enable_java=check])
+	
+	AS_IF( [  test "x$enable_java" != "xno" ] , [	
+		mozjs=mozilla-js		
+		PKG_CHECK_MODULES(MOZJS,mozilla-js)
+		AC_DEFINE_UNQUOTED(MOZJS,1,[defined if configured to have js support])
+	]
+	
+	)
+
 	] ,[])
 
 
@@ -96,7 +107,7 @@ AM_CONDITIONAL([BUILD_HTTP_SERVER],[test x${enable_http_server} = xyes])
 
 
 
-PKG_CHECK_MODULES(NEED_ALL, [ ${libsoup} ${gnutls} glib-2.0 >= 2.18 gthread-2.0 gobject-2.0 gmodule-2.0 gio-2.0 ])
+PKG_CHECK_MODULES(NEED_ALL, [ ${mozjs} ${libsoup} ${gnutls} glib-2.0 >= 2.18 gthread-2.0 gobject-2.0 gmodule-2.0 gio-2.0 ])
 
 AC_CHECK_LIB([pthread], [main])
 AC_CHECK_LIB([pcap], [main],[],[AC_MSG_ERROR(need libpcap)])
