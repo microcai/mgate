@@ -21,12 +21,20 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "mime.h"
+
 const char * getext(const char * name)
 {
 	const char * p = name + strlen(name);
 	while (*p != '.' && p > name)
 		--p;
 	return p + 1;
+}
+
+int		is_jsp(const char *filename)
+{
+	const char * ext = getext(filename);
+	return !strcasecmp(filename,"jsp");
 }
 
 const char * getmime_by_filename(const char * filename)

@@ -22,6 +22,8 @@
 #ifndef MIME_H_
 #define MIME_H_
 
+int		is_jsp(const char *filename);
 const char * getmime_by_filename(const char * filename);
+
 
 #endif /* MIME_H_ */

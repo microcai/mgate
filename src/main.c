@@ -85,6 +85,7 @@ int main(int argc, char*argv[], char*env[])
 
 #ifdef 	HTTP_SERVER
 	gint	httpport = 0 ;
+	gchar* httproot = NULL;
 	gchar*	schedhost = NULL;
 #endif
 
@@ -120,6 +121,7 @@ int main(int argc, char*argv[], char*env[])
 #ifdef 	HTTP_SERVER
 			{"http-port",0,0,G_OPTION_ARG_INT,&httpport,N_("override config, make monitor listen on that port"),N_("port")},
 			{"sched-host",0,0,G_OPTION_ARG_STRING,&schedhost,N_("override config, make monitor connect to that host"),N_("host:[port]")},
+			{"http-root",0,0,G_OPTION_ARG_STRING,&httproot,N_("overlay of the http root dir"),N_("[dir]")},
 #endif
 			{"thread-num",0,0,G_OPTION_ARG_INT,&thread_num,N_("override config, make monitor run with num threads"),N_("num")},
 			//使用离线的抓包文件而不是在线抓包。调式的时候非常有用
@@ -174,6 +176,11 @@ int main(int argc, char*argv[], char*env[])
 	if(httpport)
 	{
 		g_key_file_set_integer(gkeyfile,"http","port",httpport);
+	}
+
+	if(httproot)
+	{
+		g_key_file_set_string(gkeyfile,"http","root",httproot);
 	}
 
 	if(schedhost)

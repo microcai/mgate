@@ -26,22 +26,13 @@
 #endif
 
 #include <unistd.h>
-#include <sys/resource.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 #include <glib.h>
 #include <glib/gi18n.h>
-#include <libsoup/soup.h>
-#include "clientmgr.h"
-#include "utils.h"
-#include "http_server.h"
-#include "global.h"
-#include "htmlnode.h"
-#include "traffic_status.h"
-#include "html_paths.h"
+#include <glib/gstdio.h>
+
 #include "unzip.h"
-#include "mime.h"
 
 extern const char _binary_resource_zip_start[];
 extern const char _binary_resource_zip_end[];
@@ -50,4 +41,20 @@ const zipRecord * static_file_get_zip(const char * path)
 {
 	const char * file = path + 1;
 	return zipbuffer_search(_binary_resource_zip_start,_binary_resource_zip_end, file);
+}
+
+//有的话返回文件内容。没的话就返回NULL
+const int overlay_get_file(const char * path,const char * httproot , gpointer * filecontent, gsize * contentlength)
+{
+	struct stat stat;
+	gchar * realfile = g_strdup_printf("%s"G_DIR_SEPARATOR_S "%s", httproot, path);
+
+	gint fd = g_open(realfile,O_RDONLY|O_NOCTTY|O_CLOEXEC);
+	if(fd>0 && fstat(fd,&stat)==0 && stat.st_size < (1024*2048))
+	{
+		*filecontent = mmap(NULL,stat.st_size,PROT_READ,MAP_PRIVATE,fd,0);
+		*contentlength = stat.st_size;
+		close(fd);
+	}
+	return fd>0;
 }

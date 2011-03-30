@@ -24,8 +24,14 @@
 
 #include <glib.h>
 #include <libsoup/soup.h>
+#include "unzip.h"
+
 
 G_BEGIN_DECLS
+
+const zipRecord * static_file_get_zip(const char * path);
+const int overlay_get_file(const char * path,const char * httproot , gpointer * filecontent, gsize * contentlength);
+
 
 void soup_message_body_appender(const gchar * txt, SoupMessageBody * body) G_GNUC_INTERNAL;
 gboolean celect_usage(gpointer msg) G_GNUC_INTERNAL;
@@ -65,6 +71,10 @@ void SoupServer_path_static_file(SoupServer *server, SoupMessage *msg,
 
 void SoupServer_path_keep_alive(SoupServer *server, SoupMessage *msg,const char *path,
 		GHashTable *query, SoupClientContext *client,gpointer user_data)G_GNUC_INTERNAL;
+
+void SoupServer_excutejs(SoupServer *server, SoupMessage *msg,
+		const char *path, GHashTable *query, SoupClientContext *client,
+		gpointer user_data) G_GNUC_INTERNAL;
 
 G_END_DECLS
 

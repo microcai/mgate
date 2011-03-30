@@ -104,7 +104,7 @@ AS_IF([test x${enable_http_server} = xyes] ,[
 
 
 AM_CONDITIONAL([BUILD_HTTP_SERVER],[test x${enable_http_server} = xyes])
-
+AM_CONDITIONAL([MOZJS],[test "x${mozjs}" = "xmozilla-js"])
 
 
 PKG_CHECK_MODULES(NEED_ALL, [ ${mozjs} ${libsoup} ${gnutls} glib-2.0 >= 2.18 gthread-2.0 gobject-2.0 gmodule-2.0 gio-2.0 ])

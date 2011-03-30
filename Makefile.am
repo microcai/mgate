@@ -32,7 +32,7 @@ sysconfigdir = @sysconfdir@
 sysconfig_DATA = mgate.cfg
 
 test : $(top_builddir)/src/mgate /tmp/${prefix}/share/locale/
-	@	$(top_builddir)/src/mgate --module_dir=$(top_builddir)/modules  --config=$(top_srcdir)/mgate.cfg --locale=/tmp/${prefix}/share/locale/  ${ARG}
+	@	$(top_builddir)/src/mgate --module_dir=$(top_builddir)/modules  --config=$(top_srcdir)/mgate.cfg --locale=/tmp/${prefix}/share/locale/ --http-root=.  ${ARG}
 
 /tmp/${prefix}/share/locale/ : po/zh_CN.gmo
 	@ ( cd po && $(MAKE) DESTDIR=/tmp install ) > /dev/null 2> /dev/null

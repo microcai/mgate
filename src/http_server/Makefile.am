@@ -40,6 +40,8 @@ if BUILD_HTTP_SERVER
 
 noinst_LIBRARIES = libhttp_server.a
 
+endif
+
 libhttp_server_a_SOURCES = http_server.c http_server.h
 libhttp_server_a_SOURCES += html_resource.c
 libhttp_server_a_SOURCES += htmlnode.c htmlnode.h
@@ -59,6 +61,8 @@ EXTRA_libhttp_server_a_SOURCES = 404.html
 
 libhttp_server_a_LIBADD = resource.o 404.o 
 
-
+if MOZJS
+libhttp_server_a_SOURCES += http_server_excutejs.c
 endif
+
 
