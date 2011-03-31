@@ -24,7 +24,7 @@
  user = root
  passwd = 
 [sqlite]
- file = /tmp/mgate.db
+ file = @localstatedir@/lib/mgate.db
  [http]
  port = 8000
 # 用来获得 验证码的 URL 

@@ -34,6 +34,7 @@ sysconfig_DATA = mgate.cfg
 @PACKAGE_NAME@.cfg:@PACKAGE_NAME@.cfg.in
 		( \
 		prefix=${prefix}; \
+		localstatedir=${localstatedir}; \
 		s=`cat $<`; \
 		eval "echo \"$${s}\""; \
 	   ) > $@	
