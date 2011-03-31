@@ -3,9 +3,9 @@ ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = src modules po
 dist_doc_DATA = README 
-EXTRA_DIST = @PACKAGE_NAME@.spec.in mgate.cfg
+EXTRA_DIST = @PACKAGE_NAME@.spec.in @PACKAGE_NAME@.cfg.in.in
 
-DISTCLEANFILES = @PACKAGE_NAME@.spec
+DISTCLEANFILES = @PACKAGE_NAME@.spec @PACKAGE_NAME@.cfg @PACKAGE_NAME@.cfg.in
 
 spec= @PACKAGE_NAME@.spec
 
@@ -30,6 +30,17 @@ srpm: dist @PACKAGE_NAME@.spec
 sysconfigdir = @sysconfdir@
 
 sysconfig_DATA = mgate.cfg
+
+@PACKAGE_NAME@.cfg:@PACKAGE_NAME@.cfg.in
+		( \
+		prefix=${prefix}; \
+		s=`cat $<`; \
+		eval "echo \"$${s}\""; \
+	   ) > $@	
+
+
+
+#===============================for test===========
 
 test : $(top_builddir)/src/mgate /tmp/${prefix}/share/locale/
 	@	$(top_builddir)/src/mgate --module_dir=$(top_builddir)/modules  --config=$(top_srcdir)/mgate.cfg --locale=/tmp/${prefix}/share/locale/ --http-root=.  ${ARG}

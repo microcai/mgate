@@ -42,3 +42,7 @@ mgate-*/
 *.tar.bz2
 i386/
 *tags
+mgate.cfg
+mgate.cfg.in
+*.rpm
+

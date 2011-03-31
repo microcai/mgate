@@ -29,6 +29,8 @@
  port = 8000
 # 用来获得 验证码的 URL 
  sms_url = /getsmscode.asp
+# http root dir 
+ root = @datadir@/@PACKAGE_NAME@/www
 
 [sms]
 #短信调度中心地址

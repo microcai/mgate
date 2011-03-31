@@ -96,10 +96,8 @@ AS_IF([test x${enable_http_server} = xyes] ,[
 		mozjs=mozilla-js		
 		PKG_CHECK_MODULES(MOZJS,mozilla-js)
 		AC_DEFINE_UNQUOTED(MOZJS,1,[defined if configured to have js support])
-	]
+	])
 	
-	)
-
 	] ,[])
 
 
@@ -197,6 +195,7 @@ AC_CONFIG_FILES( [
 					modules/Makefile
 					po/Makefile.in
 					Makefile
+					mgate.cfg.in
 		])
 
 AS_IF([test "$prefix" = "NONE"],[prefix="/usr/local"])
