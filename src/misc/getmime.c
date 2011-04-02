@@ -34,7 +34,7 @@ const char * getext(const char * name)
 int		is_jsp(const char *filename)
 {
 	const char * ext = getext(filename);
-	return !strcasecmp(filename,"jsp");
+	return strcasecmp(ext,"jsp")==0;
 }
 
 const char * getmime_by_filename(const char * filename)

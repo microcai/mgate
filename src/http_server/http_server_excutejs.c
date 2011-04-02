@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ucontext.h>
+#include <sys/mman.h>
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <libsoup/soup.h>
@@ -43,8 +44,17 @@
 #include "htmlnode.h"
 #include "html_paths.h"
 
+typedef	struct	uthread{
+	ucontext_t  oucp;
+	ucontext_t	 ucp;
+	volatile int			 need_exit;
+}uthread;
+
+
 #define MAX_BYTES (256*1024*1024)
 #define STACK_SIZE	(10*1024*1024)
+#define BODY500		" internal server error! "
+
 
 static JSRuntime * jsrt;
 
@@ -61,46 +71,77 @@ static JSClass global_class = {
     JSCLASS_NO_OPTIONAL_MEMBERS
 };
 
-void SoupServer_excutejs(SoupServer *server, SoupMessage *msg,
-		const char *path, GHashTable *query, SoupClientContext *client,
-		gpointer user_data)
+
+static  JSBool yield(JSContext *cx,uintN argc, jsval *rval)
 {
+	uthread * thread = JS_GetContextPrivate(cx);
 
-	//初始化 js 引擎
-	if(!jsrt)
-		jsrt = JS_NewRuntime(MAX_BYTES);
+	swapcontext(&thread->ucp,&thread->oucp);
 
-    JSObject *global;
+	return TRUE;
+}
+
+static JSFunctionSpec jsfunctions[] = {
+		{"yield", (JSNative)yield, 0, 0 },
+		{0,0,0,0},
+};
+
+
+static void exec_ucontext(SoupServer *server, SoupMessage *msg,
+		const char *path, GHashTable *query, SoupClientContext *client,
+		gpointer user_data,uthread * thread)
+{
+	gpointer filecontent;
+	gsize filelength;
+	const zipRecord * ziprc;
+
+	JSScript *  js;
+	JSObject *global;
 
 	//创建 JS 上下文
 	JSContext * jscx = JS_NewContext(jsrt,getpagesize()*1024);
+
+	JS_SetContextPrivate(jscx,thread);
 
     global = JS_NewCompartmentAndGlobalObject(jscx, &global_class,NULL);
 
     JS_InitStandardClasses(jscx, global);
 
-    JSBool
-    jstest(JSContext *cx,uintN argc, jsval *rval)
-    {
-    	g_debug("js called me!");
+	JS_DefineFunctions(jscx, global, jsfunctions);
 
-//    	*rval = (jsval) JS_NewStringCopyZ(cx,"nihao");
-    	JS_SET_RVAL(cx,rval,STRING_TO_JSVAL(JS_NewStringCopyZ(cx,"nihao")));
-    	return TRUE;
-    }
 
-    JSFunctionSpec jsfunctions[] = {
-    		{"test", (JSNative)jstest, 0, 0 },
-    		{0,0,0,0},
-    };
+    //看是否存在对应文件
+    //没有就到 ZIP 压缩资源里找
+	if (overlay_get_file(path, user_data, &filecontent, &filelength))
+	{
+	    js = JS_CompileScript(jscx,global,filecontent,filelength,0,0);
+	    munmap(filecontent,filelength);
 
-    JS_DefineFunctions(jscx, global, jsfunctions);
+	}else if( (ziprc = static_file_get_zip(path)))
+	{
+		//解压
+		filelength = ziprc->size_orig;
 
-	//创建独立的用户空间线程
+		filecontent = g_malloc0(filelength);
 
-    char * script = " test();  ";
+		unzip_buffer(filecontent,&filelength,ziprc);
 
-    JSScript *  js = JS_CompileScript(jscx,global,script,strlen(script),0,0);
+		//有的
+	    js = JS_CompileScript(jscx,global,filecontent,filelength,0,0);
+	    g_free(filecontent);
+	}else
+	{
+		soup_server_unpause_message(server,msg);
+		return SoupServer_path_404(server,msg,path,query,client,user_data);
+	}
+
+	if(!js){
+		// 500 , internal server error
+		soup_message_set_status(msg,SOUP_STATUS_INTERNAL_SERVER_ERROR);
+		soup_message_set_response(msg,"text/html",SOUP_MEMORY_STATIC,BODY500,sizeof(BODY500)-1);
+		goto do_exit ;
+	}
+
 
 	jsval	jsv;
 
@@ -117,7 +158,48 @@ void SoupServer_excutejs(SoupServer *server, SoupMessage *msg,
 
 	soup_message_set_response(msg,"text/html",SOUP_MEMORY_TAKE,result,strlen(result));
 
+	soup_server_unpause_message(server,msg);
+
 	JS_DestroyScript(jscx,js);
 	JS_DestroyContext(jscx);
 
+do_exit:
+	thread->need_exit = TRUE;
+	soup_server_unpause_message(server,msg);
+	swapcontext(&thread->ucp,&thread->oucp);
+}
+
+static gboolean schedule(uthread * thread)
+{
+	if(!thread->need_exit){
+		swapcontext(&thread->oucp,&thread->ucp);
+		return TRUE;
+	}
+
+	g_free(thread->ucp.uc_stack.ss_sp);
+	g_free(thread);
+	return FALSE;
+}
+
+void SoupServer_excutejs(SoupServer *server, SoupMessage *msg,
+		const char *path, GHashTable *query, SoupClientContext *client,
+		gpointer user_data)
+{
+	//初始化 js 引擎
+	if(!jsrt)
+		jsrt = JS_NewRuntime(MAX_BYTES);
+
+	soup_server_pause_message(server,msg);
+	uthread* 	thread = g_new0(uthread,1);
+
+	getcontext(& thread->ucp);
+	//创建独立的用户空间线程
+	thread->ucp.uc_stack.ss_size = 1024*1024;
+	thread->ucp.uc_stack.ss_sp  = g_malloc0(thread->ucp.uc_stack.ss_size);
+
+	makecontext(&thread->ucp, (gpointer) exec_ucontext,8,server,msg,path,query,client,user_data,&thread->oucp,&thread->ucp);
+
+	g_idle_add_full(G_PRIORITY_LOW,(GSourceFunc)schedule,thread,NULL);
+
+	return ;
 }
