@@ -93,9 +93,30 @@ AS_IF([test x${enable_http_server} = xyes] ,[
 	AC_ARG_ENABLE(js,[AS_HELP_STRING([--disable-js],[disable java script support. default : auto])],[enable_java=$enable_val],[enable_java=check])
 	
 	AS_IF( [  test "x$enable_java" != "xno" ] , [	
-		mozjs=mozilla-js		
+		mozjs=mozilla-js
+		JS_PACKAGE=mozilla-js
 		PKG_CHECK_MODULES(MOZJS,mozilla-js)
 		AC_DEFINE_UNQUOTED(MOZJS,1,[defined if configured to have js support])
+		JS_LIBS=$MOZJS_LIBS
+		
+		AC_MSG_CHECKING([for mozilla-js >= 2 ])
+		if `$PKG_CONFIG --exists $JS_PACKAGE '>=' 2`; then
+		  AC_MSG_RESULT([yes])
+		  AC_DEFINE(HAVE_MOZJS_2, [1], [Define if mozilla-js is at least 2])
+		  AC_CHECK_LIB([mozjs], [JS_FreezeObject], AC_DEFINE([HAVE_JS_FREEZEOBJECT], [1], [Define if we have JS_FreezeObject]),
+		              , [$JS_LIBS])
+		  AC_CHECK_LIB([mozjs], [JS_IsScriptFrame], AC_DEFINE([HAVE_JS_ISSCRIPTFRAME], [1], [Define if we have JS_IsScriptFrame]),
+		              , [$JS_LIBS])
+		  AC_CHECK_LIB([mozjs], [JS_EndPC], AC_DEFINE([HAVE_JS_ENDPC], [1], [Define if we have JS_EndPC]),
+		              , [$JS_LIBS])
+		  AC_CHECK_LIB([mozjs], [JS_NewCompartmentAndGlobalObject],
+		              AC_DEFINE([HAVE_JS_NEWCOMPARTMENTANDGLOBALOBJECT], [1], [Define if we have JS_NewCompartmentAndGlobalObject]),
+		              , [$JS_LIBS])
+		
+		else
+		  AC_MSG_RESULT([no])
+		fi
+		
 	])
 	
 	] ,[])

@@ -55,9 +55,6 @@ typedef	struct	uthread{
 #define STACK_SIZE	(10*1024*1024)
 #define BODY500		" internal server error! "
 
-
-static JSRuntime * jsrt;
-
 static JSClass global_class = {
     "global",JSCLASS_GLOBAL_FLAGS,
     JS_PropertyStub,
@@ -95,20 +92,36 @@ static void exec_ucontext(SoupServer *server, SoupMessage *msg,
 	gsize filelength;
 	const zipRecord * ziprc;
 
-	JSScript *  js;
-	JSObject *global;
+	JSRuntime * jsrt = NULL;
+	JSContext * jscx = NULL;
+	JSScript *  js = NULL;
+	JSObject *global = NULL;
 
+	if(!(jsrt = JS_NewRuntime(MAX_BYTES)))
+		goto error_exit ;
 	//创建 JS 上下文
-	JSContext * jscx = JS_NewContext(jsrt,getpagesize()*1024);
+	if(!(jscx = JS_NewContext(jsrt,getpagesize()*1024)))
+		goto error_exit ;
 
 	JS_SetContextPrivate(jscx,thread);
 
-    global = JS_NewCompartmentAndGlobalObject(jscx, &global_class,NULL);
+#ifdef HAVE_MOZJS_2
+#ifdef HAVE_JS_NEWCOMPARTMENTANDGLOBALOBJECT
+    global = JS_NewCompartmentAndGlobalObject(jscx, &global_class, NULL);
+#else
+    global = JS_NewGlobalObject(jscx, &global_class);
+#endif /* HAVE_JS_NEWCOMPARTMENTANDGLOBALOBJECT */
+    if (global == NULL)
+        goto error_exit ;
+#else
+    global = JS_NewObject(jscx, &global_class, NULL, NULL);
+    if (global == NULL)
+    	goto error_exit ;
+    JS_SetGlobalObject(jscx, global);
+#endif /* HAVE_MOZJS_2 */
 
     JS_InitStandardClasses(jscx, global);
-
-	JS_DefineFunctions(jscx, global, jsfunctions);
-
+    JS_DefineFunctions(jscx, global, jsfunctions);
 
     //看是否存在对应文件
     //没有就到 ZIP 压缩资源里找
@@ -131,15 +144,15 @@ static void exec_ucontext(SoupServer *server, SoupMessage *msg,
 	    g_free(filecontent);
 	}else
 	{
-		soup_server_unpause_message(server,msg);
-		return SoupServer_path_404(server,msg,path,query,client,user_data);
+		SoupServer_path_404(server,msg,path,query,client,user_data);
+		goto error_exit ;
 	}
 
 	if(!js){
 		// 500 , internal server error
 		soup_message_set_status(msg,SOUP_STATUS_INTERNAL_SERVER_ERROR);
 		soup_message_set_response(msg,"text/html",SOUP_MEMORY_STATIC,BODY500,sizeof(BODY500)-1);
-		goto do_exit ;
+		goto error_exit ;
 	}
 
 
@@ -158,15 +171,20 @@ static void exec_ucontext(SoupServer *server, SoupMessage *msg,
 
 	soup_message_set_response(msg,"text/html",SOUP_MEMORY_TAKE,result,strlen(result));
 
-	soup_server_unpause_message(server,msg);
-
 	JS_DestroyScript(jscx,js);
 	JS_DestroyContext(jscx);
-
+	JS_DestroyRuntime(jsrt);
 do_exit:
 	thread->need_exit = TRUE;
 	soup_server_unpause_message(server,msg);
 	swapcontext(&thread->ucp,&thread->oucp);
+	return ;
+error_exit:
+	if(js && jscx)JS_DestroyScript(jscx,js);
+	if(jscx)JS_DestroyContext(jscx);
+	if(jsrt) JS_DestroyRuntime(jsrt);
+
+	goto do_exit;
 }
 
 static gboolean schedule(uthread * thread)
@@ -185,10 +203,6 @@ void SoupServer_excutejs(SoupServer *server, SoupMessage *msg,
 		const char *path, GHashTable *query, SoupClientContext *client,
 		gpointer user_data)
 {
-	//初始化 js 引擎
-	if(!jsrt)
-		jsrt = JS_NewRuntime(MAX_BYTES);
-
 	soup_server_pause_message(server,msg);
 	uthread* 	thread = g_new0(uthread,1);
 
