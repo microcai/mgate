@@ -42,6 +42,6 @@ rm -rf $RPM_BUILD_ROOT
 /etc/init.d/mgated
 /etc/@PACKAGE_NAME@.cfg
 %{_prefix}/bin/mgate
-%{_prefix}/lib/mgate/modules
+%{_libdir}/mgate/modules
 %{_docdir}/mgate/README
 %{_datadir}/

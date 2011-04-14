@@ -10,13 +10,14 @@ DISTCLEANFILES = @PACKAGE_NAME@.spec @PACKAGE_NAME@.cfg @PACKAGE_NAME@.cfg.in
 spec= @PACKAGE_NAME@.spec
 
 rpm: dist @PACKAGE_NAME@.spec
-	rpmbuild -bb \
+	rpmbuild  --nodeps -bb \
 			--define "_sourcedir `pwd`" \
 			--define "_builddir `pwd`" \
 			--define "_specdir `pwd`" \
 			--define "_rpmdir `pwd`" \
 			--define "_srcrpmdir `pwd`" \
-			$(spec)
+			$(spec) && echo rpm is at `pwd`/`arch`/@PACKAGE_NAME@-@VERSION@-1.`arch`.rpm
+
 
 srpm: dist @PACKAGE_NAME@.spec
 	rpmbuild -bs \

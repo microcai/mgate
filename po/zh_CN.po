@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
-"POT-Creation-Date: 2011-03-19 19:04+0800\n"
+"POT-Creation-Date: 2011-04-14 19:03+0800\n"
 "PO-Revision-Date: 2011-03-19 19:05+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
@@ -72,12 +72,17 @@ msgstr "预加载客户端 %s"
 msgid "using port %d as default duto the missing [http]:[port] settings"
 msgstr "使用端口 %d 作为默认端口，因为没有设置 [http]:[port]"
 
-#: src/http_server/http_server.c:67
+#: src/http_server/http_server.c:71
+#, fuzzy, c-format
+msgid "using %s as http root overlay"
+msgstr "使用网卡 %s 抓包"
+
+#: src/http_server/http_server.c:79
 #, c-format
 msgid "server failt to start at port %d, will use random port!"
 msgstr "从端口%d 启动失败，将使用随机端口！"
 
-#: src/http_server/http_server.c:73
+#: src/http_server/http_server.c:86
 #, c-format
 msgid "server started at port %u"
 msgstr "服务器在端口%u启动"
@@ -121,117 +126,125 @@ msgstr "©"
 msgid "MicroAppliyLab"
 msgstr "薇菜工作室"
 
-#: src/main.c:109
+#: src/main.c:110
 msgid "mgate - A monitoring gateway"
 msgstr "mgate － 一个监控工具"
 
-#: src/main.c:113
+#: src/main.c:114
 msgid "run as daemon"
 msgstr "运行为守护进程"
 
-#: src/main.c:114
+#: src/main.c:115
 msgid "flash the db"
 msgstr "清空数据"
 
-#: src/main.c:115
+#: src/main.c:116
 msgid "Create database"
 msgstr "建立数据库"
 
-#: src/main.c:116
+#: src/main.c:117
 msgid "set domain dir root"
 msgstr "设置翻译目录"
 
-#: src/main.c:116 src/main.c:118
+#: src/main.c:117 src/main.c:119
 msgid "dir"
 msgstr "目录"
 
-#: src/main.c:117
+#: src/main.c:118
 msgid "set alternative config file"
 msgstr "制定配置文件"
 
-#: src/main.c:117
+#: src/main.c:118
 msgid "filename"
 msgstr "文件名"
 
-#: src/main.c:118
+#: src/main.c:119
 msgid "set alternative module dir"
 msgstr "设置 模块目录"
 
-#: src/main.c:119
+#: src/main.c:120
 msgid "override config, make monitor capturing on that interface"
 msgstr "覆盖config设置，使用这个接口"
 
-#: src/main.c:119
+#: src/main.c:120
 msgid "nic"
 msgstr "网卡"
 
-#: src/main.c:121
+#: src/main.c:122
 msgid "override config, make monitor listen on that port"
 msgstr "覆盖config设置，使用这个端口"
 
-#: src/main.c:121
+#: src/main.c:122
 msgid "port"
 msgstr "端口"
 
-#: src/main.c:122
+#: src/main.c:123
 msgid "override config, make monitor connect to that host"
 msgstr "覆盖config设置，连接到这个服务器"
 
-#: src/main.c:122
+#: src/main.c:123
 msgid "host:[port]"
 msgstr "主机:[端口]"
 
 #: src/main.c:124
+msgid "overlay of the http root dir"
+msgstr ""
+
+#: src/main.c:124
+msgid "[dir]"
+msgstr ""
+
+#: src/main.c:126
 msgid "override config, make monitor run with num threads"
 msgstr "覆盖config设置，使用这个端口"
 
-#: src/main.c:124
+#: src/main.c:126
 msgid "num"
 msgstr "数字"
 
-#: src/main.c:126
+#: src/main.c:128
 msgid "using dumped file other that live capture. - for stdin"
 msgstr "使用预先抓包的文件而不是直接抓取。- 表示使用标准输入"
 
-#: src/main.c:126
+#: src/main.c:128
 msgid "pcapsavefile"
 msgstr "pcap文件"
 
-#: src/main.c:158
+#: src/main.c:160
 msgid "Err opening config file"
 msgstr "打开配置文件发生错误"
 
-#: src/main.c:228
+#: src/main.c:235
 #, c-format
 msgid "unable to create pid file %s : %s"
 msgstr "无法创建 pid 文件 %s : %s"
 
-#: src/main.c:255
+#: src/main.c:262
 #, c-format
 msgid "pidfile exist, another one is running? pid(%d)"
 msgstr "pid文件存在，是否已经运行了一个？ pid(%d)"
 
-#: src/main.c:278
+#: src/main.c:285
 msgid "ERROR"
 msgstr "错误"
 
-#: src/main.c:281
+#: src/main.c:288
 msgid "CRITICAL"
 msgstr "严重"
 
-#: src/main.c:284
+#: src/main.c:291
 msgid "WARNING"
 msgstr "警告"
 
-#: src/main.c:287
+#: src/main.c:294
 msgid "Message"
 msgstr "消息"
 
-#: src/main.c:290
+#: src/main.c:297
 msgid "INFO"
 msgstr "资讯"
 
-#: src/main.c:293
+#: src/main.c:300
 msgid "DEBUG"
 msgstr "调式"
 
