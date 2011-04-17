@@ -1,5 +1,7 @@
+
 /*
- * global.h
+ * global.c  --- places for global var
+ *
  *
  *      Copyright 2010 薇菜工作室
  *
@@ -20,15 +22,9 @@
  *
  */
 
-#ifndef GLOBAL_H_
-#define GLOBAL_H_
 
-#include <glib.h>
+#include "global.h"
 
-extern GKeyFile * gkeyfile;
-extern const gchar * strHotelID ;
-extern const gchar * strHotelName ;
+GKeyFile * gkeyfile;
 
-extern gboolean start_by_systemd ;
-
-#endif /* GLOBAL_H_ */
+gboolean start_by_systemd = FALSE;

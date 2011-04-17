@@ -412,4 +412,3 @@ gboolean arp_ip2mac(in_addr_t ip,guchar mac[6],int sock)
 	return success;
 }
 
-GKeyFile * gkeyfile;

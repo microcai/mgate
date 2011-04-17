@@ -1,0 +1,11 @@
+
+[Unit]
+Description=mornitoring gate
+
+[Service]
+StandardOutput=syslog
+WorkingDirectory=/
+StandardError=syslog
+ExecStart=@bindir@/@PACKAGE_NAME@ --systemd
+
+

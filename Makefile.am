@@ -3,11 +3,13 @@ ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = src modules po
 dist_doc_DATA = README 
-EXTRA_DIST = @PACKAGE_NAME@.spec.in @PACKAGE_NAME@.cfg.in.in
+EXTRA_DIST = @PACKAGE_NAME@.spec.in @PACKAGE_NAME@.cfg.in.in @PACKAGE_NAME@.service.in.in
 
 DISTCLEANFILES = @PACKAGE_NAME@.spec @PACKAGE_NAME@.cfg @PACKAGE_NAME@.cfg.in
 
 spec= @PACKAGE_NAME@.spec
+
+systemdsystemunitdir=@systemdsystemunitdir@
 
 rpm: dist @PACKAGE_NAME@.spec
 	rpmbuild  --nodeps -bb \
@@ -30,7 +32,7 @@ srpm: dist @PACKAGE_NAME@.spec
 
 sysconfigdir = @sysconfdir@
 
-sysconfig_DATA = mgate.cfg
+sysconfig_DATA = @PACKAGE_NAME@.cfg
 
 @PACKAGE_NAME@.cfg:@PACKAGE_NAME@.cfg.in
 		( \
@@ -40,7 +42,19 @@ sysconfig_DATA = mgate.cfg
 		eval "echo \"$${s}\""; \
 	   ) > $@	
 
+if HAVE_SYSTEMD
+systemdsystemunit_DATA = @PACKAGE_NAME@.service
 
+@PACKAGE_NAME@.service:@PACKAGE_NAME@.service.in
+		( \
+		exec_prefix=${exec_prefix}; \
+		pkgdatadir=${pkgdatadir}; \
+		s=`cat $<`; \
+		eval "echo \"$${s}\""; \
+	   ) > $@	
+
+CLEANFILES = 	@PACKAGE_NAME@.service
+endif
 
 #===============================for test===========
 

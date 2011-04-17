@@ -47,18 +47,35 @@ static SoupServer * server;
 
 int start_server()
 {
+	int port;
 	GError * err = NULL;
 
 	g_assert(gkeyfile);
 
-	int port = g_key_file_get_integer(gkeyfile,"http","port",&err);
+	if(!start_by_systemd){
 
-	if(err)
+		port = g_key_file_get_integer(gkeyfile,"http","port",&err);
+
+		if(err)
+		{
+			port = 8000;
+			g_error_free(err);
+			g_warning(_("using port %d as default duto the missing [http]:[port] settings"),port);
+			err = NULL;
+		}
+
+		while (!(server = soup_server_new(SOUP_SERVER_ASYNC_CONTEXT,
+				g_main_context_get_thread_default(), "port", port,
+				SOUP_SERVER_SERVER_HEADER, PACKAGE_STRING " simple http server", NULL)))
+		{
+			g_warning(_("server failt to start at port %d, will use random port!"),port);
+			port = 0;
+		}
+
+	}else
 	{
-		port = 8000;
-		g_error_free(err);
-		g_warning(_("using port %d as default duto the missing [http]:[port] settings"),port);
-		err = NULL;
+//		soup_server_
+
 	}
 
 	gchar *  httproot = g_key_file_get_string(gkeyfile,"http","root",&err);
@@ -70,16 +87,6 @@ int start_server()
 	{
 		g_message(_("using %s as http root overlay"),httproot);
 	}
-
-
-	while (!(server = soup_server_new(SOUP_SERVER_ASYNC_CONTEXT,
-			g_main_context_get_thread_default(), "port", port,
-			SOUP_SERVER_SERVER_HEADER, PACKAGE_STRING " simple http server", NULL)))
-	{
-		g_warning(_("server failt to start at port %d, will use random port!"),port);
-		port = 0;
-	}
-
 
 	smsserver_pinger_start();
 

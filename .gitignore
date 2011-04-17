@@ -46,3 +46,5 @@ mgate.cfg
 mgate.cfg.in
 *.rpm
 
+mgate.service.in
+mgate.service

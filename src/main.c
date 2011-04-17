@@ -95,7 +95,11 @@ int main(int argc, char*argv[], char*env[])
 
 	gettimeofday(&start_time,0);
 
-	setlocale(LC_ALL,"");
+	if(!getenv("LANG"))
+		setlocale(LC_ALL,"zh_CN.UTF-8");
+	else
+		setlocale(LC_ALL,"");
+
 	textdomain(GETTEXT_PACKAGE);
 	bindtextdomain(GETTEXT_PACKAGE,GETTEXT_LOCALE_PATH);
 #ifdef DEBUG
@@ -111,6 +115,7 @@ int main(int argc, char*argv[], char*env[])
 
 	GOptionEntry args[] =
 	{
+			{"systemd",'D',0,G_OPTION_ARG_NONE,&start_by_systemd,N_("for use with systemd")},
 			{"daemon",'D',0,G_OPTION_ARG_NONE,&run_daemon,N_("run as daemon")},
 			{"flushdb",'f',0,G_OPTION_ARG_NONE,&flush_db,N_("flash the db")},
 			{"createdb",'c',0,G_OPTION_ARG_NONE,&createdb,N_("Create database")},
