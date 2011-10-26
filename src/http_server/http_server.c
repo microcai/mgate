@@ -60,7 +60,7 @@ int start_server()
 		{
 			port = 8000;
 			g_error_free(err);
-			g_warning(_("using port %d as default duto the missing [http]:[port] settings"),port);
+			g_warning(_("using port %d as default due to the missing [http]:[port] settings"),port);
 			err = NULL;
 		}
 
@@ -75,6 +75,8 @@ int start_server()
 	}else
 	{
 //		soup_server_
+
+//		soup_socket_new();
 
 	}
 
