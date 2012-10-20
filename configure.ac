@@ -107,16 +107,16 @@ AS_IF([test x${enable_http_server} = xyes] ,[
 	AC_ARG_ENABLE(js,[AS_HELP_STRING([--disable-js],[disable java script support. default : auto])],[enable_java=$enable_val],[enable_java=check])
 	
 	AS_IF( [  test "x$enable_java" != "xno" ] , [	
-		mozjs=mozilla-js
-		JS_PACKAGE=mozilla-js
-		PKG_CHECK_MODULES(MOZJS,mozilla-js)
+		mozjs=mozjs185
+		JS_PACKAGE=mozjs185
+		PKG_CHECK_MODULES(MOZJS,mozjs185)
 		AC_DEFINE_UNQUOTED(MOZJS,1,[defined if configured to have js support])
 		JS_LIBS=$MOZJS_LIBS
 		
-		AC_MSG_CHECKING([for mozilla-js >= 2 ])
+		AC_MSG_CHECKING([for mozjs185 >= 2 ])
 		if `$PKG_CONFIG --exists $JS_PACKAGE '>=' 2`; then
 		  AC_MSG_RESULT([yes])
-		  AC_DEFINE(HAVE_MOZJS_2, [1], [Define if mozilla-js is at least 2])
+		  AC_DEFINE(HAVE_MOZJS_2, [1], [Define if mozjs185 is at least 2])
 		  AC_CHECK_LIB([mozjs], [JS_FreezeObject], AC_DEFINE([HAVE_JS_FREEZEOBJECT], [1], [Define if we have JS_FreezeObject]),
 		              , [$JS_LIBS])
 		  AC_CHECK_LIB([mozjs], [JS_IsScriptFrame], AC_DEFINE([HAVE_JS_ISSCRIPTFRAME], [1], [Define if we have JS_IsScriptFrame]),
@@ -137,7 +137,7 @@ AS_IF([test x${enable_http_server} = xyes] ,[
 
 
 AM_CONDITIONAL([BUILD_HTTP_SERVER],[test x${enable_http_server} = xyes])
-AM_CONDITIONAL([MOZJS],[test "x${mozjs}" = "xmozilla-js"])
+AM_CONDITIONAL([MOZJS],[test "x${mozjs}" = "xmozjs185"])
 
 
 PKG_CHECK_MODULES(NEED_ALL, [ ${mozjs} ${libsoup} ${gnutls} glib-2.0 >= 2.18 gthread-2.0 gobject-2.0 gmodule-2.0 gio-2.0 ])
