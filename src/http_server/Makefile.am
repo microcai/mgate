@@ -61,8 +61,4 @@ EXTRA_libhttp_server_a_SOURCES = 404.html
 
 libhttp_server_a_LIBADD = resource.o 404.o 
 
-if MOZJS
-libhttp_server_a_SOURCES += http_server_excutejs.c
-endif
-
 

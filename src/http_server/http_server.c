@@ -126,15 +126,7 @@ static void SoupServer_path_root(SoupServer *server, SoupMessage *msg,
 		return SoupServer_path_static_file(server,msg,"/index.html",query,client,user_data);
 	}
 
-	// 察看是不是一个 jsp 脚本
-#ifdef MOZJS
-	if(is_jsp(path)) //是的话就进入 js 脚本模式。
-	{
-		SoupServer_excutejs(server,msg,path,query,client,user_data);
-	}else
-#endif
-		return SoupServer_path_static_file(server,msg,path,query,client,user_data);
-
+	return SoupServer_path_static_file(server,msg,path,query,client,user_data);
 }
 
 void soup_message_body_appender(const gchar * txt, SoupMessageBody * body)
