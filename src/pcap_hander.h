@@ -24,7 +24,6 @@
 
 #include <pcap/pcap.h>
 #include <glib.h>
-#include "kpolice.h"
 
 typedef struct _pcap_process_thread_param
 {
@@ -37,7 +36,7 @@ typedef struct _pcap_process_thread_param
 
 G_BEGIN_DECLS
 
-typedef	gboolean (*pcap_hander_callback)(  pcap_process_thread_param * param ,gpointer user_data,Kpolice*police);
+typedef	gboolean (*pcap_hander_callback)(  pcap_process_thread_param * param ,gpointer user_data);
 
 typedef struct _pcap_hander_callback_trunk{
 	pcap_hander_callback	func;

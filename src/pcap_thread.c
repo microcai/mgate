@@ -48,7 +48,7 @@
 #include "global.h"
 #include "traffic_status.h"
 
-static void pcap_process_thread_func(gpointer _thread_data, Kpolice* police)
+static void pcap_process_thread_func(gpointer _thread_data)
 {
 
 	struct in_addr ip;
@@ -80,7 +80,7 @@ static void pcap_process_thread_func(gpointer _thread_data, Kpolice* police)
 	//then we call these handler one by one
 	for(j=0;j<i;j++)
 	{
-		if(handers[j].func(thread_data,handers[j].user_data,police))
+		if(handers[j].func(thread_data,handers[j].user_data))
 			break;
 	}
 	g_free((void*)(thread_data->packet_linklayer_hdr));

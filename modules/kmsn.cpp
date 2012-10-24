@@ -57,17 +57,17 @@ static char * MemStr(char *p1, const char *p2, int nCount)
     return NULL;
 }
 
-static int RecordMSNAccount(std::string msn,in_addr_t ip,in_addr_t dst_ip,pcap_process_thread_param * param,Kpolice * police)
+static int RecordMSNAccount(std::string msn,in_addr_t ip,in_addr_t dst_ip,pcap_process_thread_param * param)
 {
 	g_debug("[msn]:%s",msn.c_str());
 
     struct tcphdr* tcp = (tcphdr*)(param->packet_ip_contents + sizeof(iphdr));
-    RecordAccout(Type_MSN.c_str(),ip,dst_ip,param->packet_linklayer_hdr+6,"","",msn.c_str(),ntohs(tcp->dest),police);
+   // RecordAccout(Type_MSN.c_str(),ip,dst_ip,param->packet_linklayer_hdr+6,"","",msn.c_str(),ntohs(tcp->dest),police);
 
     return 1;
 }
 
-static int msn_packet_callback(pcap_process_thread_param * param, gpointer user_data,Kpolice * police)
+static int msn_packet_callback(pcap_process_thread_param * param, gpointer user_data)
 {
     /**************************************************
      *IP数据包通常就在以太网数据头的后面。以太网头的大小为14字节*
@@ -113,7 +113,7 @@ static int msn_packet_callback(pcap_process_thread_param * param, gpointer user_
         if (strstr(strMSN, "@"))
         {
             //记录
-            return RecordMSNAccount(strMSN,ip_head->saddr,ip_head->daddr,param,police);
+            return RecordMSNAccount(strMSN,ip_head->saddr,ip_head->daddr,param);
         }
     }
     return 0;

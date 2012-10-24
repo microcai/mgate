@@ -24,8 +24,6 @@
 
 #include <glib.h>
 
-#include "kpolice.h"
-
 G_BEGIN_DECLS
 
 typedef enum NetAcountType{
@@ -68,8 +66,6 @@ int utf8_gbk(char *outbuf, size_t outlen, const char *inbuf, size_t inlen);
 struct tm * GetCurrentTime();
 double GetDBTime_str(char *pTime);
 double GetDBTime_tm(struct tm * ptm);
-
-void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const guchar mac[6], const char * host , const char * passwd,const void * data, unsigned short dport,Kpolice *);
 
 gboolean arp_ip2mac(in_addr_t ip, guchar mac[6],int sock);
 

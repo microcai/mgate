@@ -57,7 +57,7 @@ static int RecordLZ(char*LZ,u_char*packet,in_addr_t ip)
 	return 1;
 }
 #endif
-static gboolean GetLZAccount(pcap_process_thread_param * param , gpointer user_data,Kpolice * police)
+static gboolean GetLZAccount(pcap_process_thread_param * param , gpointer user_data)
 {
     struct iphdr * ip_head = (struct iphdr*)  param->packet_ip_contents;
     /**************************************************

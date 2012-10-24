@@ -214,25 +214,25 @@ bool ParseTcpPkt(std::string strIndex, const char* tcpdata, size_t tcpdata_len, 
 }
 
 
-static int RecordPOST(const char *user, const char*pswd, const char*host, pcap_process_thread_param * param,in_addr_t sip,in_addr_t dip,Kpolice * police)
+static int RecordPOST(const char *user, const char*pswd, const char*host, pcap_process_thread_param * param,in_addr_t sip,in_addr_t dip)
 {
 	struct tcphdr* tcp = (tcphdr*)(param->packet_ip_contents + sizeof(iphdr));
 
 	char key2[80];
 	snprintf(key2,80,"%s:%s",user,pswd);
-	RecordAccout("0006",sip,dip,param->packet_linklayer_hdr+6,host,key2,host,ntohs(tcp->dest),police);
+//	RecordAccout("0006",sip,dip,param->packet_linklayer_hdr+6,host,key2,host,ntohs(tcp->dest),police);
 	return 1;
 }
 
-static int RecordUrl(char *url,pcap_process_thread_param * param,in_addr_t sip,in_addr_t dip,Kpolice * police)
+static int RecordUrl(char *url,pcap_process_thread_param * param,in_addr_t sip,in_addr_t dip)
 {
 	g_debug("got url  %s",url);
 	struct tcphdr* tcp = (tcphdr*)(param->packet_ip_contents + sizeof(iphdr));
-	RecordAccout("0001",sip,dip,param->packet_linklayer_hdr+6,"","",url,ntohs(tcp->dest),police);
+	//RecordAccout("0001",sip,dip,param->packet_linklayer_hdr+6,"","",url,ntohs(tcp->dest));
     return 1;
 }
 
-static int GetHttpPost( pcap_process_thread_param * param,gpointer user_data,Kpolice * police)
+static int GetHttpPost( pcap_process_thread_param * param,gpointer user_data)
 {
 	/**************************************************
 	 *IP数据包通常就在以太网数据头的后面。以太网头的大小为14字节*
@@ -269,9 +269,9 @@ static int GetHttpPost( pcap_process_thread_param * param,gpointer user_data,Kpo
 
 		if(ParseTcpPkt(strIndex, (const char*)tcpdata, tcpdatelen, url, usr, pwd))
 		{
-			int nret =  RecordPOST(usr.c_str(), pwd.c_str(), url.c_str(), param,ip_head->saddr, ip_head->daddr,police);
+			//int nret =  RecordPOST(usr.c_str(), pwd.c_str(), url.c_str(), param,ip_head->saddr, ip_head->daddr);
 			//pthread_mutex_unlock(&lock);
-			return nret;
+			return -1;
 		}
 
 	}
@@ -283,7 +283,7 @@ static int GetHttpPost( pcap_process_thread_param * param,gpointer user_data,Kpo
 	return 0;
 }
 
-static int url_packet_callback(pcap_process_thread_param  * param ,gpointer use_data,Kpolice * police)
+static int url_packet_callback(pcap_process_thread_param  * param ,gpointer use_data)
 {
     /**************************************************
      *IP数据包通常就在以太网数据头的后面。以太网头的大小为14字节*
@@ -344,7 +344,7 @@ static int url_packet_callback(pcap_process_thread_param  * param ,gpointer use_
 
 			try
 			{
-				int nret = RecordUrl(pUrl,param,ip_head->saddr ,ip_head->daddr,police);
+				int nret = RecordUrl(pUrl,param,ip_head->saddr ,ip_head->daddr);
 
 				return nret;
 			}

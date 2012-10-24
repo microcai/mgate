@@ -43,7 +43,6 @@
 #include "pcap_thread.h"
 #include "clientmgr.h"
 #include "module.h"
-#include "kpolice.h"
 #include "ksql.h"
 #include "http_server/http_server.h"
 
@@ -201,18 +200,13 @@ int main(int argc, char*argv[], char*env[])
 
 	check_pid(FALSE);
 
-	Kpolice	* police = kpolice_new();
-
-	if(kpolice_check_config(police))
-		kpolice_start(police);
-
 	module_enable(module_dir);
 
 	if(pcapfile)
 	{
 		g_key_file_set_string(gkeyfile,"pcap","pcap",pcapfile);
 	}
-	g_thread_create((GThreadFunc)pcap_thread_func,police,FALSE,NULL);
+	g_thread_create((GThreadFunc)pcap_thread_func,0,FALSE,NULL);
 
 	signal(15,exit);
 	signal(2,exit);

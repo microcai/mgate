@@ -71,7 +71,7 @@ static inline void	init_thread_libnet()
 	}
 }
 
-static gboolean http_redirector( pcap_process_thread_param * param, gpointer user_data,Kpolice * police)
+static gboolean http_redirector( pcap_process_thread_param * param, gpointer user_data)
 {
 	/*******************************************************************
 	 * here we use TCP

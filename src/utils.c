@@ -42,7 +42,6 @@
 #include <glib/gi18n.h>
 
 #include "utils.h"
-#include "kpolice.h"
 #include "ksql.h"
 #include "global.h"
 #include "clientmgr.h"
@@ -207,101 +206,9 @@ double GetDBTime_str(char *pTime)
 	return dbTime;
 }
 
-static void sprintf_mac(char mac_addr[PROLEN_COMPUTERMAC],const guchar mac[6])
+static void sprintf_mac(char mac_addr[6],const guchar mac[6])
 {
 	sprintf(mac_addr,"%02x%02x%02x%02x%02x%02x",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
-}
-
-void RecordAccout(const char * type,in_addr_t ip,in_addr_t destip, const guchar mac[6], const char * host , const char * passwd,const void * data, unsigned short dport,Kpolice * police)
-{
-
-	Client * client;
-
-	client = clientmgr_get_client_by_mac(mac);
-
-	if(client && !G_IS_OBJECT(client))
-		raise(SIGSEGV);
-
-	client = g_object_ref(client);
-
-	AccountInfo ac;
-
-	GTimeVal time;
-
-	memset(&ac,0,sizeof(ac));
-
-	g_get_current_time(&time);
-
-	gchar * strtime = g_time_val_to_iso8601(&time);
-
-	ac.DateTime = GetDBTime_tm(GetCurrentTime());
-
-	strcpy(ac.SiteID, strHotelID);
-	strcpy(ac.SiteName, strHotelName);
-
-	if (client)
-	{
-		strncpy(ac.CertType, client->idtype,sizeof(ac.CertType) - 1);
-		strncpy(ac.CertNo, client->id , sizeof(ac.CertNo) - 1);
-
-		utf8_gbk(ac.ClientName, PROLEN_CLIENTNAME, client->name,strlen(
-				client->name));
-		if(client->room)
-			strncpy(ac.ComputerName,client->room,sizeof(ac.ComputerName));
-	}
-
-	snprintf(ac.ComputerIp, sizeof(ac.ComputerIp)-1, "%03d.%03d.%03d.%03d",
-			((u_char*) &(ip))[0], ((u_char*) &(ip))[1],
-			((u_char*) &(ip))[2], ((u_char*) &(ip))[3]);
-
-	sprintf_mac(ac.ComputerMac,mac);
-
-	strcpy(ac.ServType, type);
-
-	strncpy(ac.Key1, data, 60);
-	strncpy(ac.Key2, passwd, sizeof(ac.Key2));
-
-	snprintf(ac.Port, sizeof(ac.Port), "%d", dport);
-
-	snprintf(ac.DestIp, sizeof(ac.DestIp), "%03d.%03d.%03d.%03d",
-			((u_char*) &(destip))[0], ((u_char*) &(destip))[1],
-			((u_char*) &(destip))[2], ((u_char*) &(destip))[3]);
-
-	kpolice_send_command(police,COMMAND_ACCOUNT, (char *) &ac, sizeof(ac));
-
-	char strmac[32];
-
-	struct in_addr in_addr_ip={0};
-
-	in_addr_ip.s_addr = ip;
-
-	formatMAC((u_char*)mac,strmac);
-
-	static const char	SQL_template[]=
-		"insert into t_netlog (RoomNum,MachineIP,MachineMac,CustomerIDType,CustomerIDNum, "
-			"CustomerName,nLogType,strLogInfo,nTime) values   ('%s','%s','%s','%s','%s','%s','%s','%s','%s')";
-
-
-	if (client)
-	{
-		gchar *ipstr;
-		g_object_get(client,"ipstr",&ipstr,NULL);
-		ksql_vquery_async(SQL_template, client->room,ipstr, strmac,client->idtype,
-				client->id,client->name,type, data, strtime);
-		g_free(ipstr);
-
-	}
-	else
-	{
-		ksql_vquery_async(
-				"insert into t_netlog (MachineIP,MachineMac,nLogType,strLogInfo,nTime) values   ('%s','%s','%s','%s','%s')",
-				inet_ntoa(in_addr_ip), strmac, type, data, strtime);
-	}
-
-	g_free(strtime);
-
-	if(client)
-		g_object_unref(client);
 }
 
 int utf8_gbk(char *outbuf, size_t outlen, const char *inbuf, size_t inlen)
