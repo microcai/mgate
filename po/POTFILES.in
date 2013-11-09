@@ -16,4 +16,3 @@ src/http_server/html_path_login.c
 src/http_server/http_server.c
 src/http_server/smsserver_connector.c
 src/main.c
-src/kpolice.c
