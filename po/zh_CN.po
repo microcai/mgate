@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: 0.01\n"
 "Report-Msgid-Bugs-To: microcaicai@gmail.com\n"
 "POT-Creation-Date: 2011-04-14 19:03+0800\n"
-"PO-Revision-Date: 2011-03-19 19:05+0800\n"
+"PO-Revision-Date: 2013-11-09 21:26+0800\n"
 "Last-Translator: microcai <microcai@fedoraproject.org>\n"
 "Language-Team: zh_CN <microcai@fedoraproject.org>\n"
 "Language: \n"
@@ -248,49 +248,3 @@ msgstr "资讯"
 msgid "DEBUG"
 msgstr "调式"
 
-#: src/kpolice.c:106
-msgid "connection to police center lost, reconnect!"
-msgstr "连接丢失, 重试！"
-
-#: src/kpolice.c:324
-msgid "A connection to the police server has been successfully established"
-msgstr "成功建立到公安机关中心服务器的连接"
-
-#: src/kpolice.c:350
-msgid ""
-"A connection to the police server port2 has been successfully established"
-msgstr "成功建立到公安机关中心服务器 端口2 的连接"
-
-#: src/kpolice.c:406
-msgid ""
-"[kpolice]:[HotelID] not set, monitor will not be able to send infomation"
-msgstr "[kpolice]:[HotelID] 客户端 ID 未指定，数据将无法上传"
-
-#: src/kpolice.c:412
-msgid "police ip not set, monitor will not upload any infomation!"
-msgstr "公安IP没有设置，数据将不会上传!"
-
-#: src/kpolice.c:423
-#, c-format
-msgid "[kpolice]:[port1] not set, default to %d"
-msgstr "[kpolice]:[port1] 未设置，使用默认值 %d"
-
-#: src/kpolice.c:433
-#, c-format
-msgid "[kpolice]:[port2] not set, default to 'port1+1'(%d)"
-msgstr "[kpolice]:[port1] 未设置，使用默认值 %d ( port1+1)"
-
-#: src/kpolice.c:484 src/kpolice.c:499
-#, c-format
-msgid "using http proxy %s"
-msgstr "使用 http 代理 %s"
-
-#: src/kpolice.c:506
-#, c-format
-msgid "using socks5 proxy %s"
-msgstr "使用 socks5 代理 %s"
-
-#: src/kpolice.c:713
-#, c-format
-msgid "Got message, %s"
-msgstr "获得消息 , %s"
